@@ -1,0 +1,8 @@
+*.pdf
+*.fits
+*.pyc
+*.jpg
+*.jpeg
+*.png
+.*project
+.DS_Store
