@@ -3,13 +3,13 @@ import numpy as np
 import copy   # Added by Maria Pena-Guerrero
 
 # Header
-__author__ = "Tommy Le Blanc"
-__version__ = "1.0.1"
+__author__ = "T. Le Blanc & M. A. Pena-Guerrero"
+__version__ = "2.0"
 
 # HISTORY
 #    1. Feb 2014 - Vr. 1.0: Added initial versions the JWST target locate
-#                           algorithm. Added the following:
-#                           i) 
+#                           algorithm. 
+#    2. Jul 2015 - Vr. 2.0: Modifications made by Maria Pena-Guerrero
 
 
 # Utility definitions
@@ -111,7 +111,7 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
 # *************************** checkbox_2D ***************************
 
 # *************************** checkbox_1D ***************************
-def checkbox_1D(image, checkbox, xwidth, debug=False):
+def checkbox_1D(image, checkbox, xwidth=0, debug=False):
     """
     Find the course location of an flattened input psf by 
     finding the brightest checkbox.
