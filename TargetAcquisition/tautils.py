@@ -293,7 +293,20 @@ def readimage(master_img):
     # Generate a final image by doing a pixel to pixel check 
     # between alpha and beta images, storing lower value
     omega = np.where(alpha < beta, alpha, beta)
-     
+    
+    # show on screen the values of rows and column
+    show_data = False
+    if show_data:
+        image = alpha
+        print ('max_image = ', image.max())
+        print ('min_image = ', image.min())
+        for j in range(len(image[0])):
+            print (j, image[j, :])
+
+    # Convert negative pixel values to zero
+    negative_idx = np.where(omega < 0.0)
+    omega[negative_idx] = 0.0
+
     print('(readimage): Image processed!')
         
     # Return the extracted image
@@ -391,6 +404,7 @@ def display_ns_psf(image, vlim=(), fsize=(8, 8), interp='nearest', \
     ax.set_aspect('equal')
     ax.set_xlabel('x')
     ax.set_ylabel('y')
+    ax.set_ylim(0.0, 32)
 
     if vlim == ():
         vlim = (image.min(), image.max())
