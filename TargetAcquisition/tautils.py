@@ -10,8 +10,8 @@ import logging
 import pywcs 
 
 # Header
-__author__ = "Tommy Le Blanc"
-__version__ = "1.4.5"
+__author__ = "T. Le Blanc & M. A. Pena-Guerrero"
+__version__ = "2.0"
 
 # HISTORY
 #    1. Jan 2013 - Vr. 1.0: Added initial versions of centroid and bytescl
@@ -76,9 +76,11 @@ __version__ = "1.4.5"
 #                          - Added the ability to make axes actual pixel values using
 #                            the extent keyword. Shifts axes .5 pixel to make pixel 
 #                            center origin.
-#   13. Jul 2015 - Vr.1.4.5: 
+#   13. Jul 2015 - Vr. 2.0: 
 #                          - Code modified by Maria Pena-Guerrero for non-Notebook 
 #                            environment. 
+#                          - Corrected x and y width values in checkbox functions,
+#                            as well as xwh and ywh values. 
 #
 # Utility definitions
 # *********************** centroid ***********************
