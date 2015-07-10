@@ -14,7 +14,7 @@ __version__ = "1.0.1"
 
 # Utility definitions
 # *************************** checkbox_2D ***************************
-def checkbox_2D(image, checkbox, debug=False):
+def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
     """
     Find the course location of an input psf by finding the 
     brightest checkbox.
@@ -28,6 +28,10 @@ def checkbox_2D(image, checkbox, debug=False):
     checkbox -- A sliding partial filter that equal the sum
                 of values in an n x n region centered on the
                 current pixel, where n is an odd integer.
+    xwidth   -- Number of rows for the centroid region (positive
+                odd integer, or 0).
+    ywidth   -- Number of columns for the centroid region (positive
+                odd integer, or 0).
     
     Output(s):
     checkbox_ctr -- A tuple containing the brightest checkbox 
@@ -47,11 +51,9 @@ def checkbox_2D(image, checkbox, debug=False):
     chw = (checkbox - 1) / 2
     
     # Calculate the image size
+    # Note: the x and y are opposite to intuitive values in the images.  - Added by M. Pena-Guerrero
     xsize, ysize = image.shape[1], image.shape[0]
-    
-    # Calculate the x and y widths of checkbox region
-    xwidth, ywidth = xsize - checkbox + 1, ysize - checkbox + 1
-    
+        
     # If the checkbox size is not equal to both the X and Y sizes, 
     # find the pixel with the brightest checkbox
     if checkbox != xsize and checkbox != ysize:
@@ -79,14 +81,14 @@ def checkbox_2D(image, checkbox, debug=False):
         
     # Print calculated checkbox center, and sum within checkbox centroid
 
-    # Find the checkbox region half-width in x and y
-    xhw = (xwidth / 2) - 1
-    yhw = (ywidth / 2) - 1
+    # Find the centroid region half-width in x and y
+    xhw = (xwidth - 1) / 2
+    yhw = (ywidth - 1) / 2
         
     if xpeak < xhw or xpeak > xsize - xhw or ypeak < yhw or ypeak > ysize - yhw:
         print('(checkbox_2D): WARNING - Peak too close to edge of image.')
         
-#    NOTE: Use this section of the input image is a subset of a larger image
+#    NOTE: Use this section if the input image is a subset of a larger image.
 #          Not currently needed for this analysis
 #    # Determine the center of the brightest checkbox, in extracted
 #    # image coordinates
@@ -109,7 +111,7 @@ def checkbox_2D(image, checkbox, debug=False):
 # *************************** checkbox_2D ***************************
 
 # *************************** checkbox_1D ***************************
-def checkbox_1D(image, checkbox, debug=False):
+def checkbox_1D(image, checkbox, xwidth, debug=False):
     """
     Find the course location of an flattened input psf by 
     finding the brightest checkbox.
@@ -123,6 +125,8 @@ def checkbox_1D(image, checkbox, debug=False):
     checkbox -- A sliding partial filter that equal the sum
                 of values in an n x n region centered on the
                 current pixel, where n is an odd integer.
+    xwidth   -- Number of rows for the centroid region (positive
+                odd integer, or 0).
     
     Output(s):
     xpeak -- The brightest checkbox location.
@@ -145,18 +149,13 @@ def checkbox_1D(image, checkbox, debug=False):
     # Calculate the checkbox half-width
     chw = (checkbox - 1) / 2
 
-    
     # Calculate the image size
     xsize, ysize = image.shape[1], image.shape[0]
     
-    # Calculate the x and y widths of checkbox region
-    xwidth = xsize - checkbox + 1
-
     # If the checkbox size is not equal to both the X and Y sizes, 
     # find the pixel with the brightest checkbox
     if checkbox != xsize and checkbox != ysize:
         xpeak = 0
-        ypeak = 1
         sumpeak = 0
         for ii in xrange(xsize - checkbox):
             t = np.sum(vector[ii:ii+checkbox])
@@ -177,7 +176,7 @@ def checkbox_1D(image, checkbox, debug=False):
     # Print checkbox center and peak around centroid region
 
     # Find the checkbox region half-width in x and y
-    xhw = (xwidth / 2) - 1
+    xhw = (xwidth - 1) / 2
         
     if xpeak < xhw or xpeak > xsize - xhw:
         print('(checkbox_1D): WARNING - Peak too close to edge of image.')
@@ -251,14 +250,44 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     # their appropriate variables
     xpeak, ypeak = checkbox_center
     xhw, yhw = checkbox_halfwidth 
-    
-    for ii in xrange(int(xpeak - xhw - 1), int(xpeak + xhw - 1)):
-        for jj in xrange(int(ypeak - yhw - 1), int(ypeak + yhw - 1)):
+
+    # Added by M. Pena-Guerrero
+    lolim_x = int(xpeak - xhw - 1)
+    uplim_x = int(xpeak + xhw - 1)
+    lolim_y = int(ypeak - yhw - 1)
+    uplim_y = int(ypeak + yhw - 1)
+
+    # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
+    if lolim_x < 0:
+        print ('(centroid_2D): ERROR - lower limit in x is out of data.')
+        exit()
+    if uplim_x > 32:
+        print ('(centroid_2D): ERROR - upper limit in x is out of data.')
+        exit()
+    if lolim_y < 0:
+        print ('(centroid_2D): ERROR - lower limit in y is out of data.')
+        exit()
+    if uplim_y > 32:
+        print ('(centroid_2D): ERROR - upper limit in y is out of data.')
+        exit()
+
+    for ii in xrange(lolim_x, uplim_x):
+        for jj in xrange(lolim_y, uplim_y):
             xloc = ii + 1
             yloc = jj + 1
+            # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
+            if xloc > 32:
+                print ('(centroid_2D): ERROR - Upper limit in x is out of data.')
+                exit()
+            if yloc > 32:
+                print ('(centroid_2D): ERROR - Upper limit in y is out of data.')
+                exit()
+
             c_sum = c_sum + image[jj, ii]
             xsum = xsum + xloc * image[jj, ii]
             ysum = ysum + yloc * image[jj, ii]
+            #print ('ii, jj: ', ii, jj)
+            #print ('xsum, ysum, c_sum: ', xsum, ysum, c_sum)
             
     if debug:
         # Initial sum calculation (before iterations)
@@ -277,7 +306,8 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     old_ycen = copy.deepcopy(ycen)   # Modified by Maria Pena-Guerrero
     num_iter = 0
     
-    print ('Mamimum iterations = ', max_iter)   # Added by M. Pena-Guerrero
+    print ('(centroid_2D): Maximum iterations = ', max_iter)   # Added by M. Pena-Guerrero
+    
     for kk in xrange(max_iter):
         num_iter += 1
         c_sum = 0
@@ -287,10 +317,19 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
         # Set up x and y centroid scanning ranges
         x_range = np.array((np.floor(old_xcen - xhw) - 1, np.ceil(old_xcen + xhw) - 1))
         y_range = np.array((np.floor(old_ycen - yhw) - 1, np.ceil(old_ycen + yhw) - 1))
+        
+        # Debug messages  - Added by M. Pena-Guerrero
+        #if debug:
+        #    print ('x_range=', x_range)
+        #    print ('y_range=', y_range)
+        #    print ('old_xcen, old_ycen, xhw, yhw', old_xcen, old_ycen, xhw, yhw)
+        #    print ('(np.floor(old_xcen - xhw) - 1, np.ceil(old_xcen + xhw) - 1): ', np.floor(old_xcen - xhw) - 1, np.ceil(old_xcen + xhw) - 1) 
+        #    print ('(np.floor(old_ycen - yhw) - 1, np.ceil(old_ycen + yhw) - 1): ', np.floor(old_ycen - yhw) - 1, np.ceil(old_ycen + yhw) - 1) 
+        #    print ('iteration number: ', num_iter)
                 
         for ii in xrange(np.int(x_range[0]), np.int(x_range[1])):
             for jj in xrange(np.int(y_range[0]), np.int(y_range[1])):
-                
+
                 # Initalize weights to zero
                 xweight = 0
                 yweight = 0
@@ -299,6 +338,9 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 xoff = np.abs((ii + 1) - old_xcen)
                 yoff = np.abs((jj + 1) - old_ycen)
                 
+                #print ('ii, jj: ', ii, jj)
+                #print ('xoff, yoff: ', xoff, yoff)
+
                 # If within the original centroid box, set weight to 1
                 # for both x and y.
                 # If on the border, the scale weight
@@ -322,7 +364,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 c_sum = c_sum + image[jj, ii] * weight
                 xsum = xsum + xloc * image[jj, ii] * weight
                 ysum = ysum + yloc * image[jj, ii] * weight
-                
+        
         if c_sum == 0:
             print('(centroid_2D): ERROR - Divide by zero.')
         else:
@@ -340,18 +382,28 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 old_xcen = xcen
                 old_ycen = ycen
     
+    # Now subtract 1 on both axes, since Python starts counting from 0   - Modified by M. Pena-Guerrero
+    start_from0 = False
+    if start_from0:
+        centroid = np.array((xcen-1, ycen-1))   # but we are not correcting because JWST will start with 1
+    else:
+        centroid = np.array((xcen, ycen))   # Leave results starting from 1 (as in OS for JWST)
+        
     # Debug messages
     if debug:
+        print('(centroid_2D): Starting count for columns and rows from 0 set to: ', str(start_from0))  # Added by M. Pena-Guerrero
         print('(centroid_2D): xpeak, ypeak = {}, {}'.format(xpeak, ypeak))
         print('(centroid_2D): xhw, yhw = {}, {}'.format(xhw, yhw))
         print('(centroid_2D): xcen, ycen = {}, {} '.format(xcen, ycen))        
-        
-                        
-    print('(centroid_2D): Centroid = [{}, {}] for num_iter = {}.'.format(xcen-1, ycen-1, num_iter))
+                                
+    if start_from0:
+        starting_point = 0
+    else:
+        starting_point = 1
+    print('(centroid_2D): Centroid values start from ', starting_point)
+    print('(centroid_2D): Centroid = [{}, {}] for num_iter = {}.'.format(centroid[0], centroid[1], num_iter))
     print('(centroid_2D): Converged? ', convergence_flag)
           
-    # -1 on both axes, as Python is 0 major    
-    centroid = np.array((xcen-1, ycen-1))
     return centroid, c_sum
 # *************************** centroid_2D ***************************
 
