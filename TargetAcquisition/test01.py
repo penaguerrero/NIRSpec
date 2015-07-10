@@ -591,7 +591,7 @@ if run_part3 or run_all:   # Added by Maria Pena-Guerrero
     For this exercise, perform the following checkbox calculation: 
     '''
     # Test checkbox piece
-    cb_cen, cb_hw = jtl.checkbox_2D(psf, 5)
+    cb_cen, cb_hw = jtl.checkbox_2D(psf, 5, debug=True)
     
     # Checkbox center, in base 1
     print('Checkbox Output:')
@@ -745,7 +745,9 @@ if run_part4 or run_all:   # Added by Maria Pena-Guerrero
         
         print('Final sum: ', cb_sum)
         print('cb_centroid: ', cb_centroid)
-        raw_input()
+        
+        if ii==3:
+            raw_input()
         '''
         # ... find the 2nd and 3rd moments...
         x_mom, y_mom = jtl.find2D_higher_moments(full_psf, cb_centroid, cb_hw, cb_sum)
@@ -755,3 +757,4 @@ if run_part4 or run_all:   # Added by Maria Pena-Guerrero
         print('---------------------------------------------------------------')
         print()
         '''
+    
