@@ -289,8 +289,10 @@ def readimage(master_img):
     
     # Read in input file, and generate the alpha and beta images
     # (for subtraction)
-    alpha = master_img[1, :, :] - master_img[0, :, :]
-    beta = master_img[2, :, :] - master_img[1, :, :]
+    #alpha = master_img[1, :, :] - master_img[0, :, :]
+    #beta = master_img[2, :, :] - master_img[1, :, :]
+    alpha = master_img[1] - master_img[0]
+    beta = master_img[2] - master_img[1]
     
     # Generate a final image by doing a pixel to pixel check 
     # between alpha and beta images, storing lower value
@@ -406,7 +408,7 @@ def display_ns_psf(image, vlim=(), fsize=(8, 8), interp='nearest', \
     ax.set_aspect('equal')
     ax.set_xlabel('x')
     ax.set_ylabel('y')
-    ax.set_ylim(0.0, 32)
+    ax.set_ylim(0.0, np.shape(image)[0])
 
     if vlim == ():
         vlim = (image.min(), image.max())
