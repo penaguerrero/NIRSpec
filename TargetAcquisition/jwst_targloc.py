@@ -13,6 +13,72 @@ __version__ = "2.0"
 
 
 # Utility definitions
+
+# *************************** bg_correction ***************************
+def bg_correction(master_img, bg_method=None, bg_value=None, bg_frac=None, debug=False):
+    """
+    Subtract a background value from every pixel in the image, based on
+    the background method (None, Fixed, or Fraction):
+        - If None, the image is used as-is.
+        - If Fixed, the given background level (bg_value) is the value
+        to be subtracted from each pixel in the image.
+        - If Fraction, the given background level is the fraction (e.g. if
+        bg_fraction = 0.5, the background is set to the median pixel value
+        in the image; if bg_fraction = 0.4, 40% of the pixels have data
+        values less than background, while 60% have data values larger than 
+        background, and implicitly, the top 20% of the data values are 
+        assumed to contain significant counts from astronomical sources, 
+        cosmic rays, or hot pixels. See code).
+
+    Keyword arguments:
+    master_img -- 3-frame image (as per NIRSpec output images)
+    bg_method  -- Either None value or string: "fixed" or "frac"
+    bg_value   -- Fixed value to subtract from each pixel (this has to 
+                  be set if bg_method = "fixed")
+    bg_frac   -- Fractional value to subtract from image (this has to 
+                  be set if bg_method = "frac")
+    
+    Example usage:
+    
+        >> master_img_bgcorr = bg_correction(master_img, bg_method='frac', bg_value=0.4)
+
+        Correct each ramped image from background.
+    """
+    if bg_method is None:
+        return master_img
+    
+    elif "fix" in bg_method:
+        # Check that bg_value is defined
+        if bg_value is None:
+            print ("ERROR - Background_method set to 'fixed': bg_value needs to be a float number, got None.")
+            exit()
+        master_img_bgcorr = master_img - bg_value
+        return master_img_bgcorr
+    
+    elif "frac" in bg_method:
+        # Check that bg_value is defined
+        if bg_frac is None:
+            print ("ERROR - Background_method set to 'fractional': bg_frac needs to be a float number, got None.")
+            exit()
+        # Find the pixel value (bg) that represents that fraction of the population
+        master_img_bgcorr = []
+        for img in master_img:
+            sorted_img = np.sort(np.ravel(img))   # flatten the image and sort it
+            xsize = np.shape(img)[1]
+            ysize = np.shape(img)[0]
+            idx_bg = np.floor(bg_frac * xsize * ysize)
+            print ('(np.shape(sorted_img)): ', (np.shape(sorted_img)))
+            bg = sorted_img[idx_bg]
+            img_bgcorr = img - bg
+            master_img_bgcorr.append(img_bgcorr)
+            # Debugging messages
+            if debug:
+                print("(bg_correction): xsize = {},  ysize= {}".format(xsize, ysize))
+                print("(bg_correction): idx_bg = {}".format(idx_bg))
+        return master_img_bgcorr
+# *************************** bg_correction ***************************
+
+
 # *************************** checkbox_2D ***************************
 def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
     """
