@@ -38,6 +38,9 @@ def bg_correction(master_img, bg_method=None, bg_value=None, bg_frac=None, debug
     bg_frac   -- Fractional value to subtract from image (this has to 
                   be set if bg_method = "frac")
     
+    Output(s):
+    master_img_bgcorr -- The group of 3 background subtracted images 
+
     Example usage:
     
         >> master_img_bgcorr = bg_correction(master_img, bg_method='frac', bg_value=0.4)
@@ -62,19 +65,27 @@ def bg_correction(master_img, bg_method=None, bg_value=None, bg_frac=None, debug
             exit()
         # Find the pixel value (bg) that represents that fraction of the population
         master_img_bgcorr = []
+        img_number = 1
         for img in master_img:
+            img_original = copy.deepcopy(img)
             sorted_img = np.sort(np.ravel(img))   # flatten the image and sort it
             xsize = np.shape(img)[1]
             ysize = np.shape(img)[0]
             idx_bg = np.floor(bg_frac * xsize * ysize)
-            print ('(np.shape(sorted_img)): ', (np.shape(sorted_img)))
+            # If at the edge, correct
+            if idx_bg == np.shape(sorted_img)[0]:
+                idx_bg = idx_bg - 1
             bg = sorted_img[idx_bg]
-            img_bgcorr = img - bg
+            img_bgcorr = img_original - bg
             master_img_bgcorr.append(img_bgcorr)
             # Debugging messages
             if debug:
+                print("(bg_correction) - For image numebr {} :".format(img_number))
                 print("(bg_correction): xsize = {},  ysize= {}".format(xsize, ysize))
+                print("(bg_correction): sorted_img = {}".format(sorted_img))
                 print("(bg_correction): idx_bg = {}".format(idx_bg))
+                print("(bg_correction): bg = {}".format(bg))
+                img_number = img_number + 1
         return master_img_bgcorr
 # *************************** bg_correction ***************************
 
@@ -130,12 +141,14 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
             for jj in xrange(ysize - checkbox):
                 t = np.sum(image[jj:jj+checkbox, ii:ii+checkbox])
                 if t > sumpeak:
-                    xpeak = ii + chw + 1
+                    xpeak = ii + chw + 1   
                     ypeak = jj + chw + 1
                     sumpeak = t
+                    #print('sum is in X from ii={} to ii+checkbox={}'.format(str(ii), str(ii+checkbox)))
+                    #print('       in Y from jj={} to jj+checkbox={}'.format(str(jj), str(jj+checkbox)))
+                    #print('xpeak, ypeak, sumpeak', xpeak, ypeak, sumpeak)
         
         print('(checkbox_2D): Checkbox not equal to both x/ysize.')
-
     
     # If the checkbox size is equal to both the X and Y sizes
     if checkbox == xsize and checkbox == ysize:
@@ -145,12 +158,10 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
         
         print('(checkbox_2D): Checkbox equal to x/ysize.')
         
-    # Print calculated checkbox center, and sum within checkbox centroid
-
     # Find the centroid region half-width in x and y
     xhw = (xwidth - 1) / 2
     yhw = (ywidth - 1) / 2
-        
+    print ('xpeak, xhw, xsize : ', xpeak, xhw, xsize, '    ypeak, yhw, ysize : ', ypeak, yhw, ysize)
     if xpeak < xhw or xpeak > xsize - xhw or ypeak < yhw or ypeak > ysize - yhw:
         print('(checkbox_2D): WARNING - Peak too close to edge of image.')
         
@@ -172,7 +183,9 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
         
     checkbox_ctr = np.array((xpeak, ypeak))
     checkbox_hfw = np.array((xhw, yhw))
-
+    
+    print('(checkbox_2D): Checkbox centroid is given in Python indexing: starting at 0')
+    
     return checkbox_ctr, checkbox_hfw
 # *************************** checkbox_2D ***************************
 
@@ -239,14 +252,11 @@ def checkbox_1D(image, checkbox, xwidth=0, debug=False):
         
         print('(checkbox_1D): Checkbox equal to xsize.')
         
-    # Print checkbox center and peak around centroid region
-
     # Find the checkbox region half-width in x and y
     xhw = (xwidth - 1) / 2
         
     if xpeak < xhw or xpeak > xsize - xhw:
         print('(checkbox_1D): WARNING - Peak too close to edge of image.')
-        
     
     # Debug messages
     if debug:
@@ -262,6 +272,8 @@ def checkbox_1D(image, checkbox, xwidth=0, debug=False):
 #    # Determine the center of the brightest checkbox, in extracted
 #    # image coordinates
 #    xpeak = xpeak + xhw
+    
+    print('(checkbox_1D): Checkbox centroid is given in Python indexing: starting at 0')
     
     return xpeak, xhw
 # *************************** checkbox_1D ***************************
@@ -291,7 +303,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     Output(s):
     centroid  -- Tuple containing the location of the target, 
                  in the format [x, y].
-    c_cum     -- The calculated flux sum within the checkbox 
+    c_sum     -- The calculated flux sum within the checkbox 
                  region.
     
     Example usage:
@@ -316,52 +328,70 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     # their appropriate variables
     xpeak, ypeak = checkbox_center
     xhw, yhw = checkbox_halfwidth 
+    
+    # If too close to the edge and small centroid area, include the border   - Added by M. Pena-Guerrero 
+    if xpeak==2.0 and xhw==1.0:
+        xhw = 2.0
+        print ("(centroid_2D): WARNING - too close to the edge on X and centroid area too small: including edge now.")
+    if ypeak==2.0 and yhw==1.0:
+        yhw = 2.0
+        print ("(centroid_2D): WARNING - too close to the edge on Y and centroid area too small: including edge now.")
 
-    # Added by M. Pena-Guerrero
-    lolim_x = int(xpeak - xhw - 1)
-    uplim_x = int(xpeak + xhw - 1)
-    lolim_y = int(ypeak - yhw - 1)
-    uplim_y = int(ypeak + yhw - 1)
+    # Added by M. Pena-Guerrero   ->   Remove the -1 if centroid is given in Python indexing (starting at 0)
+    lolim_x = int(xpeak - xhw)# - 1)
+    uplim_x = int(xpeak + xhw)# - 1)
+    lolim_y = int(ypeak - yhw)# - 1)
+    uplim_y = int(ypeak + yhw)# - 1)
+    
+    if debug:
+        print ('\n xpeak, ypeak, xhw, yhw', xpeak, ypeak, xhw, yhw)
+        print ('lolim_x, uplim_x', lolim_x, uplim_x)
+        print ('lolim_y, uplim_y', lolim_y, uplim_y, '\n')
 
     # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
     if lolim_x < 0:
-        print ('(centroid_2D): ERROR - lower limit in x is out of data.')
-        exit()
+        lolim_x = 0
+        print ('(centroid_2D): WARNING - lower limit in x is out of data, setting to 0.')
     if uplim_x > 32:
-        print ('(centroid_2D): ERROR - upper limit in x is out of data.')
-        exit()
+        uplim_x = 31
+        print ('(centroid_2D): WARNING - upper limit in x is out of data, setting to 31.')
     if lolim_y < 0:
-        print ('(centroid_2D): ERROR - lower limit in y is out of data.')
-        exit()
+        lolim_y = 0
+        print ('(centroid_2D): WARNING - lower limit in y is out of data, setting to 0.')
     if uplim_y > 32:
-        print ('(centroid_2D): ERROR - upper limit in y is out of data.')
-        exit()
+        uplim_y = 31
+        print ('(centroid_2D): WARNING - upper limit in y is out of data, setting to 31.')
 
     for ii in xrange(lolim_x, uplim_x):
         for jj in xrange(lolim_y, uplim_y):
             xloc = ii + 1
             yloc = jj + 1
+
             # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
             if xloc > 32:
-                print ('(centroid_2D): ERROR - Upper limit in x is out of data.')
-                exit()
+                xloc = 31
+                print ('(centroid_2D): WARNING - Upper limit in x is out of data, setting to 31.')
             if yloc > 32:
-                print ('(centroid_2D): ERROR - Upper limit in y is out of data.')
-                exit()
+                yloc = 31
+                print ('(centroid_2D): WARNING - Upper limit in y is out of data, setting to 31.')
 
             c_sum = c_sum + image[jj, ii]
             xsum = xsum + xloc * image[jj, ii]
             ysum = ysum + yloc * image[jj, ii]
-            #print ('ii, jj: ', ii, jj)
-            #print ('xsum, ysum, c_sum: ', xsum, ysum, c_sum)
+            if debug:
+                print('xloc, yloc', xloc, yloc)
+                print ('ii, jj, image[jj, ii]: ', ii, jj, image[jj, ii])
+                print ('xsum, ysum, c_sum: ', xsum, ysum, c_sum)
+                print ('xsum, ysum, c_sum: ', xsum, ysum, c_sum)
             
     if debug:
         # Initial sum calculation (before iterations)
         print('(centroid_2D): Init. Sum (before iterations) = ', c_sum)
 
     if c_sum == 0:
-        print('(centroid_2D): ERROR - divide by zero.')
-        return
+        print('(centroid_2D): WARNING - Dividing by zero: c_sum=0. Maybe not reaching true centroid...')
+        print('               Keeping checkbox center.')
+        xcen, ycen = xpeak, ypeak
     else:
         xcen = xsum / c_sum
         ycen = ysum / c_sum
@@ -427,12 +457,24 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 xloc = ii + 1
                 yloc = jj + 1
                 
+                # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
+                if ii >= 32:
+                    ii = 31
+                    print ('(centroid_2D): WARNING - X index is out of data, setting to 31.')
+                if jj >= 32:
+                    jj = 31
+                    print ('(centroid_2D): WARNING - Y index is out of data, setting to 31.')
+                
                 c_sum = c_sum + image[jj, ii] * weight
                 xsum = xsum + xloc * image[jj, ii] * weight
                 ysum = ysum + yloc * image[jj, ii] * weight
         
         if c_sum == 0:
-            print('(centroid_2D): ERROR - Divide by zero.')
+            print('(centroid_2D): WARNING - Still dividing by zero: c_sum=0. Maybe not reaching true centroid...')
+            print('               Keeping checkbox center.')
+            # If the centering box was too small, keep checkbox center
+            xcen, ycen = checkbox_center
+            break
         else:
             xcen = xsum / c_sum
             ycen = ysum / c_sum
@@ -446,7 +488,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 break
             else:
                 old_xcen = xcen
-                old_ycen = ycen
+                old_ycen = ycen    
     
     # Now subtract 1 on both axes, since Python starts counting from 0   - Modified by M. Pena-Guerrero
     start_from0 = False
@@ -466,7 +508,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
         starting_point = 0
     else:
         starting_point = 1
-    print('(centroid_2D): Centroid values start from ', starting_point)
+    print('(centroid_2D): Centroid indexing starts with: ', starting_point)
     print('(centroid_2D): Centroid = [{}, {}] for num_iter = {}.'.format(centroid[0], centroid[1], num_iter))
     print('(centroid_2D): Converged? ', convergence_flag)
           
