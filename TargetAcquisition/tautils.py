@@ -274,7 +274,7 @@ def bytescl(img, bottom, top):
 
 # *********************** readimage ***********************
 # Extract an image from a multi-ramp integration FITS file
-def readimage(master_img):
+def readimage(master_img, debug=False):
     """
     Extract am image from a multi-ramp integration FITS file.
     Currently, JWST NIRSpec FITS images consists of a 3-ramp integration, 
@@ -298,18 +298,23 @@ def readimage(master_img):
     # between alpha and beta images, storing lower value
     omega = np.where(alpha < beta, alpha, beta)
     
-    # show on screen the values of rows and column
-    show_data = False
-    if show_data:
-        image = alpha
-        print ('max_image = ', image.max())
-        print ('min_image = ', image.min())
-        for j in range(len(image[0])):
-            print (j, image[j, :])
-
     # Convert negative pixel values to zero
     negative_idx = np.where(omega < 0.0)
     omega[negative_idx] = 0.0
+
+    # show on screen the values of rows and column for debugging other functions of the code
+    if debug:
+        image = omega   # Type image to be displayed
+        if image is omega:
+            print ('Combined ramped images:  ')
+            print ('   AFTER zeroing negative pixels')
+        else:
+            print ('   BEFORE zeroing negative pixels')
+        print ('max_image = ', image.max())
+        print ('min_image = ', image.min())
+        for j in range(np.shape(image)[0]):
+            print (j, image[j, :])#, alpha[j, :], beta[j, :])
+    
 
     print('(readimage): Image processed!')
         
