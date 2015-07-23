@@ -109,5 +109,11 @@ if testing:
     xt = x + 0.02     # measured centroid x-coordinate of each reference star
     yt = y + 0.01     # measured centroid y-coordinate of each reference star
     deltas, sigmas = ls_fit(n, x, y, xt, yt)
+    """
+    With these parameters output should be:
+       >> (least_squares): Least squares algorithm Version 1.0 loaded!
+       >> delta_x = -0.02   delta_y = -0.01   delta_theta = 7.57912251477e-16
+       >> sigma_x = 4.564982887e-15   sigma_y = 3.69348008392e-15   sigma_theta = -999.0    
+    """
     
 
