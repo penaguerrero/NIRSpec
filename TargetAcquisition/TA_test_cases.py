@@ -45,50 +45,67 @@ path_scene1_slow = "PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS/postag
 path_scene1_slow_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage")
 path_scene1_rapid = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRSRAPID/postage")
 path_scene1_rapid_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage")
+path_scene1_slow_shifted = "PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS/postage"
+path_scene1_slow_shifted_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage")
+path_scene1_rapid_shifted = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRSRAPID/postage")
+path_scene1_rapid_shifted_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage")
 path_scene2_slow = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS/postage")
 path_scene2_slow_nonoise = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS no_noise/postage")
 path_scene2_rapid = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID/postage")
 path_scene2_rapid_nonoise = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID no_noise/postage")
+path_scene2_slow_shifted = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS/postage")
+path_scene2_slow_shifted_nonoise = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS no_noise/postage")
+path_scene2_rapid_shifted = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID/postage")
+path_scene2_rapid_shifted_nonoise = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID no_noise/postage")
 #                      0                   1                     2                      3            
-paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, path_scene1_rapid_nonoise, 
-             path_scene2_slow, path_scene2_slow_nonoise, path_scene2_rapid, path_scene2_rapid_nonoise]
-#                      4                   5                     6                      7            
+paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, path_scene1_rapid_nonoise,
+#                      4                        5                                   6                           7            
+              path_scene1_slow_shifted, path_scene1_slow_shifted_nonoise, path_scene1_rapid_shifted, path_scene1_rapid_shifted_nonoise, 
+#                      8                   9                     10                      11            
+              path_scene2_slow, path_scene2_slow_nonoise, path_scene2_rapid, path_scene2_rapid_nonoise,
+#                      12                       13                                  14                          15            
+              path_scene2_slow_shifted, path_scene2_slow_shifted_nonoise, path_scene2_rapid_shifted, path_scene2_rapid_shifted_nonoise]
 
 
 ###########################################################################################################
 
 
 # Set test parameters
-save_text_file = True
-path_number = 0   # Select 0 through 7 from paths_list above OR  
-single_star = False   # If only want to test one star set to True and type the path for a single star 
-single_star_path = 'PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS/postage/postageout_star_     150 quad_       3 quad_star       50.fits'
-if single_star:
-    save_text_file = False
+save_text_file = False
+path_number = 15            # Select 0 through 7 from paths_list above OR  
+single_star = True          # If only want to test one star set to True and type the path for a single star 
+single_star_path = paths_list[2]+'/postageout_star_     103 quad_       3 quad_star        3.fits'
+display_master_img = False  # Want to see the combined ramped images for every star?
+debug = False               # see all debug messages (i.e. values of all calculations)
+centroid_in_full_detector = False   # Want results in full detector coordinates or 32x32? 
 checkbox_size = 3
-background_method = "frac"   # Select either 'fractional', 'fixed', or None   
-xwidth_list = [3, 5, 7]   # Number of rows of the centroid region
-ywidth_list = [3, 5, 7]   # Number of columns of the centroid region
+background_method = 'frac'  # Select either 'fractional', 'fixed', or None   
+xwidth_list = [3, 5, 7]     # Number of rows of the centroid region
+ywidth_list = [3, 5, 7]     # Number of columns of the centroid region
 max_iter = 50
 threshold = 1e-5
 detector = 491
 determine_moments = False   # Want to determine 2nd and 3rd moments?
-display_master_img = False   # Want to see the combined ramped images for every star?
-debug = False   # see all debug messages (i.e. values of all calculations)
 
 
 ###########################################################################################################
 
+if single_star:
+    print('got here')
+    save_text_file = False
+    display_master_img = True   # Want to see the combined ramped images for every star?
+    debug = True   # see all debug messages (i.e. values of all calculations)
+
 
 ##### FUNCTIONS
 def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_size, max_iter, 
-                            threshold, debug, determine_moments):   
+                            threshold, determine_moments, debug):   
     """
     Determine the centroid location given the that the background is already subtracted. 
     """ 
     # Display the combined FITS image that combines all frames into one image
     if display_master_img: 
-        tu.display_ns_psf(psf)
+        tu.display_ns_psf(psf, vlim=(0.1, 5))
     # Test checkbox piece
     cb_centroid_list = []
     for xwidth, ywidth in zip(xwidth_list, ywidth_list):
@@ -119,15 +136,16 @@ def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_
     return cb_centroid_list
 
 
-def transform2fulldetector(detector, cb_centroid_list, ESA_center, true_center):
+def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list, ESA_center, true_center):
     """
     Transform centroid coordinates into full detector coordinates.
     
     Keyword arguments:
-    detector         -- Either 491 or 492
-    cb_centroid_list -- Centroid determined by target acquisition (TA) algorithm in terms of 32 by 32 pixels
-    ESA_center       -- Centroid determined with the ESA version of TA algorithm in terms of full detector
-    true_center      -- Actual (true) position of star in terms of full detector  
+    detector                   -- Either 491 or 492
+    centroid_in_full_detector  -- Resuling coordinates in terms of full detector, True or False
+    cb_centroid_list           -- Centroid determined by target acquisition (TA) algorithm in terms of 32 by 32 pixels
+    ESA_center                 -- Centroid determined with the ESA version of TA algorithm in terms of full detector
+    true_center                -- Actual (true) position of star in terms of full detector  
     
     Output(s):
     cb_centroid_list_fulldetector  -- List of centroid locations determined with the TA algorithm in 
@@ -149,32 +167,59 @@ def transform2fulldetector(detector, cb_centroid_list, ESA_center, true_center):
     # from centroid function starts with 1
     loleft_x = np.floor(corrected_x) - 16.0
     loleft_y = np.floor(corrected_y) - 16.0
-    
-    # Add lower left corner to centroid location to get it in terms of full detector
-    cb_centroid_list_fulldetector = []
-    for centroid_location in cb_centroid_list:
-        centroid_fulldetector_x = centroid_location[0] + loleft_x
-        centroid_fulldetector_y = centroid_location[1] + loleft_y
-        centroid_fulldetector = [centroid_fulldetector_x, centroid_fulldetector_y]
-        cb_centroid_list_fulldetector.append(centroid_fulldetector)
-    
+
+    if centroid_in_full_detector:    
+        # Add lower left corner to centroid location to get it in terms of full detector
+        cb_centroid_list_fulldetector = []
+        for centroid_location in cb_centroid_list:
+            centroid_fulldetector_x = centroid_location[0] + loleft_x
+            centroid_fulldetector_y = centroid_location[1] + loleft_y
+            centroid_fulldetector = [centroid_fulldetector_x, centroid_fulldetector_y]
+            cb_centroid_list_fulldetector.append(centroid_fulldetector)
+        corr_cb_centroid_list = cb_centroid_list_fulldetector
+        corr_true_center_centroid = true_center
+    else:
+        corr_cb_centroid_list = cb_centroid_list
+        # Add lower left corner to centroid location to get it in terms of full detector
+        corr_true_center_x = corrected_x - loleft_x
+        corr_true_center_y = corrected_y - loleft_y
+        true_center_centroid_32x32 = [corr_true_center_x, corr_true_center_y]
+        corr_true_center_centroid = true_center_centroid_32x32
+
     # Determine difference between center locations
     differences_true_TA = []
-    d3_x = true_center[0] - cb_centroid_list_fulldetector[0][0]
-    d5_x = true_center[0] - cb_centroid_list_fulldetector[1][0]
-    d7_x = true_center[0] - cb_centroid_list_fulldetector[2][0]
-    d3_y = true_center[1] - cb_centroid_list_fulldetector[0][1]
-    d5_y = true_center[1] - cb_centroid_list_fulldetector[1][1]
-    d7_y = true_center[1] - cb_centroid_list_fulldetector[2][1]
+    d3_x = corr_true_center_centroid[0] - corr_cb_centroid_list[0][0]
+    d5_x = corr_true_center_centroid[0] - corr_cb_centroid_list[1][0]
+    d7_x = corr_true_center_centroid[0] - corr_cb_centroid_list[2][0]
+    d3_y = corr_true_center_centroid[1] - corr_cb_centroid_list[0][1]
+    d5_y = corr_true_center_centroid[1] - corr_cb_centroid_list[1][1]
+    d7_y = corr_true_center_centroid[1] - corr_cb_centroid_list[2][1]
     d3 = [d3_x, d3_y]
     d5 = [d5_x, d5_y]
     d7 = [d7_x, d7_y]
     diffs = [d3, d5, d7]
     differences_true_TA.append(diffs)
+    return corr_true_center_centroid, corr_cb_centroid_list, differences_true_TA
 
-    return cb_centroid_list_fulldetector, differences_true_TA
 
+def write2file(save_text_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, differences_true_TA):
+    line1 = "{:<5} {:<10} {:<14} {:<16} {:<14} {:<16} {:<14} {:<16} {:<12} {:<14} {:<20} {:<22} {:<20} {:<22} {:<20} {:<22}\n".format(st, bg, 
+                                                    corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1],
+                                                    corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1],
+                                                    corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1],
+                                                    corr_true_center_centroid[0], corr_true_center_centroid[1],
+                                                    differences_true_TA[0][0][0], differences_true_TA[0][0][1],
+                                                    differences_true_TA[0][1][0], differences_true_TA[0][1][1],
+                                                    differences_true_TA[0][2][0], differences_true_TA[0][2][1])
+    if save_text_file:
+        f = open(output_file, "a")
+        f.write(line1)
+        f.close()
+    print(line0a)
+    print(line0b)
+    print(line1) 
 
+    
 ##### CODE
 
 # start the timer to compute the whole running time
@@ -205,14 +250,31 @@ elif path_number == 2:
 elif path_number == 3:
     case = "scene1_rapid_nonoise"
 elif path_number == 4:
-    case = "scene2_slow_real"
+    case = "scene1_slow_real_shifted"
 elif path_number == 5:
-    case = "scene2_slow_nonoise"
+    case = "scene1_slow_nonoise_shifted"
 elif path_number == 6:
-    case = "scene2_rapid_real"
+    case = "scene1_rapid_real_shifted"
 elif path_number == 7:
+    case = "scene1_rapid_nonoise_shifted"
+elif path_number == 8:
+    case = "scene2_slow_real"
+elif path_number == 9:
+    case = "scene2_slow_nonoise"
+elif path_number == 10:
+    case = "scene2_rapid_real"
+elif path_number == 11:
     case = "scene2_rapid_nonoise"
-output_file = "TA_testcases_for_"+case+bg_choice+".txt"
+elif path_number == 12:
+    case = "scene2_slow_real_shifted"
+elif path_number == 13:
+    case = "scene2_slow_nonoise_shifted"
+elif path_number == 14:
+    case = "scene2_rapid_real_shifted"
+elif path_number == 15:
+    case = "scene2_rapid_nonoise_shifted"
+outpul_file_path = "PFforMaria/Resulting_centroid_txt_files/"
+output_file = os.path.join(outpul_file_path, "TA_testcases_for_"+case+bg_choice+".txt")
 line0 = "Centroid indexing starting at 1 !"
 line0a = "{:<5} {:<15} {:<16} {:>23} {:>32} {:>33} {:>35} {:>38} {:>43}".format("Star", "Background", 
                                                                   "Centroid width: 3", "5", "7", "TruePositions", 
@@ -251,15 +313,6 @@ elif detector == 492:
     stars_detector = stars_492
     true_x = x_492
     true_y = y_492
-'''
-# The x and y positions in the 491 and 492 detectors are in coordinates of the whole detector
-# transform to 32 by 32 coordinates:
-bench_x = np.floor(x_491) - 16.0
-bench_y = np.floor(y_491) - 16.0
-if detector == 492:
-    bench_x = np.floor(x_492) - 16.0
-    bench_y = np.floor(y_492) - 16.0
-'''
 
 # Start the loop in the given directory
 dir_stars = glob(os.path.join(dir2test,"postageout_star_*.fits"))   # get all star fits files in that directory
@@ -276,6 +329,10 @@ for star in dir_stars:
             if star_exists == False:
                 print ("The file: ", star, "\n    does NOT exist. Exiting the script.")
                 exit() 
+            
+            # Obtain real star position
+            idx_star = stars_detector.index(st)
+            true_center = [true_x[idx_star], true_y[idx_star]]
             
             # Read FITS image 
             #hdr = fits.getheader(star, 0)
@@ -296,56 +353,52 @@ for star in dir_stars:
                     while master_img_bgcorr_max == 0.0:
                         print('  IMPORTANT WARNING!!! Combined ramped images have a max of 0.0 with bg_frac=', bg_frac)
                         bg_frac = bg_frac - 0.02
+                        if bg_frac < 0.0:   # prevent an infinite loop
+                            print ('   ERROR - Cannot subtract from  bg_frac < 0.0 ...')
+                            bg_frac = 0.0
+                            break
                         print('       *** Setting  NEW  bg_frac = ', bg_frac)
                         master_img_bgcorr = jtl.bg_correction(master_img, bg_method=background_method, 
                                                               bg_value=bg_value, bg_frac=bg_frac, debug=debug)
                         psf = tu.readimage(master_img_bgcorr, debug=debug)
                         master_img_bgcorr_max = psf.max()
                     cb_centroid_list = run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
-                                                               checkbox_size, max_iter, threshold, debug, 
-                                                               determine_moments)
+                                                               checkbox_size, max_iter, threshold, 
+                                                               determine_moments, debug)
+                    # Transform to full detector coordinates in order to compare with real centers
+                    ESA_center = [0,0]
+                    corr_true_center_centroid, corr_cb_centroid_list, differences_true_TA = transform2fulldetector(detector, 
+                                                                                                  centroid_in_full_detector,
+                                                                                                  cb_centroid_list, ESA_center, 
+                                                                                                  true_center)
+                    # Write output into text file
+                    bg = bg_frac
+                    write2file(save_text_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, differences_true_TA)
                     #raw_input()
             else:
                 master_img_bgcorr = jtl.bg_correction(master_img, bg_method=background_method, 
                                                       bg_value=bg_value, bg_frac=bg_frac)
-                cb_centroid_list = run_recursive_centroids(master_img_bgcorr, background, xwidth_list, 
-                                                           ywidth_list, checkbox_size, max_iter, threshold, 
-                                                           debug, determine_moments)
-            # Obtain real star position
-            idx_star = stars_detector.index(st)
-            true_center = [true_x[idx_star], true_y[idx_star]]
-            
-            # Transform to full detector coordinates in order to compare with real centers
-            ESA_center = [0,0]
-            cb_centroid_list_fulldetector, differences_true_TA = transform2fulldetector(detector, cb_centroid_list, 
-                                                                                        ESA_center, true_center)
-
-            centroid_in_full_detector = True
-            # Write output into text file
-            bg = background
-            if centroid_in_full_detector:
-                centroid = cb_centroid_list_fulldetector
-            else:
-                centroid = cb_centroid_list
-            line1 = "{:<5} {:<10} {:<14} {:<16} {:<14} {:<16} {:<14} {:<16} {:<8} {:<14} {:<20} {:<22} {:<20} {:<22} {:<20} {:<22}\n".format(st, bg, 
-                                                            centroid[0][0], centroid[0][1],
-                                                            centroid[1][0], centroid[1][1],
-                                                            centroid[2][0], centroid[2][1],
-                                                            true_center[0], true_center[1],
-                                                            differences_true_TA[0][0][0], differences_true_TA[0][0][1],
-                                                            differences_true_TA[0][1][0], differences_true_TA[0][1][1],
-                                                            differences_true_TA[0][2][0], differences_true_TA[0][2][1])
-            if save_text_file:
-                f = open(output_file, "a")
-                f.write(line1)
-                f.close()
-            print(line0a)
-            print(line0b)
-            print(line1) 
+                # Obtain the combined FITS image that combines all frames into one image AND
+                # check if all image is zeros, take the image that still has a max value
+                psf = tu.readimage(master_img_bgcorr, debug=debug)                
+                cb_centroid_list = run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
+                                                           checkbox_size, max_iter, threshold, 
+                                                           determine_moments, debug)
+                # Transform to full detector coordinates in order to compare with real centers
+                ESA_center = [0,0]
+                corr_true_center_centroid, corr_cb_centroid_list, differences_true_TA = transform2fulldetector(detector, 
+                                                                                              centroid_in_full_detector,
+                                                                                              cb_centroid_list, ESA_center, 
+                                                                                              true_center)
+                # Write output into text file
+                bg = background
+                write2file(save_text_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, differences_true_TA) 
             
             if single_star:
                 print ("Recursive test script finished. \n")
                 exit()
 
+if not single_star:
+    print (" Centroids and differences were written into: \n  {}".format(output_file))
 print ("\n Recursive test script finished. Took  %s  seconds to finish. \n" % ((time.time() - start_time)) )
             
