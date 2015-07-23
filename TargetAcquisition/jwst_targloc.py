@@ -63,6 +63,8 @@ def bg_correction(master_img, bg_method=None, bg_value=None, bg_frac=None, debug
         if bg_frac is None:
             print ("ERROR - Background_method set to 'fractional': bg_frac needs to be a float number, got None.")
             exit()
+        if bg_frac == 0.0:   #?
+            return master_img
         # Find the pixel value (bg) that represents that fraction of the population
         master_img_bgcorr = []
         img_number = 1
@@ -137,6 +139,8 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
         xpeak = 0
         ypeak = 0
         sumpeak = 0
+        sumpeak_list = []
+        xy_peak_list = []
         for ii in xrange(xsize - checkbox):
             for jj in xrange(ysize - checkbox):
                 t = np.sum(image[jj:jj+checkbox, ii:ii+checkbox])
@@ -147,7 +151,27 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
                     #print('sum is in X from ii={} to ii+checkbox={}'.format(str(ii), str(ii+checkbox)))
                     #print('       in Y from jj={} to jj+checkbox={}'.format(str(jj), str(jj+checkbox)))
                     #print('xpeak, ypeak, sumpeak', xpeak, ypeak, sumpeak)
-        
+                    xy_peak = [xpeak, ypeak]
+                    xy_peak_list.append(xy_peak)
+                    sumpeak_list.append(sumpeak)
+                    """
+                    # Check that this peak is NOT a cosmic ray by finding if there is a single pixel with
+                    # the sum value, if there is DO NOT take this as the peak
+                    idx_t = np.where(image == t)
+                    print('idx_t=', idx_t[0], idx_t[1])
+                    if len(idx_t[0]) == 1 and len(sumpeak_list) != 1:
+                        # find second largest peak
+                        sumpeak_old = max(n for n in sumpeak_list if n!=max(sumpeak_list))
+                        idx_sumold = sumpeak_list.index(sumpeak_old)
+                        xpeak_old, ypeak_old = xy_peak_list[idx_sumold][0], xy_peak_list[idx_sumold][1]
+                        if sumpeak_old == 0:
+                            sumpeak_old = t
+                            xpeak_old, ypeak_old = xpeak, ypeak
+                        print ('sumpeak_old, xpeak_old, ypeak_old : ', sumpeak_old, xpeak_old, ypeak_old)
+                        print ('xpeak, ypeak, sumpeak : ', xpeak, ypeak, sumpeak)
+                        xpeak, ypeak = xpeak_old, ypeak_old
+                        sumpeak = sumpeak_old
+                        """
         print('(checkbox_2D): Checkbox not equal to both x/ysize.')
     
     # If the checkbox size is equal to both the X and Y sizes
@@ -161,7 +185,7 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
     # Find the centroid region half-width in x and y
     xhw = (xwidth - 1) / 2
     yhw = (ywidth - 1) / 2
-    print ('xpeak, xhw, xsize : ', xpeak, xhw, xsize, '    ypeak, yhw, ysize : ', ypeak, yhw, ysize)
+    #print ('xpeak, xhw, xsize : ', xpeak, xhw, xsize, '    ypeak, yhw, ysize : ', ypeak, yhw, ysize)
     if xpeak < xhw or xpeak > xsize - xhw or ypeak < yhw or ypeak > ysize - yhw:
         print('(checkbox_2D): WARNING - Peak too close to edge of image.')
         
