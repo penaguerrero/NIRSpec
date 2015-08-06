@@ -353,6 +353,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     xpeak, ypeak = checkbox_center
     xhw, yhw = checkbox_halfwidth 
     
+    """
     # If too close to the edge and small centroid area, include the border   - Added by M. Pena-Guerrero 
     if xpeak==2.0 and xhw==1.0:
         xhw = 2.0
@@ -360,7 +361,8 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     if ypeak==2.0 and yhw==1.0:
         yhw = 2.0
         print ("(centroid_2D): WARNING - too close to the edge on Y and centroid area too small: including edge now.")
-
+    """
+    
     # Added by M. Pena-Guerrero   ->   Remove the -1 if centroid is given in Python indexing (starting at 0)
     lolim_x = int(xpeak - xhw)# - 1)
     uplim_x = int(xpeak + xhw)# - 1)
