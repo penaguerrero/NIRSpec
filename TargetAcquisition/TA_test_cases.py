@@ -227,7 +227,7 @@ def write2file(save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_
     print(line1) 
 
 
-def read_listfile(list_file_name):    
+def read_listfile(list_file_name, detector, background_method):    
     """ This function reads the fits table that contains the flux and converts to magnitude for the 
     simulated stars. """
     listfiledata = fits.getdata(list_file_name)
@@ -240,7 +240,15 @@ def read_listfile(list_file_name):
         factor = np.append(factor, row[4])
     # convert the flux into magnitude (factor=1.0 is equivalent to magnitude=18.0)
     mag = 2.5*np.log10(factor) + 18.0
-    return star_number, xpos, ypos, mag
+    # Get the correct slices according to detector
+    if detector == 491:   # slice from star 101 to 200
+        star_number, xpos, ypos, mag = star_number[100:], xpos[100:], ypos[100:], mag[100:]
+    elif detector == 492:   # slice from star 1 to 100
+        star_number, xpos, ypos, mag = star_number[:100], xpos[:100], ypos[:100:], mag[:100]
+    bg_method = background_method
+    if background_method is None:   # convert the None value to string
+        bg_method = 'None'
+    return star_number, xpos, ypos, mag, bg_method
     
 
 def get_fracdata(offsets):
@@ -371,6 +379,20 @@ def get_fracdata(offsets):
     frac09 = np.array([frac093x, frac093y, frac095x, frac095y, frac097x, frac097y])
     frac10 = np.array([frac103x, frac103y, frac105x, frac105y, frac107x, frac107y])
     return frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10
+
+
+def find_std(arr):
+    """ This function determines the standard deviation of the given array. """
+    N = float(len(arr))
+    mean = np.sum(arr) / N
+    diff2meansq_list = []
+    for a in arr:
+        diff = a - mean
+        diffsq = diff * diff
+        diff2meansq_list.append(diffsq)
+    std = ( 1.0/(N-1.0) * sum(diff2meansq_list) )**(0.5)
+    print ('sigma = ', std, '    mean = ', mean)
+    return std, mean
 
 
 ##### CODE
@@ -552,31 +574,35 @@ if just_read_text_file != True:
                     print ("Recursive test script finished. \n")
                     exit()
 
-# Make the plot of magnitude (in x) versus radial offset distance (in y) for Scene2
-if "scene2" in case:
-    # Read the text file just written to get the offsets from the "real" positions of the fake stars
-    offsets = np.loadtxt(output_file, skiprows=3, usecols=(10,11,12,13,14,15), unpack=True)
-    path2listfile = "PFforMaria/Scene_2_AB1823"
-    list_file = "simuTA20150528-F140X-S50-K-AB18to23.list"
+### Obtain standard deviation from true star positions
+# Read the text file just written to get the offsets from the "real" positions of the fake stars
+offsets = np.loadtxt(output_file, skiprows=3, usecols=(10,11,12,13,14,15), unpack=True)
+if "scene1" in case:
+    path2listfile = "PFforMaria/Scene_1_AB23"
+    list_file = "simuTA20150528-F140X-S50-K-AB23.list"
+    if 'shifted' in case: 
+        list_file = "simuTA20150528-F140X-S50-K-AB23-shifted.list"
     lf = os.path.join(path2listfile,list_file)
-    star_number, xpos, ypos, mag = read_listfile(lf)
-    if detector == 491:   # slice from star 101 to 200
-        star_number, xpos, ypos, mag = star_number[100:], xpos[100:], ypos[100:], mag[100:]
-    elif detector == 492:   # slice from star 1 to 100
-        star_number, xpos, ypos, mag = star_number[:100], xpos[:100], ypos[:100:], mag[:100]
-    bg_method = background_method
-    if background_method is None:   # convert the None value to string
-        bg_method = 'None'
+    star_number, xpos, ypos, mag, bg_method = read_listfile(lf, detector, background_method)
+    print ('For Checkbox=3: ')
+    sig3, mean3 = find_std(offsets[1])
+    print ('For Checkbox=5: ')
+    sig5, mean5 = find_std(offsets[3])
+    print ('For Checkbox=7: ')
+    sig7, mean7 = find_std(offsets[5])
     if 'frac' not in bg_method:
         fig1 = plt.figure(1, figsize=(12, 10))
+        ax1 = fig1.add_subplot(111)
         plt.title(case+'_BG'+bg_method)
-        plt.xlabel('Magnitude')
+        plt.xlabel('Radial offset in X')
         plt.ylabel('Radial offset in Y')
-        plt.hlines(0.0, 18.0, 23.0, colors='k', linestyles='dashed')
-        plt.plot(mag, offsets[1], 'bo', ms=8, alpha=0.7, label='Checkbox=3')
-        plt.plot(mag, offsets[3], 'go', ms=8, alpha=0.7, label='Checkbox=5')
-        plt.plot(mag, offsets[5], 'ro', ms=8, alpha=0.7, label='Checkbox=7')
-        plt.legend(loc='upper left')
+        plt.hlines(0.0, -10, 15, colors='k', linestyles='dashed')
+        plt.plot(offsets[0], offsets[1], 'bo', ms=8, alpha=0.7, label='Checkbox=3')
+        plt.plot(offsets[2], offsets[1], 'go', ms=8, alpha=0.7, label='Checkbox=3')
+        plt.plot(offsets[4], offsets[1], 'ro', ms=8, alpha=0.7, label='Checkbox=3')
+        plt.legend(loc='lower right')
+        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
+        ax1.annotate(textinfig, xy=(0.15, 0.05), xycoords='axes fraction' )
         if save_plot:
             if background_method is None:
                 bg = 'None_'
@@ -588,8 +614,122 @@ if "scene2" in case:
         if show_plot:
             plt.show()
     else:
-        print ('frac!')
-        print ("Reading text file: ",  output_file)
+        frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = get_fracdata(offsets)
+        fig1 = plt.figure(1, figsize=(12, 10))
+        fig1.subplots_adjust(hspace=0.30)
+        ax1 = fig1.add_subplot(311)
+        ax1.set_title(case+"_BGfrac")
+        ax1.set_xlabel('Radial offset in X: Checkbox=3')
+        ax1.set_ylabel('Radial offset in Y: Checkbox=3')
+        ax1.plot(frac00[0], frac00[1], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
+        ax1.plot(frac01[0], frac01[1], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
+        ax1.plot(frac02[0], frac02[1], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
+        ax1.plot(frac03[0], frac03[1], 'go', ms=5, alpha=0.7, label='bg_frac=0.3')
+        ax1.plot(frac04[0], frac04[1], 'ko', ms=8, alpha=0.7, label='bg_frac=0.4')
+        ax1.plot(frac05[0], frac05[1], 'yo', ms=8, alpha=0.7, label='bg_frac=0.5')
+        ax1.plot(frac06[0], frac06[1], 'co', ms=8, alpha=0.7, label='bg_frac=0.6')
+        ax1.plot(frac07[0], frac07[1], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
+        ax1.plot(frac08[0], frac08[1], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
+        ax1.plot(frac09[0], frac09[1], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
+        ax1.plot(frac10[0], frac10[1], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
+        xmin, xmax = ax1.get_xlim()
+        plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
+        ax1.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
+        # Shrink current axis by 10%
+        box = ax1.get_position()
+        ax1.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+        ax2 = fig1.add_subplot(312)
+        ax2.set_xlabel('Radial offset in X: Checkbox=5')
+        ax2.set_ylabel('Radial offset in Y: Checkbox=5')
+        ax2.plot(frac00[2], frac00[3], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
+        ax2.plot(frac01[2], frac01[3], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
+        ax2.plot(frac02[2], frac02[3], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
+        ax2.plot(frac03[2], frac03[3], 'go', ms=5, alpha=0.7, label='bg_frac=0.3')
+        ax2.plot(frac04[2], frac04[3], 'ko', ms=8, alpha=0.7, label='bg_frac=0.4')
+        ax2.plot(frac05[2], frac05[3], 'yo', ms=8, alpha=0.7, label='bg_frac=0.5')
+        ax2.plot(frac06[2], frac06[3], 'co', ms=8, alpha=0.7, label='bg_frac=0.6')
+        ax2.plot(frac07[2], frac07[3], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
+        ax2.plot(frac08[2], frac08[3], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
+        ax2.plot(frac09[2], frac09[3], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
+        ax2.plot(frac10[2], frac10[3], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
+        xmin, xmax = ax2.get_xlim()
+        plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
+        ax2.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
+        # Shrink current axis by 10%
+        box = ax2.get_position()
+        ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+        # put legend out of the plot box
+        ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))            
+        ax3 = fig1.add_subplot(313)
+        ax3.set_xlabel('Radial offset in X: Checkbox=7')
+        ax3.set_ylabel('Radial offset in Y: Checkbox=7')
+        ax3.plot(frac00[4], frac00[5], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
+        ax3.plot(frac01[4], frac01[5], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
+        ax3.plot(frac02[4], frac02[5], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
+        ax3.plot(frac03[4], frac03[5], 'go', ms=5, alpha=0.7, label='bg_frac=0.3')
+        ax3.plot(frac04[4], frac04[5], 'ko', ms=8, alpha=0.7, label='bg_frac=0.4')
+        ax3.plot(frac05[4], frac05[5], 'yo', ms=8, alpha=0.7, label='bg_frac=0.5')
+        ax3.plot(frac06[4], frac06[5], 'co', ms=8, alpha=0.7, label='bg_frac=0.6')
+        ax3.plot(frac07[4], frac07[5], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
+        ax3.plot(frac08[4], frac08[5], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
+        ax3.plot(frac09[4], frac09[5], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
+        ax3.plot(frac10[4], frac10[5], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
+        xmin, xmax = ax3.get_xlim()
+        plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
+        ax3.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
+        # Shrink current axis by 10%
+        box = ax3.get_position()
+        ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+        if save_plot:
+            destination = os.path.abspath("PFforMaria/plots/MagVsYoffset_frac_"+case+plot_type)
+            plt.savefig(destination)
+            print ("\n Plot saved: ", destination)
+        if show_plot:
+            plt.show()        
+
+# Make the plot of magnitude (in x) versus radial offset distance (in y) for Scene2
+if "scene2" in case:
+    # Read the text file just written to get the offsets from the "real" positions of the fake stars
+    path2listfile = "PFforMaria/Scene_2_AB1823"
+    list_file = "simuTA20150528-F140X-S50-K-AB18to23.list"
+    if 'shifted' in case: 
+        list_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted.list"
+    lf = os.path.join(path2listfile,list_file)
+    star_number, xpos, ypos, mag, bg_method = read_listfile(lf, detector, background_method)
+    print ('For Checkbox=3: ')
+    sig3, mean3 = find_std(offsets[1])
+    print ('For Checkbox=5: ')
+    sig5, mean5 = find_std(offsets[3])
+    print ('For Checkbox=7: ')
+    sig7, mean7 = find_std(offsets[5])
+    if 'frac' not in bg_method:
+        fig1 = plt.figure(1, figsize=(12, 10))
+        ax1 = fig1.add_subplot(111)
+        plt.title(case+'_BG'+bg_method)
+        plt.xlabel('Magnitude')
+        plt.ylabel('Radial offset in Y')
+        plt.hlines(0.0, 18.0, 23.0, colors='k', linestyles='dashed')
+        plt.plot(mag, offsets[1], 'bo', ms=8, alpha=0.7, label='Checkbox=3')
+        plt.plot(mag, offsets[3], 'go', ms=8, alpha=0.7, label='Checkbox=5')
+        plt.plot(mag, offsets[5], 'ro', ms=8, alpha=0.7, label='Checkbox=7')
+        plt.legend(loc='upper left')
+        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
+        ax1.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
+        if save_plot:
+            if background_method is None:
+                bg = 'None_'
+            else:
+                bg = 'fix_'
+            destination = os.path.abspath("PFforMaria/plots/MagVsYoffset_"+bg+case+plot_type)
+            plt.savefig(destination)
+            print ("\n Plot saved: ", destination)
+        if show_plot:
+            plt.show()
+    else:
+        #print ("Reading text file: ",  output_file)
         frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = get_fracdata(offsets)
         fig1 = plt.figure(1, figsize=(12, 10))
         fig1.subplots_adjust(hspace=0.10)
@@ -609,6 +749,8 @@ if "scene2" in case:
         ax1.plot(mag, frac08[1], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
         ax1.plot(mag, frac09[1], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
         ax1.plot(mag, frac10[1], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
+        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
+        ax1.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
         # Shrink current axis by 10%
         box = ax1.get_position()
         ax1.set_position([box.x0, box.y0, box.width * 0.9, box.height])
@@ -627,6 +769,8 @@ if "scene2" in case:
         ax2.plot(mag, frac08[3], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
         ax2.plot(mag, frac09[3], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
         ax2.plot(mag, frac10[3], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
+        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig5, mean5)
+        ax2.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
         # Shrink current axis by 10%
         box = ax2.get_position()
         ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
@@ -647,6 +791,8 @@ if "scene2" in case:
         ax3.plot(mag, frac08[5], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
         ax3.plot(mag, frac09[5], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
         ax3.plot(mag, frac10[5], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
+        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig7, mean7)
+        ax3.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
         # Shrink current axis by 10%
         box = ax3.get_position()
         ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
