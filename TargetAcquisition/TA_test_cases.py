@@ -596,13 +596,20 @@ if "scene1" in case:
         plt.title(case+'_BG'+bg_method)
         plt.xlabel('Radial offset in X')
         plt.ylabel('Radial offset in Y')
-        plt.hlines(0.0, -10, 15, colors='k', linestyles='dashed')
         plt.plot(offsets[0], offsets[1], 'bo', ms=8, alpha=0.7, label='Checkbox=3')
         plt.plot(offsets[2], offsets[1], 'go', ms=8, alpha=0.7, label='Checkbox=3')
         plt.plot(offsets[4], offsets[1], 'ro', ms=8, alpha=0.7, label='Checkbox=3')
+        xmin, xmax = ax1.get_xlim()
+        plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+        ymin, ymax = ax1.get_ylim()
+        plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
         plt.legend(loc='lower right')
-        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
-        ax1.annotate(textinfig, xy=(0.15, 0.05), xycoords='axes fraction' )
+        textinfig3 = r'$\sigma3$ = %0.2f    $\mu3$ = %0.2f' % (sig3, mean3)
+        textinfig5 = r'$\sigma5$ = %0.2f    $\mu5$ = %0.2f' % (sig5, mean5)
+        textinfig7 = r'$\sigma7$ = %0.2f    $\mu7$ = %0.2f' % (sig7, mean7)
+        ax1.annotate(textinfig3, xy=(0.15, 0.055), xycoords='axes fraction' )
+        ax1.annotate(textinfig5, xy=(0.15, 0.03), xycoords='axes fraction' )
+        ax1.annotate(textinfig7, xy=(0.15, 0.005), xycoords='axes fraction' )
         if save_plot:
             if background_method is None:
                 bg = 'None_'
@@ -634,6 +641,8 @@ if "scene1" in case:
         ax1.plot(frac10[0], frac10[1], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
         xmin, xmax = ax1.get_xlim()
         plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+        ymin, ymax = ax1.get_ylim()
+        plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
         textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
         ax1.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
         # Shrink current axis by 10%
@@ -655,6 +664,8 @@ if "scene1" in case:
         ax2.plot(frac10[2], frac10[3], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
         xmin, xmax = ax2.get_xlim()
         plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+        ymin, ymax = ax2.get_ylim()
+        plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
         textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
         ax2.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
         # Shrink current axis by 10%
@@ -678,6 +689,8 @@ if "scene1" in case:
         ax3.plot(frac10[4], frac10[5], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
         xmin, xmax = ax3.get_xlim()
         plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+        ymin, ymax = ax3.get_ylim()
+        plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
         textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
         ax3.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
         # Shrink current axis by 10%
@@ -716,8 +729,12 @@ if "scene2" in case:
         plt.plot(mag, offsets[3], 'go', ms=8, alpha=0.7, label='Checkbox=5')
         plt.plot(mag, offsets[5], 'ro', ms=8, alpha=0.7, label='Checkbox=7')
         plt.legend(loc='upper left')
-        textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
-        ax1.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
+        textinfig3 = r'$\sigma3$ = %0.2f    $\mu3$ = %0.2f' % (sig3, mean3)
+        textinfig5 = r'$\sigma5$ = %0.2f    $\mu5$ = %0.2f' % (sig5, mean5)
+        textinfig7 = r'$\sigma7$ = %0.2f    $\mu7$ = %0.2f' % (sig7, mean7)
+        ax1.annotate(textinfig3, xy=(0.75, 0.055), xycoords='axes fraction' )
+        ax1.annotate(textinfig5, xy=(0.75, 0.03), xycoords='axes fraction' )
+        ax1.annotate(textinfig7, xy=(0.75, 0.005), xycoords='axes fraction' )
         if save_plot:
             if background_method is None:
                 bg = 'None_'
