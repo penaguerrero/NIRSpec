@@ -10,6 +10,9 @@ import os
 import tautils as tu
 import jwst_targloc as jtl
 
+# other code
+import testing_functions as tf
+
 # Header
 __author__ = "Maria A. Pena-Guerrero"
 __version__ = "1.0"
@@ -71,14 +74,16 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 
 # Set test parameters
-path_number = 7             # Select 0 through 7 from paths_list above OR  
-save_text_file = False
-just_read_text_file = True  # skip the for loop to the plotting part
+path_number = 15             # Select 0 through 15 from paths_list above OR  
+save_text_file = True
+just_read_text_file = False  # skip the for loop to the plotting part
 single_star = False          # If only want to test one star set to True and type the path for a single star
+save_centroid_disp = True   # To modify go to lines 306 and 307
 # NOTE: for the names of stars, single numbers before the .fits require 8 spaces after quad_star, 
 #       while 2 numbers require 7 spaces.  
-single_star_path = paths_list[15]+'/postageout_star_     190 quad_       4 quad_star       40.fits'
+single_star_path = paths_list[path_number]+'/postageout_star_     105 quad_       3 quad_star        5.fits'
 display_master_img = False  # Want to see the combined ramped images for every star?
+vlim = (0.001,10)             # sensitivity limits of image, i.e. (0.001, 0.1) 
 debug = False               # see all debug messages (i.e. values of all calculations)
 centroid_in_full_detector = False   # Want results in full detector coordinates or 32x32? 
 checkbox_size = 3
@@ -90,332 +95,21 @@ threshold = 1e-5
 detector = 491
 determine_moments = False   # Want to determine 2nd and 3rd moments?
 # make plot of magnitude (in x) versus radial offset distance (in y) for Scene2 
-show_plot = True
-save_plot = False
+show_plot = False
+save_plot = True   # legend can be moved in line 789
 plot_type = '.jpg'
 
 
 ###########################################################################################################
 
+show_disp = False
 if single_star:
-    #print('got here')
     save_text_file = False
-    display_master_img = True   # Want to see the combined ramped images for every star?
-    debug = True   # see all debug messages (i.e. values of all calculations)
-    vlim = ()#(0.1, 5)
-else:
-    vlim = ()
-    
-
-##### FUNCTIONS
-def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_size, max_iter, 
-                            threshold, determine_moments, debug, vlim=()):   
-    """
-    Determine the centroid location given the that the background is already subtracted. 
-    """ 
-    # Display the combined FITS image that combines all frames into one image
-    if display_master_img: 
-        tu.display_ns_psf(psf, vlim=vlim)
-    # Test checkbox piece
-    cb_centroid_list = []
-    for xwidth, ywidth in zip(xwidth_list, ywidth_list):
-        print ("Testing centroid width: ", checkbox_size)
-        print ("     xwidth = ", xwidth, "  ywidth = ", ywidth)
-        cb_cen, cb_hw = jtl.checkbox_2D(psf, checkbox_size, xwidth, ywidth, debug=debug)
-        print ('Got coarse location for checkbox_size {} \n'.format(checkbox_size))
-        # Checkbox center, in base 1
-        print('Checkbox Output:')
-        print('Checkbox center: [{}, {}]'.format(cb_cen[0], cb_cen[1]))
-        print('Checkbox halfwidths: xhw: {}, yhw: {}'.format(cb_hw[0], cb_hw[1]))
-        print()
-        # Calculate the centroid based on the checkbox region calculated above
-        cb_centroid, cb_sum = jtl.centroid_2D(psf, cb_cen, cb_hw, max_iter=max_iter, threshold=threshold, debug=debug)
-        cb_centroid_list.append(cb_centroid)
-        print('Final sum: ', cb_sum)
-        print('cb_centroid: ', cb_centroid)
-        print()
-        #raw_input()
-    # Find the 2nd and 3rd moments
-    if determine_moments:
-        x_mom, y_mom = jtl.find2D_higher_moments(psf, cb_centroid, cb_hw, cb_sum)
-        print('Higher moments(2nd, 3rd):')
-        print('x_moments: ', x_mom)
-        print('y moments: ', y_mom)
-        print('---------------------------------------------------------------')
-        print()
-    return cb_centroid_list
-
-
-def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list, ESA_center, true_center):
-    """
-    Transform centroid coordinates into full detector coordinates.
-    
-    Keyword arguments:
-    detector                   -- Either 491 or 492
-    centroid_in_full_detector  -- Resuling coordinates in terms of full detector, True or False
-    cb_centroid_list           -- Centroid determined by target acquisition (TA) algorithm in terms of 32 by 32 pixels
-    ESA_center                 -- Centroid determined with the ESA version of TA algorithm in terms of full detector
-    true_center                -- Actual (true) position of star in terms of full detector  
-    
-    Output(s):
-    cb_centroid_list_fulldetector  -- List of centroid locations determined with the TA algorithm in 
-                                      terms of full detector. List is for positions determined with
-                                      3, 5, and 7 checkbox sizes. 
-    
-    """
-    # Corrections for offsets in positions (see section 2.5 of Technical Notes in Documentation directory)
-    offset_491 = (-0.086, -0.077)
-    offset_492 = (0.086, 0.077)
-    if detector == 491:
-        corrected_x = true_center[0] + offset_491[0]
-        corrected_y = true_center[1] + offset_491[1]
-    elif detector == 492:
-        corrected_x = true_center[0] + offset_492[0]
-        corrected_y = true_center[1] + offset_492[1]
-        
-    # Get the lower left corner coordinates in terms of full detector. We subtract 16.0 because indexing
-    # from centroid function starts with 1
-    loleft_x = np.floor(corrected_x) - 16.0
-    loleft_y = np.floor(corrected_y) - 16.0
-
-    if centroid_in_full_detector:    
-        # Add lower left corner to centroid location to get it in terms of full detector
-        cb_centroid_list_fulldetector = []
-        for centroid_location in cb_centroid_list:
-            centroid_fulldetector_x = centroid_location[0] + loleft_x
-            centroid_fulldetector_y = centroid_location[1] + loleft_y
-            centroid_fulldetector = [centroid_fulldetector_x, centroid_fulldetector_y]
-            cb_centroid_list_fulldetector.append(centroid_fulldetector)
-        corr_cb_centroid_list = cb_centroid_list_fulldetector
-        corr_true_center_centroid = true_center
-    else:
-        corr_cb_centroid_list = cb_centroid_list
-        # Add lower left corner to centroid location to get it in terms of full detector
-        corr_true_center_x = corrected_x - loleft_x
-        corr_true_center_y = corrected_y - loleft_y
-        true_center_centroid_32x32 = [corr_true_center_x, corr_true_center_y]
-        corr_true_center_centroid = true_center_centroid_32x32
-
-    # Determine difference between center locations
-    differences_true_TA = []
-    d3_x = corr_true_center_centroid[0] - corr_cb_centroid_list[0][0]
-    d5_x = corr_true_center_centroid[0] - corr_cb_centroid_list[1][0]
-    d7_x = corr_true_center_centroid[0] - corr_cb_centroid_list[2][0]
-    d3_y = corr_true_center_centroid[1] - corr_cb_centroid_list[0][1]
-    d5_y = corr_true_center_centroid[1] - corr_cb_centroid_list[1][1]
-    d7_y = corr_true_center_centroid[1] - corr_cb_centroid_list[2][1]
-    d3 = [d3_x, d3_y]
-    d5 = [d5_x, d5_y]
-    d7 = [d7_x, d7_y]
-    diffs = [d3, d5, d7]
-    differences_true_TA.append(diffs)
-    return corr_true_center_centroid, corr_cb_centroid_list, differences_true_TA
-
-
-def write2file(save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, differences_true_TA):
-    line1 = "{:<5} {:<10} {:<14} {:<16} {:<14} {:<16} {:<14} {:<16} {:<12} {:<14} {:<20} {:<22} {:<20} {:<22} {:<20} {:<22}\n".format(st, bg, 
-                                                    corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1],
-                                                    corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1],
-                                                    corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1],
-                                                    corr_true_center_centroid[0], corr_true_center_centroid[1],
-                                                    differences_true_TA[0][0][0], differences_true_TA[0][0][1],
-                                                    differences_true_TA[0][1][0], differences_true_TA[0][1][1],
-                                                    differences_true_TA[0][2][0], differences_true_TA[0][2][1])
-    if save_text_file:
-        f = open(output_file, "a")
-        f.write(line1)
-        f.close()
-    print(line0a)
-    print(line0b)
-    print(line1) 
-
-
-def read_listfile(list_file_name, detector, background_method):    
-    """ This function reads the fits table that contains the flux and converts to magnitude for the 
-    simulated stars. """
-    listfiledata = fits.getdata(list_file_name)
-    star_number, xpos, ypos, orient, factor = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])  
-    for row in listfiledata:
-        star_number = np.append(star_number, row[0]) 
-        xpos = np.append(xpos, row[1]) 
-        ypos = np.append(ypos, row[2])
-        orient = np.append(orient, row[3])
-        factor = np.append(factor, row[4])
-    # convert the flux into magnitude (factor=1.0 is equivalent to magnitude=18.0)
-    mag = 2.5*np.log10(factor) + 18.0
-    # Get the correct slices according to detector
-    if detector == 491:   # slice from star 101 to 200
-        star_number, xpos, ypos, mag = star_number[100:], xpos[100:], ypos[100:], mag[100:]
-    elif detector == 492:   # slice from star 1 to 100
-        star_number, xpos, ypos, mag = star_number[:100], xpos[:100], ypos[:100:], mag[:100]
-    bg_method = background_method
-    if background_method is None:   # convert the None value to string
-        bg_method = 'None'
-    return star_number, xpos, ypos, mag, bg_method
-    
-
-def get_fracdata(offsets):
-    """ This function gets arrays for each fractional background for the same star. """
-    frac003x, frac005x, frac007x = [], [], []
-    frac003y, frac005y, frac007y = [], [], []
-    frac013x, frac015x, frac017x = [], [], []
-    frac013y, frac015y, frac017y = [], [], []
-    frac023x, frac025x, frac027x = [], [], []
-    frac023y, frac025y, frac027y = [], [], []
-    frac033x, frac035x, frac037x = [], [], []
-    frac033y, frac035y, frac037y = [], [], []
-    frac043x, frac045x, frac047x = [], [], []
-    frac043y, frac045y, frac047y = [], [], []
-    frac053x, frac055x, frac057x = [], [], []
-    frac053y, frac055y, frac057y = [], [], []
-    frac063x, frac065x, frac067x = [], [], []
-    frac063y, frac065y, frac067y = [], [], []
-    frac073x, frac075x, frac077x = [], [], []
-    frac073y, frac075y, frac077y = [], [], []
-    frac083x, frac085x, frac087x = [], [], []
-    frac083y, frac085y, frac087y = [], [], []
-    frac093x, frac095x, frac097x = [], [], []
-    frac093y, frac095y, frac097y = [], [], []
-    frac103x, frac105x, frac107x = [], [], []
-    frac103y, frac105y, frac107y = [], [], []
-    i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10 = 0,1,2,3,4,5,6,7,8,9,10
-    for i, _ in enumerate(offsets[0]):
-        #row = [offsets[0][i], offsets[1][i], offsets[2][i], offsets[3][i], offsets[4][i], offsets[5][i]]
-        #row = np.array(row).reshape(1,6)
-        if i == i0:
-            frac003x.append(offsets[0][i])
-            frac003y.append(offsets[1][i])
-            frac005x.append(offsets[2][i])
-            frac005y.append(offsets[3][i])
-            frac007x.append(offsets[4][i])
-            frac007y.append(offsets[5][i])
-            i0 = i0+11
-        if i == i1:
-            frac013x.append(offsets[0][i])
-            frac013y.append(offsets[1][i])
-            frac015x.append(offsets[2][i])
-            frac015y.append(offsets[3][i])
-            frac017x.append(offsets[4][i])
-            frac017y.append(offsets[5][i])
-            i1 = i1+11
-        if i == i2:
-            frac023x.append(offsets[0][i])
-            frac023y.append(offsets[1][i])
-            frac025x.append(offsets[2][i])
-            frac025y.append(offsets[3][i])
-            frac027x.append(offsets[4][i])
-            frac027y.append(offsets[5][i])
-            i2 = i2+11
-        if i == i3:
-            frac033x.append(offsets[0][i])
-            frac033y.append(offsets[1][i])
-            frac035x.append(offsets[2][i])
-            frac035y.append(offsets[3][i])
-            frac037x.append(offsets[4][i])
-            frac037y.append(offsets[5][i])
-            i3 = i3+11
-        if i == i4:
-            frac043x.append(offsets[0][i])
-            frac043y.append(offsets[1][i])
-            frac045x.append(offsets[2][i])
-            frac045y.append(offsets[3][i])
-            frac047x.append(offsets[4][i])
-            frac047y.append(offsets[5][i])
-            i4 = i4+11
-        if i == i5:
-            frac053x.append(offsets[0][i])
-            frac053y.append(offsets[1][i])
-            frac055x.append(offsets[2][i])
-            frac055y.append(offsets[3][i])
-            frac057x.append(offsets[4][i])
-            frac057y.append(offsets[5][i])
-            i5 = i5+11
-        if i == i6:
-            frac063x.append(offsets[0][i])
-            frac063y.append(offsets[1][i])
-            frac065x.append(offsets[2][i])
-            frac065y.append(offsets[3][i])
-            frac067x.append(offsets[4][i])
-            frac067y.append(offsets[5][i])
-            i6 = i6+11
-        if i == i7:
-            frac073x.append(offsets[0][i])
-            frac073y.append(offsets[1][i])
-            frac075x.append(offsets[2][i])
-            frac075y.append(offsets[3][i])
-            frac077x.append(offsets[4][i])
-            frac077y.append(offsets[5][i])
-            i7 = i7+11
-        if i == i8:
-            frac083x.append(offsets[0][i])
-            frac083y.append(offsets[1][i])
-            frac085x.append(offsets[2][i])
-            frac085y.append(offsets[3][i])
-            frac087x.append(offsets[4][i])
-            frac087y.append(offsets[5][i])
-            i8 = i8+11
-        if i == i9:
-            frac093x.append(offsets[0][i])
-            frac093y.append(offsets[1][i])
-            frac095x.append(offsets[2][i])
-            frac095y.append(offsets[3][i])
-            frac097x.append(offsets[4][i])
-            frac097y.append(offsets[5][i])
-            i9 = i9+11
-        if i == i10:
-            frac103x.append(offsets[0][i])
-            frac103y.append(offsets[1][i])
-            frac105x.append(offsets[2][i])
-            frac105y.append(offsets[3][i])
-            frac107x.append(offsets[4][i])
-            frac107y.append(offsets[5][i])
-            i10 = i10+11
-    frac00 = np.array([frac003x, frac003y, frac005x, frac005y, frac007x, frac007y])
-    frac01 = np.array([frac013x, frac013y, frac015x, frac015y, frac017x, frac017y])
-    frac02 = np.array([frac023x, frac023y, frac025x, frac025y, frac027x, frac027y])
-    frac03 = np.array([frac033x, frac033y, frac035x, frac035y, frac037x, frac037y])
-    frac04 = np.array([frac043x, frac043y, frac045x, frac045y, frac047x, frac047y])
-    frac05 = np.array([frac053x, frac053y, frac055x, frac055y, frac057x, frac057y])
-    frac06 = np.array([frac063x, frac063y, frac065x, frac065y, frac067x, frac067y])
-    frac07 = np.array([frac073x, frac073y, frac075x, frac075y, frac077x, frac077y])
-    frac08 = np.array([frac083x, frac083y, frac085x, frac085y, frac087x, frac087y])
-    frac09 = np.array([frac093x, frac093y, frac095x, frac095y, frac097x, frac097y])
-    frac10 = np.array([frac103x, frac103y, frac105x, frac105y, frac107x, frac107y])
-    return frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10
-
-
-def find_std(arr):
-    """ This function determines the standard deviation of the given array. """
-    N = float(len(arr))
-    mean = np.sum(arr) / N
-    diff2meansq_list = []
-    for a in arr:
-        diff = a - mean
-        diffsq = diff * diff
-        diff2meansq_list.append(diffsq)
-    std = ( 1.0/(N-1.0) * sum(diff2meansq_list) )**(0.5)
-    #print ('sigma = ', std, '    mean = ', mean)
-    return std, mean
-
-
-def get_frac_stdevs(frac_data):
-    sig3, mean3 = [], []
-    sig5, mean5 = [], []
-    sig7, mean7 = [], []
-    for f in frac_data:
-        s3, m3 = find_std(f[1])
-        s5, m5 = find_std(f[3])
-        s7, m7 = find_std(f[5])
-        sig3.append(s3)
-        sig5.append(s5)
-        sig7.append(s7)
-        mean3.append(m3)
-        mean5.append(m5)
-        mean7.append(m7)
-    return sig3, mean3, sig5, mean5, sig7, mean7
-
-
-##### CODE
+    show_disp = True
+    #display_master_img = True   # Want to see the combined ramped images for every star?
+    #debug = True   # see all debug messages (i.e. values of all calculations)
+    #vlim = (1,10)#(0.001, .01)
+    #       146
 
 # start the timer to compute the whole running time
 start_time = time.time()
@@ -471,12 +165,17 @@ elif path_number == 15:
 outpul_file_path = "PFforMaria/Resulting_centroid_txt_files/"
 output_file = os.path.join(outpul_file_path, "TA_testcases_for_"+case+bg_choice+".txt")
 line0 = "Centroid indexing starting at 1 !"
-line0a = "{:<5} {:<15} {:<16} {:>23} {:>32} {:>33} {:>35} {:>38} {:>43}".format("Star", "Background", 
-                                                                  "Centroid width: 3", "5", "7", "TruePositions", 
+line0a = "{:<5} {:<15} {:<16} {:>23} {:>32} {:>33} {:>26} {:>15} {:>35} {:>38} {:>43}".format("Star", "Background", 
+                                                                  "Centroid width: 3", "5", "7", 
+                                                                  "TruePositions", "LoLeftCoords",
+                                                                  "Factor",
                                                                   "Difference with: checkbox 3", "checkbox 5", "checkbox 7")
-line0b = "{:>25} {:>12} {:>16} {:>14} {:>16} {:>14} {:>16} {:>14} {:>16} {:>14} {:>26} {:>14} {:>28} {:>14}".format(
-                                                                       "x", "y", "x", "y", "x", "y", "TrueX", "TrueY", 
+line0b = "{:>25} {:>12} {:>16} {:>14} {:>16} {:>14} {:>16} {:>14} {:>12} {:>10} {:>26} {:>16} {:>26} {:>16} {:>28} {:>16}".format(
+                                                                       "x", "y", "x", "y", "x", "y", 
+                                                                       "TrueX", "TrueY", "LoLeftX", "LoLeftY",
                                                                        "x", "y", "x", "y", "x", "y")
+lines4screenandfile = [line0, line0a, line0b]
+
 if save_text_file:
     f = open(output_file, "w+")
     f.write(line0+"\n")
@@ -509,8 +208,23 @@ elif detector == 492:
     true_x = x_492
     true_y = y_492
 
+# Read fits table with benchmark data
+if "scene1" in case:
+    path2listfile = "PFforMaria/Scene_1_AB23"
+    list_file = "simuTA20150528-F140X-S50-K-AB23.list"
+    if 'shifted' in case: 
+        list_file = "simuTA20150528-F140X-S50-K-AB23-shifted.list"
+if "scene2" in case:
+    # Read the text file just written to get the offsets from the "real" positions of the fake stars
+    path2listfile = "PFforMaria/Scene_2_AB1823"
+    list_file = "simuTA20150528-F140X-S50-K-AB18to23.list"
+    if 'shifted' in case: 
+        list_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted.list"
+lf = os.path.join(path2listfile,list_file)
+star_number, xpos, ypos, factor, mag, bg_method = tf.read_listfile(lf, detector, background_method)
+
+# Start the loop in the given directory
 if just_read_text_file != True:
-    # Start the loop in the given directory
     dir_stars = glob(os.path.join(dir2test,"postageout_star_*.fits"))   # get all star fits files in that directory
     for star in dir_stars:
         if single_star:
@@ -529,6 +243,7 @@ if just_read_text_file != True:
                 # Obtain real star position
                 idx_star = stars_detector.index(st)
                 true_center = [true_x[idx_star], true_y[idx_star]]
+                factor_i = factor[idx_star]
                 
                 # Read FITS image 
                 #hdr = fits.getheader(star, 0)
@@ -558,18 +273,19 @@ if just_read_text_file != True:
                                                                   bg_value=bg_value, bg_frac=bg_frac, debug=debug)
                             psf = tu.readimage(master_img_bgcorr, debug=debug)
                             master_img_bgcorr_max = psf.max()
-                        cb_centroid_list = run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
-                                                                   checkbox_size, max_iter, threshold, 
-                                                                   determine_moments, debug, vlim=vlim)
+                        cb_centroid_list = tf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
+                                                               checkbox_size, max_iter, threshold, 
+                                                               determine_moments, debug, display_master_img, vlim=vlim)
                         # Transform to full detector coordinates in order to compare with real centers
                         ESA_center = [0,0]
-                        corr_true_center_centroid, corr_cb_centroid_list, differences_true_TA = transform2fulldetector(detector, 
+                        corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
                                                                                                       centroid_in_full_detector,
                                                                                                       cb_centroid_list, ESA_center, 
-                                                                                                      true_center)
+                                                                                                      true_center, perform_avgcorr=False)
                         # Write output into text file
                         bg = bg_frac
-                        write2file(save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, differences_true_TA)
+                        data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
+                        tf.write2file(data2write, lines4screenandfile)
                         #raw_input()
                 else:
                     master_img_bgcorr = jtl.bg_correction(master_img, bg_method=background_method, 
@@ -577,45 +293,34 @@ if just_read_text_file != True:
                     # Obtain the combined FITS image that combines all frames into one image AND
                     # check if all image is zeros, take the image that still has a max value
                     psf = tu.readimage(master_img_bgcorr, debug=debug)                
-                    cb_centroid_list = run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
+                    cb_centroid_list = tf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
                                                                checkbox_size, max_iter, threshold, 
-                                                               determine_moments, debug, vlim=vlim)
+                                                               determine_moments, debug, display_master_img, vlim=vlim)
                     # Transform to full detector coordinates in order to compare with real centers
                     ESA_center = [0,0]
-                    corr_true_center_centroid, corr_cb_centroid_list, differences_true_TA = transform2fulldetector(detector, 
+                    corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
                                                                                                   centroid_in_full_detector,
                                                                                                   cb_centroid_list, ESA_center, 
-                                                                                                  true_center)
+                                                                                                  true_center, perform_avgcorr=False)
                     # Write output into text file
                     bg = background
-                    write2file(save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, differences_true_TA) 
+                    data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
+                    tf.write2file(data2write, lines4screenandfile) 
                 
+                tf.display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
+                                     vlim, savefile=save_centroid_disp)  
                 if single_star:
+                    tf.display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
+                     vlim, savefile=save_centroid_disp)  
                     print ("Recursive test script finished. \n")
                     exit()
 
 ### Obtain standard deviation from true star positions
 # Read the text file just written to get the offsets from the "real" positions of the fake stars
-offsets = np.loadtxt(output_file, skiprows=3, usecols=(10,11,12,13,14,15), unpack=True)
-if "scene1" in case:
-    path2listfile = "PFforMaria/Scene_1_AB23"
-    list_file = "simuTA20150528-F140X-S50-K-AB23.list"
-    if 'shifted' in case: 
-        list_file = "simuTA20150528-F140X-S50-K-AB23-shifted.list"
-if "scene2" in case:
-    # Read the text file just written to get the offsets from the "real" positions of the fake stars
-    path2listfile = "PFforMaria/Scene_2_AB1823"
-    list_file = "simuTA20150528-F140X-S50-K-AB18to23.list"
-    if 'shifted' in case: 
-        list_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted.list"
-lf = os.path.join(path2listfile,list_file)
-star_number, xpos, ypos, mag, bg_method = read_listfile(lf, detector, background_method)
-#print ('For Checkbox=3: ')
-sig3, mean3 = find_std(offsets[1])
-#print ('For Checkbox=5: ')
-sig5, mean5 = find_std(offsets[3])
-#print ('For Checkbox=7: ')
-sig7, mean7 = find_std(offsets[5])
+offsets = np.loadtxt(output_file, skiprows=3, usecols=(13,14,15,16,17,18), unpack=True)
+sig3, mean3 = tf.find_std(offsets[1])
+sig5, mean5 = tf.find_std(offsets[3])
+sig7, mean7 = tf.find_std(offsets[5])
 if 'frac' not in bg_method:
     fig1 = plt.figure(1, figsize=(12, 10))
     ax1 = fig1.add_subplot(111)
@@ -646,10 +351,12 @@ if 'frac' not in bg_method:
         print ("\n Plot saved: ", destination)
     if show_plot:
         plt.show()
+    else:
+        plt.close('all')
 else:
-    frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = get_fracdata(offsets)
+    frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = tf.get_fracdata(offsets)
     frac_data  = [frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10]
-    sig3, mean3, sig5, mean5, sig7, mean7 = get_frac_stdevs(frac_data)
+    sig3, mean3, sig5, mean5, sig7, mean7 = tf.get_frac_stdevs(frac_data)
     frac_bgs = ['0.0', '0.1', '0.2', '0.3', '0.4', '0.5' ,'0.6' ,'0.7', '0.8', '0.9', '1.0']
     print ('\n{:<4} {:<20} {:>10}'.format('FrBG', 'Standard_deviation', 'Mean_y-offset'))
     print ('Checkbox sizes:')
@@ -753,6 +460,7 @@ else:
         print ("\n Plot saved: ", destination)
     if show_plot:
         plt.show()        
+    plt.close('all')
 
 # Make the plot of magnitude (in x) versus radial offset distance (in y) for Scene2
 if "scene2" in case:
@@ -762,13 +470,13 @@ if "scene2" in case:
     if 'shifted' in case: 
         list_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted.list"
     lf = os.path.join(path2listfile,list_file)
-    star_number, xpos, ypos, mag, bg_method = read_listfile(lf, detector, background_method)
+    star_number, xpos, ypos, factor, mag, bg_method = tf.read_listfile(lf, detector, background_method)
     print ('For Checkbox=3: ')
-    sig3, mean3 = find_std(offsets[1])
+    sig3, mean3 = tf.find_std(offsets[1])
     print ('For Checkbox=5: ')
-    sig5, mean5 = find_std(offsets[3])
+    sig5, mean5 = tf.find_std(offsets[3])
     print ('For Checkbox=7: ')
-    sig7, mean7 = find_std(offsets[5])
+    sig7, mean7 = tf.find_std(offsets[5])
     if 'frac' not in bg_method:
         fig3 = plt.figure(1, figsize=(12, 10))
         ax1 = fig3.add_subplot(111)
@@ -778,7 +486,8 @@ if "scene2" in case:
         plt.plot(mag, offsets[1], 'bo', ms=8, alpha=0.7, label='Checkbox=3')
         plt.plot(mag, offsets[3], 'go', ms=8, alpha=0.7, label='Checkbox=5')
         plt.plot(mag, offsets[5], 'ro', ms=8, alpha=0.7, label='Checkbox=7')
-        plt.legend(loc='upper left')
+        #plt.legend(loc='lower left')
+        plt.legend(loc='upper right')
         textinfig3 = r'$\sigma3$ = %0.2f    $\mu3$ = %0.2f' % (sig3, mean3)
         textinfig5 = r'$\sigma5$ = %0.2f    $\mu5$ = %0.2f' % (sig5, mean5)
         textinfig7 = r'$\sigma7$ = %0.2f    $\mu7$ = %0.2f' % (sig7, mean7)
@@ -797,11 +506,13 @@ if "scene2" in case:
             print ("\n Plot saved: ", destination)
         if show_plot:
             plt.show()
+        else:
+            plt.close('all')
     else:
         #print ("Reading text file: ",  output_file)
-        frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = get_fracdata(offsets)
+        frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = tf.get_fracdata(offsets)
         frac_data  = [frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10]
-        sig3, mean3, sig5, mean5, sig7, mean7 = get_frac_stdevs(frac_data)
+        sig3, mean3, sig5, mean5, sig7, mean7 = tf.get_frac_stdevs(frac_data)
         frac_bgs = ['0.0', '0.1', '0.2', '0.3', '0.4', '0.5' ,'0.6' ,'0.7', '0.8', '0.9', '1.0']
         print ('\n{:<4} {:<20} {:>10}'.format('FrBG', 'Standard_deviation', 'Mean_y-offset'))
         print ('Checkbox sizes:')
@@ -892,8 +603,9 @@ if "scene2" in case:
             print ("\n Plot saved: ", destination)
         if show_plot:
             plt.show()
+        else:
+            plt.close('all')
         
-
 if not single_star:
     print ("\n Centroids and differences were written into: \n  {}".format(output_file))
 print ("\n Recursive test script finished. Took  %s  seconds to finish. \n" % ((time.time() - start_time)) )
