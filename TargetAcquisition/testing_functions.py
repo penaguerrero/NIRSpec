@@ -55,16 +55,20 @@ def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list
     
     Keyword arguments:
     detector                   -- Either 491 or 492
-    centroid_in_full_detector  -- Resuling coordinates in terms of full detector, True or False
-    cb_centroid_list           -- Centroid determined by target acquisition (TA) algorithm in terms of 32 by 32 pixels
+    centroid_in_full_detector  -- Resulting coordinates in terms of full detector? True or False
+    cb_centroid_list           -- Checkbox based centroid determined by target acquisition (TA) algorithm in 
+                                  terms of 32 by 32 pixels for checkbox sizes 3, 5, and 7
     ESA_center                 -- Centroid determined with the ESA version of TA algorithm in terms of full detector
     true_center                -- Actual (true) position of star in terms of full detector  
     perform_avgcorr            -- Add the average correction given by Pierre
     
     Output(s):
+    corr_true_center_centroid      -- List of true positions either in full detector terms or 32x32 pix
     cb_centroid_list_fulldetector  -- List of centroid locations determined with the TA algorithm in 
                                       terms of full detector. List is for positions determined with
                                       3, 5, and 7 checkbox sizes. 
+    loleftcoords                   -- Coordinates of the lower left corner of the 32x32 pixel box
+    differences_true_TA            -- Difference of true-observed positions
     
     """
     # Corrections for offsets in positions (see section 2.5 of Technical Notes in Documentation directory)
@@ -169,7 +173,27 @@ def read_listfile(list_file_name, detector, background_method):
     if background_method is None:   # convert the None value to string
         bg_method = 'None'
     return star_number, xpos, ypos, factor, mag, bg_method
-    
+
+
+def read_positionsfile(positions_file_name, detector):
+    """ This function reads the fits table that contains the true full detector positions of all simulated stars. """
+    posfiledata = fits.getdata(positions_file_name)
+    star_number, xpos491, ypos491, xpos492, ypos492 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])  
+    for row in posfiledata:
+        star_number = np.append(star_number, row[0]) 
+        xpos491 = np.append(xpos491, row[3]) 
+        ypos491 = np.append(ypos491, row[4])
+        xpos492 = np.append(xpos492, row[5]) 
+        ypos492 = np.append(ypos492, row[6])
+    # Get the correct slices according to detector
+    if detector == 491:   # slice from star 101 to 200
+        star_number, xpos, ypos = star_number[100:], xpos491[100:], ypos491[100:]
+    elif detector == 492:   # slice from star 1 to 100
+        star_number, xpos, ypos = star_number[:100], xpos492[:100], ypos492[:100:]
+    #for s, x, y in zip(star_number, xpos, ypos):
+    #    print(s, x, y)
+    return star_number, xpos, ypos
+
 
 def get_fracdata(offsets):
     """ This function gets arrays for each fractional background for the same star. """
@@ -332,7 +356,7 @@ def get_frac_stdevs(frac_data):
     return sig3, mean3, sig5, mean5, sig7, mean7
 
 
-def display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, vlims=None, savefile=None):    
+def display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, vlims=None, savefile=False, fig_name=None, redos=False):    
     fig_title = "star_"+str(st)+"_"+case
     # Display both centroids for comparison.
     _, ax = plt.subplots(figsize=(8, 8))
@@ -371,31 +395,34 @@ def display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid
         plt.show()
     else:
         plt.close('all')
-    if savefile is not None:
-        path4fig = "PFforMaria/centroid_figs/"
+    if savefile:
+        path4fig = "PFforMaria/centroid_figs"
         if "scene1" in fig_title:
             if "slow" in fig_title:
                 if "real" in fig_title:
-                    in_dir = "Scene1_slow_real/"
+                    in_dir = "Scene1_slow_real"
                 else:
-                    in_dir = "Scene1_slow_nonoise/"
+                    in_dir = "Scene1_slow_nonoise"
             elif "rapid" in fig_title:
                 if "real" in fig_title:
-                    in_dir = "Scene1_rapid_real/"
+                    in_dir = "Scene1_rapid_real"
                 else:
-                    in_dir = "Scene1_rapid_nonoise/"
+                    in_dir = "Scene1_rapid_nonoise"
         if "scene2" in fig_title:
             if "slow" in fig_title:
                 if "real" in fig_title:
-                    in_dir = "Scene2_slow_real/"
+                    in_dir = "Scene2_slow_real"
                 else:
-                    in_dir = "Scene2_slow_nonoise/"
+                    in_dir = "Scene2_slow_nonoise"
             elif "rapid" in fig_title:
                 if "real" in fig_title:
-                    in_dir = "Scene2_rapid_real/"
+                    in_dir = "Scene2_rapid_real"
                 else:
-                    in_dir = "Scene2_rapid_nonoise/"
-        fig_name = path4fig+in_dir+fig_title+".jpg"
+                    in_dir = "Scene2_rapid_nonoise"
+        if fig_name is None:
+            fig_name = path4fig+in_dir+"/"+fig_title+".jpg"
+        if redos:
+            fig_name = path4fig+"_redo/"+in_dir+"_redo/"+fig_title+"_redo.jpg"
         fig.savefig(fig_name)
         print ("Figure ", fig_name, " was saved!")
     
