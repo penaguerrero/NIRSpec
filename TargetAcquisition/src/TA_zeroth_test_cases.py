@@ -12,7 +12,6 @@ import jwst_targloc as jtl
 
 # extra coding used
 import testing_functions as tf
-from distutils.log import FATAL
 
 print()
 
@@ -48,14 +47,14 @@ flight_scene2 = "PFforMaria/electron_rate_maps/SKY-F140X-MIRROR_MOS_simuTA201505
 paths_list = [perfect_scene1, perfect_scene2, flight_scene1, flight_scene2]
 """
 
-perfect_s1 = "PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_004/postage_redo"
-perfect_s1_shift = "PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_002/postage_redo"
-perfect_s2 = "PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_002/postage_redo"
-perfect_s2_shift = "PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_002/postage_redo"
-flight_s1 = "PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_005/postage_redo"
-flight_s1_shift = "PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_003/postage_redo"
-flight_s2 = "PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_003/postage_redo"
-flight_s2_shift = "PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_003/postage_redo"
+perfect_s1 = "../PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_004/postage_redo"
+perfect_s1_shift = "../PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_002/postage_redo"
+perfect_s2 = "../PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_002/postage_redo"
+perfect_s2_shift = "../PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_002/postage_redo"
+flight_s1 = "../PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_005/postage_redo"
+flight_s1_shift = "../PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_003/postage_redo"
+flight_s2 = "../PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_003/postage_redo"
+flight_s2_shift = "../PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_003/postage_redo"
 #                   0            1            2            3            
 paths_list = [perfect_s1, perfect_s1_shift, perfect_s2, perfect_s2_shift, 
               flight_s1, flight_s1_shift, flight_s2, flight_s2_shift]
@@ -122,7 +121,7 @@ start_time = time.time()
 
 # Get true positions from Pierre's position files
 if "Scene_1" in dir2test:
-    path2listfile = "PFforMaria/Scene_1_AB23"
+    path2listfile = "../PFforMaria/Scene_1_AB23"
     list_file = "simuTA20150528-F140X-S50-K-AB23.list"
     positions_file = "simuTA20150528-F140X-S50-K-AB23_positions.fits" 
     if 'shifted' in dir2test: 
@@ -131,7 +130,7 @@ if "Scene_1" in dir2test:
         
 if "Scene_2" in dir2test:
     # Read the text file just written to get the offsets from the "real" positions of the fake stars
-    path2listfile = "PFforMaria/Scene_2_AB1823"
+    path2listfile = "../PFforMaria/Scene_2_AB1823"
     list_file = "simuTA20150528-F140X-S50-K-AB18to23.list"
     positions_file = "simuTA20150528-F140X-S50-K-AB18to23_positions.fits"
     if 'shifted' in dir2test: 
@@ -152,7 +151,7 @@ benchmark_data = np.loadtxt(star_param_txt, skiprows=3, unpack=True)
 bench_star, quadrant, star_in_quad, x_491, y_491, x_492, y_492, V2, V3, xL, xR, yL, yU = benchmark_data
     
 # Set up the output file and path for plots and figures
-output_file_path = "PFforMaria/electron_rate_maps/TAposition_text_files/"
+output_file_path = "../PFforMaria/electron_rate_maps/TAposition_text_files/"
 paths_list_str = ["perfect_s1", "perfect_s1_shift", "perfect_s2", "perfect_s2_shift", 
                   "flight_s1", "flight_s1_shift", "flight_s2", "flight_s2_shift"]
 case = paths_list_str[path_number]
@@ -174,7 +173,7 @@ if save_text_file:
     f.write(line0a+"\n")
     f.write(line0b+"\n")
     f.close()
-display_fig_name_path = "PFforMaria/electron_rate_maps/centroid_figs/"
+display_fig_name_path = "../PFforMaria/electron_rate_maps/centroid_figs/"
 
 # Start the loop in the given directory
 if just_read_text_file != True:
@@ -313,7 +312,7 @@ if 'frac' not in bg_method:
             bg = 'None_'
         else:
             bg = 'fix_'
-        destination = os.path.abspath("PFforMaria/electron_rate_maps/plots/XoffsetVsYoffset_"+bg+case+plot_type)
+        destination = os.path.abspath("../PFforMaria/electron_rate_maps/plots/XoffsetVsYoffset_"+bg+case+plot_type)
         fig1.savefig(destination)
         print ("\n Plot saved: ", destination)
     if show_plot:
@@ -422,7 +421,7 @@ else:
     box = ax3.get_position()
     ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     if save_plot:
-        destination = os.path.abspath("PFforMaria/electron_rate_maps/plots/XoffsetVsYoffset_frac_"+case+plot_type)
+        destination = os.path.abspath("../PFforMaria/electron_rate_maps/plots/XoffsetVsYoffset_frac_"+case+plot_type)
         fig2.savefig(destination)
         print ("\n Plot saved: ", destination)
     if show_plot:
@@ -468,7 +467,7 @@ if "s2" in case:
                 bg = 'None_'
             else:
                 bg = 'fix_'
-            destination = os.path.abspath("PFforMaria/electron_rate_maps/plots/MagVsYoffset_"+bg+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/electron_rate_maps/plots/MagVsYoffset_"+bg+case+plot_type)
             fig3.savefig(destination)
             print ("\n Plot saved: ", destination)
         if show_plot:
@@ -565,7 +564,7 @@ if "s2" in case:
         box = ax3.get_position()
         ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
         if save_plot:
-            destination = os.path.abspath("PFforMaria/electron_rate_maps/plots/MagVsYoffset_frac_"+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/electron_rate_maps/plots/MagVsYoffset_frac_"+case+plot_type)
             fig4.savefig(destination)
             print ("\n Plot saved: ", destination)
         if show_plot:
