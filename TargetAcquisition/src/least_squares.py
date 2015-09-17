@@ -26,8 +26,8 @@ Output(s):
     sigmas = [sigma_x, sigma_y, sigma_theta]
 
 Example usage:
-    import least_squares
-    deltas, sigmas = ls_fit(n, x, y, xt, yt)
+    import least_squares as ls
+    deltas, sigmas = ls.ls_fit(n, x, y, xt, yt)
 
 
 *** Testing suite of the script at the bottom
