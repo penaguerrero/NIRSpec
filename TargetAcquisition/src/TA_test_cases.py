@@ -44,22 +44,22 @@ DESCRIPTION:
 """
 
 # Paths to Scenes 1 and 2 local directories: /Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/
-path_scene1_slow = "PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS/postage"
-path_scene1_slow_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage")
-path_scene1_rapid = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRSRAPID/postage")
-path_scene1_rapid_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage")
-path_scene1_slow_shifted = "PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS/postage"
-path_scene1_slow_shifted_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage")
-path_scene1_rapid_shifted = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRSRAPID/postage")
+path_scene1_slow = "../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS/postage"
+path_scene1_slow_nonoise = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage")
+path_scene1_rapid = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRSRAPID/postage")
+path_scene1_rapid_nonoise = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage")
+path_scene1_slow_shifted = "../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS/postage"
+path_scene1_slow_shifted_nonoise = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage")
+path_scene1_rapid_shifted = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRSRAPID/postage")
 path_scene1_rapid_shifted_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage")
-path_scene2_slow = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS/postage")
-path_scene2_slow_nonoise = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS no_noise/postage")
-path_scene2_rapid = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID/postage")
-path_scene2_rapid_nonoise = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID no_noise/postage")
-path_scene2_slow_shifted = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS/postage")
-path_scene2_slow_shifted_nonoise = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS no_noise/postage")
-path_scene2_rapid_shifted = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID/postage")
-path_scene2_rapid_shifted_nonoise = os.path.abspath("PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID no_noise/postage")
+path_scene2_slow = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS/postage")
+path_scene2_slow_nonoise = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS no_noise/postage")
+path_scene2_rapid = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID/postage")
+path_scene2_rapid_nonoise = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID no_noise/postage")
+path_scene2_slow_shifted = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS/postage")
+path_scene2_slow_shifted_nonoise = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS no_noise/postage")
+path_scene2_rapid_shifted = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID/postage")
+path_scene2_rapid_shifted_nonoise = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID no_noise/postage")
 #                      0                   1                     2                      3            
 paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, path_scene1_rapid_nonoise,
 #                      4                        5                                   6                           7            
@@ -168,7 +168,7 @@ elif path_number == 14:
 elif path_number == 15:
     case = "scene2_rapid_nonoise_shifted"
 
-output_file_path = "PFforMaria/Resulting_centroid_txt_files/"
+output_file_path = "../PFforMaria/Resulting_centroid_txt_files/"
 
 line0 = "Centroid indexing starting at 1 !"
 line0a = "{:<5} {:<15} {:<16} {:>23} {:>32} {:>33} {:>26} {:>15} {:>35} {:>38} {:>43}".format("Star", "Background", 
@@ -184,7 +184,7 @@ lines4screenandfile = [line0, line0a, line0b]
 
 if redos:
     case = case+"_redo"
-    output_file_path = "PFforMaria/Resulting_centroid_txt_files_redo/"
+    output_file_path = "../PFforMaria/Resulting_centroid_txt_files_redo/"
 
 output_file = os.path.join(output_file_path, "TA_testcases_for_"+case+bg_choice+".txt")
 if redos:
@@ -234,7 +234,7 @@ elif detector == 492:
 
 # Read fits table with benchmark data
 if "scene1" in case:
-    path2listfile = "PFforMaria/Scene_1_AB23"
+    path2listfile = "../PFforMaria/Scene_1_AB23"
     list_file = "simuTA20150528-F140X-S50-K-AB23.list"
     positions_file = "simuTA20150528-F140X-S50-K-AB23_positions.fits" 
     if 'shifted' in case: 
@@ -242,7 +242,7 @@ if "scene1" in case:
         positions_file = "simuTA20150528-F140X-S50-K-AB23-shifted_positions.fits"
 if "scene2" in case:
     # Read the text file just written to get the offsets from the "real" positions of the fake stars
-    path2listfile = "PFforMaria/Scene_2_AB1823"
+    path2listfile = "../PFforMaria/Scene_2_AB1823"
     list_file = "simuTA20150528-F140X-S50-K-AB18to23.list"
     positions_file = "simuTA20150528-F140X-S50-K-AB18to23_positions.fits"
     if 'shifted' in case: 
@@ -385,9 +385,9 @@ if 'frac' not in bg_method:
             bg = 'None_'
         else:
             bg = 'fix_'
-        destination = os.path.abspath("PFforMaria/plots/XoffsetVsYoffset_"+bg+case+plot_type)
+        destination = os.path.abspath("../PFforMaria/plots/XoffsetVsYoffset_"+bg+case+plot_type)
         if redos:
-            destination = os.path.abspath("PFforMaria/plots_redo/XoffsetVsYoffset_"+bg+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/plots_redo/XoffsetVsYoffset_"+bg+case+plot_type)
         fig1.savefig(destination)
         print ("\n Plot saved: ", destination)
     if show_plot:
@@ -496,9 +496,9 @@ else:
     box = ax3.get_position()
     ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     if save_plot:
-        destination = os.path.abspath("PFforMaria/plots/XoffsetVsYoffset_frac_"+case+plot_type)
+        destination = os.path.abspath("../PFforMaria/plots/XoffsetVsYoffset_frac_"+case+plot_type)
         if redos:
-            destination = os.path.abspath("PFforMaria/plots_redo/XoffsetVsYoffset_frac"+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/plots_redo/XoffsetVsYoffset_frac"+case+plot_type)
         fig2.savefig(destination)
         print ("\n Plot saved: ", destination)
     if show_plot:
@@ -508,7 +508,7 @@ else:
 # Make the plot of magnitude (in x) versus radial offset distance (in y) for Scene2
 if "scene2" in case:
     # Read the text file just written to get the offsets from the "real" positions of the fake stars
-    path2listfile = "PFforMaria/Scene_2_AB1823"
+    path2listfile = "../PFforMaria/Scene_2_AB1823"
     list_file = "simuTA20150528-F140X-S50-K-AB18to23.list"
     if 'shifted' in case: 
         list_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted.list"
@@ -551,9 +551,9 @@ if "scene2" in case:
                 bg = 'None_'
             else:
                 bg = 'fix_'
-            destination = os.path.abspath("PFforMaria/plots/MagVsYoffset_"+bg+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/plots/MagVsYoffset_"+bg+case+plot_type)
             if redos:
-                destination = os.path.abspath("PFforMaria/plots_redo/MagVsYoffset_"+bg+case+plot_type)
+                destination = os.path.abspath("../PFforMaria/plots_redo/MagVsYoffset_"+bg+case+plot_type)
             fig3.savefig(destination)
             print ("\n Plot saved: ", destination)
         if show_plot:
@@ -650,9 +650,9 @@ if "scene2" in case:
         box = ax3.get_position()
         ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
         if save_plot:
-            destination = os.path.abspath("PFforMaria/plots/MagVsYoffset_frac_"+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/plots/MagVsYoffset_frac_"+case+plot_type)
             if redos:
-                destination = os.path.abspath("PFforMaria/plots_redo/MagVsYoffset_frac"+case+plot_type)
+                destination = os.path.abspath("../PFforMaria/plots_redo/MagVsYoffset_frac"+case+plot_type)
             fig4.savefig(destination)
             print ("\n Plot saved: ", destination)
         if show_plot:
