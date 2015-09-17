@@ -1,0 +1,16 @@
+Coords_transforms/
+PFforMaria/
+*NIRSpec_*_file_*
+*.erm
+*.zip
+*.pro
+*.list
+*.docx
+*.pdf
+*.fits
+*.pyc
+*.jpg
+*.jpeg
+*.png
+.*project
+.DS_Store
