@@ -1,3 +1,9 @@
+*NIRSpec_*_file_*
+*.erm
+*.zip
+*.pro
+*.list
+*.docx
 *.pdf
 *.fits
 *.pyc
