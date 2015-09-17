@@ -218,7 +218,7 @@ def get_distriution(txt_file, save_figs):
 # ---> CODE
 
 # Set the path for comparison files and store them accordingly
-all_files = glob("PFforMaria/Resulting_centroid_txt_files_redo/*")
+all_files = glob("../PFforMaria/Resulting_centroid_txt_files_redo/*")
 Scene1_centroids_rapid_nonoise_None, Scene2_centroids_rapid_nonoise_None  = [], []
 Scene1_centroids_rapid_nonoise_fixed,Scene2_centroids_rapid_nonoise_fixed = [], []
 Scene1_centroids_rapid_nonoise_frac, Scene2_centroids_rapid_nonoise_frac  = [], []
@@ -358,7 +358,7 @@ Scene2_centroid_names = ['Scene2_centroids_rapid_nonoise_None', 'Scene2_centroid
                         'Scene2_centroids_slow_real_None', 'Scene2_centroids_slow_real_fixed', 'Scene2_centroids_slow_real_frac']
 
 # Get true positions from Pierre's position files
-path2listfileScene1 = "PFforMaria/Scene_1_AB23"
+path2listfileScene1 = "../PFforMaria/Scene_1_AB23"
 positions_file = "simuTA20150528-F140X-S50-K-AB23_positions.fits" 
 shifted_positions_file = "simuTA20150528-F140X-S50-K-AB23-shifted_positions.fits"
 pf = os.path.join(path2listfileScene1, positions_file)
@@ -366,7 +366,7 @@ spf = os.path.join(path2listfileScene1, shifted_positions_file)
 S1star_number, S1TrueXpos, S1TrueYpos = tf.read_positionsfile(pf, detector)
 _, S1ShiftTrueXpos, S1ShiftTrueYpos = tf.read_positionsfile(spf, detector)
 
-path2listfileScene2 = "PFforMaria/Scene_2_AB1823"
+path2listfileScene2 = "../PFforMaria/Scene_2_AB1823"
 positions_file = "simuTA20150528-F140X-S50-K-AB18to23_positions.fits"
 shifted_positions_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted_positions.fits"
 pf = os.path.join(path2listfileScene2, positions_file)
@@ -381,7 +381,7 @@ _, S2ShiftTrueXpos, S2ShiftTrueYpos = tf.read_positionsfile(spf, detector)
 #write_txt_file(Scene2_all_centroids, Scene2_centroid_names, S2TrueXpos, S2TrueYpos, save_text_file)
 
 # Get the distribution, standard deviations, and means
-name_txt_file_path = "PFforMaria/comparison_txt_positions"
+name_txt_file_path = "../PFforMaria/comparison_txt_positions"
 #txt_file = name_txt_file_path+'/Scene1_centroids_rapid_nonoise_fixed.txt'
 txt_files_list = glob(name_txt_file_path+'/Scene*.txt')
 for txt_file in txt_files_list:
