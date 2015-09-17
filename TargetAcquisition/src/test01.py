@@ -576,12 +576,12 @@ if run_part3 or run_all:   # Added by Maria Pena-Guerrero
     
     # Test input image, and display to verify location
     # these test files were downloaded from:  /grp/jwst/wit/nirspec/Data_LeBlanc/TA/WEBB_psfs
-    #psf = fits.getdata('Tommys_testData/WEBB_Test_00_3.fits', 1)
-    psf = fits.getdata('Tommys_testData/WEBB_Test_00_7.fits', 1)
-    #psf = fits.getdata('Tommys_testData/WEBB_Test_00_13.fits', 1)
-    #psf = fits.getdata('Tommys_testData/WEBB_Test_90_10.fits', 1)
+    #psf = fits.getdata('../Tommys_testData/WEBB_Test_00_3.fits', 1)
+    psf = fits.getdata('../Tommys_testData/WEBB_Test_00_7.fits', 1)
+    #psf = fits.getdata('../Tommys_testData/WEBB_Test_00_13.fits', 1)
+    #psf = fits.getdata('../Tommys_testData/WEBB_Test_90_10.fits', 1)
     
-    fig_name = './initial_fig.jpg'
+    fig_name = '../initial_fig.jpg'
     tu.display_ns_psf(psf, vlim=(0.001, 0.01), savefile=fig_name)
     
     ''' 
@@ -628,7 +628,7 @@ if run_part3 or run_all:   # Added by Maria Pena-Guerrero
     ax.legend(numpoints=1, loc=1, prop={"size":"small"})
     
     # Save figure for later use
-    fig.savefig('./TargLocate.pdf')
+    fig.savefig('../TargLocate.pdf')
     
     ''' 
     3.2 - Checkbox calculation on a vector (1D):
@@ -677,9 +677,9 @@ if run_part4 or run_all:   # Added by Maria Pena-Guerrero
     The expected center of this psf is (15.5, 15.5) (0.0 is the center of the pixel in Python).
     '''
     # Read input image, and display to verify location
-    img = fits.open('Tommys_testData/WEBB_Test_00_7.fits')
+    img = fits.open('../Tommys_testData/WEBB_Test_00_7.fits')
     img.info()
-    psf = fits.getdata('Tommys_testData/WEBB_Test_00_7.fits', 1)
+    psf = fits.getdata('../Tommys_testData/WEBB_Test_00_7.fits', 1)
     print (np.shape(psf))
     #print(psf)
     tu.display_ns_psf(psf, vlim=(0.001, 0.01))
