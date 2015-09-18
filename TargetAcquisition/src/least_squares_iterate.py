@@ -153,7 +153,7 @@ print("(least_squares_iterate): Least squares iteration algorithm Version {} loa
 testing = False
 if testing: 
     # Set test values  for arrays
-    n = 10            # Number of positions
+    n = 10            # max number of iterations
     xtrue = np.array(range(10))     # true x-coordinate of each reference star: from 0 to 9
     ytrue = np.array(range(1, 11))  # true y-coordinate of each reference star: from 1 to 10
     xinput = xtrue + 0.02     # measured centroid x-coordinate of each reference star
