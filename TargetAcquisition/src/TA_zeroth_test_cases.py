@@ -38,23 +38,14 @@ DESCRIPTION:
 """
 
 # Paths
-"""
-perfect_scene1 = "PFforMaria/electron_rate_maps/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_004.erm"
-perfect_scene2 = "PFforMaria/electron_rate_maps/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_002.erm"
-flight_scene1 = "PFforMaria/electron_rate_maps/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_005.erm"
-flight_scene2 = "PFforMaria/electron_rate_maps/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_003.erm"
-#                    1               2             3             4
-paths_list = [perfect_scene1, perfect_scene2, flight_scene1, flight_scene2]
-"""
-
-perfect_s1 = "../PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_004/postage_redo"
-perfect_s1_shift = "../PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_002/postage_redo"
-perfect_s2 = "../PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_002/postage_redo"
-perfect_s2_shift = "../PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_002/postage_redo"
-flight_s1 = "../PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_005/postage_redo"
-flight_s1_shift = "../PFforMaria/Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_003/postage_redo"
-flight_s2 = "../PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_003/postage_redo"
-flight_s2_shift = "../PFforMaria/Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_003/postage_redo"
+perfect_s1 = "Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_004/postage_redo"
+perfect_s1_shift = "Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_002/postage_redo"
+perfect_s2 = "Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_002/postage_redo"
+perfect_s2_shift = "Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_002/postage_redo"
+flight_s1 = "Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_005/postage_redo"
+flight_s1_shift = "Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_003/postage_redo"
+flight_s2 = "Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_003/postage_redo"
+flight_s2_shift = "Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_003/postage_redo"
 #                   0            1            2            3            
 paths_list = [perfect_s1, perfect_s1_shift, perfect_s2, perfect_s2_shift, 
               flight_s1, flight_s1_shift, flight_s2, flight_s2_shift]
@@ -63,21 +54,21 @@ paths_list = [perfect_s1, perfect_s1_shift, perfect_s2, perfect_s2_shift,
 ###########################################################################################################
 
 # Set test parameters
-path_number = 0                    # Select 0 through 4 from paths_list above 
-detector = 491                     # Which detector are we working with: 491 or 492
+path_number = 7                    # Select 0 through 4 from paths_list above 
+detector = 492                     # Which detector are we working with: 491 or 492
 vlim = (0.001,10)                  # sensitivity limits of image, i.e. (0.001, 0.1) 
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
 ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
 max_iter = 50
 threshold = 1e-5
-background_method = 'fix'          # Select either 'fractional', 'fixed', or None   
+background_method = None           # Select either 'fractional', 'fixed', or None   
 debug = False                      # see all debug messages (i.e. values of all calculations)
 determine_moments = False          # Want to determine 2nd and 3rd moments?
 display_master_img = False         # Want to see the combined ramped images for every star?
 just_read_text_file = False        # skip the for loop to the plotting part
-centroid_in_full_detector = True   # Give resulting coordinates in terms of full detector: True or False
-show_disp = False                  # Show display of resulting positions: True or False
+centroid_in_full_detector = False  # Give resulting coordinates in terms of full detector: True or False
+show_disp = True                   # Show display of resulting positions: True or False
 save_centroid_disp = False         # To modify go to lines 306 and 307
 show_plot = False                  # Show plot(s) of x_offset vs y_offset and y_offset vs magnitude: True or False 
 plot_type = '.jpg'                 # Type of image to be saved: pdf, jpg, eps (it is better to convert from jpg to eps) 
@@ -97,7 +88,8 @@ star_file_name = '/postageout_star_     134 quad_       3 quad_star       34.fit
 
 # ---> CODE
 
-dir2test = paths_list[path_number]
+main_path_infiles = "../PFforMaria/"
+dir2test = main_path_infiles+paths_list[path_number]
 print(dir2test)
 if single_star:
     single_star_path = dir2test+star_file_name   
@@ -138,8 +130,12 @@ if "Scene_2" in dir2test:
         positions_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted_positions.fits"
 lf = os.path.join(path2listfile,list_file)
 pf = os.path.join(path2listfile,positions_file)
-star_number, xpos_arcsec, ypos_arcsec, factor, mag, bg_method = tf.read_listfile(lf, detector, background_method)
-_, xpos, ypos = tf.read_positionsfile(pf, detector)
+bench_star, xpos_arcsec, ypos_arcsec, factor, mag, bg_method = tf.read_listfile(lf, detector, background_method)
+_, true_x, true_y, trueV2, trueV3 = tf.read_positionsfile(pf, detector)
+
+"""
+*** WE ARE NOT USING THIS PART RIGHT NOW BECAUSE THE star_parameters FILES HAVE THE SAME DATA FOR 
+BOTH DETECTORS.
 
 # Read fits table with benchmark data from the star parameters file to compare results
 #     xL:  x-coordinate of the left edge of the postge stamp in the full image (range 0-2047)
@@ -147,11 +143,22 @@ _, xpos, ypos = tf.read_positionsfile(pf, detector)
 #     yL: y-coord of the lower edge of the postage stamp
 #     yU:  y-coord of the upper edge of the postage stamp
 star_param_txt = os.path.join(dir2test,"star parameters.txt")
+if detector ==492:
+    star_param_txt = os.path.join(dir2test,"star parameters_492.txt")
 benchmark_data = np.loadtxt(star_param_txt, skiprows=3, unpack=True)
 bench_star, quadrant, star_in_quad, x_491, y_491, x_492, y_492, V2, V3, xL, xR, yL, yU = benchmark_data
-    
+# Select appropriate set of stars to test according to chosen detector
+if detector == 491:
+    true_x = x_491
+    true_y = y_491
+elif detector == 492:
+    true_x = x_492
+    true_y = y_492
+"""
+
 # Set up the output file and path for plots and figures
-output_file_path = "../PFforMaria/electron_rate_maps/TAposition_text_files/"
+main_path_outfiles = "../PFforMaria/electron_rate_maps/detector_"+str(detector)
+output_file_path = main_path_outfiles+"/TAposition_text_files/"
 paths_list_str = ["perfect_s1", "perfect_s1_shift", "perfect_s2", "perfect_s2_shift", 
                   "flight_s1", "flight_s1_shift", "flight_s2", "flight_s2_shift"]
 case = paths_list_str[path_number]
@@ -173,7 +180,7 @@ if save_text_file:
     f.write(line0a+"\n")
     f.write(line0b+"\n")
     f.close()
-display_fig_name_path = "../PFforMaria/electron_rate_maps/centroid_figs/"
+display_fig_name_path = main_path_outfiles+"/centroid_figs"
 
 # Start the loop in the given directory
 if just_read_text_file != True:
@@ -181,10 +188,11 @@ if just_read_text_file != True:
     for star in dir_stars:
         if single_star:
             star = single_star_path
+        dir_star_number = int(os.path.basename(star).split()[1])
         # Test stars of detector of choice
         for st_idx, st in enumerate(bench_star):
             st = int(st)
-            if str(st)+" quad_       " in star:
+            if st == dir_star_number: #if str(st)+" quad_       " in star:
                 print ("Will test star in directory: \n     ", dir2test)
                 print ("Star: ", os.path.basename(star))
                 # Make sure the file actually exists
@@ -194,10 +202,7 @@ if just_read_text_file != True:
                     exit() 
                 
                 # Obtain real star position
-                if detector == 491:
-                    true_center = [x_491[st_idx], y_491[st_idx]]
-                else:
-                    true_center = [x_492[st_idx], y_492[st_idx]]
+                true_center = [true_x[st_idx], true_y[st_idx]]
             
                 # define the magnitude (or factor from the list file) and the ESA center (that we do not have)
                 factor_i = factor[st_idx]
@@ -264,11 +269,17 @@ if just_read_text_file != True:
                     data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
                     tf.write2file(data2write, lines4screenandfile) 
                 
-                display_fig_name = display_fig_name_path+"star_"+str(st)+"_"+case+bg_choice+".jpg"
-                tf.display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
+                if bg_choice == "_bgFrac":
+                    path2savefig = display_fig_name_path+"/bg_Fractional/"
+                elif bg_choice == "_bgFixed":
+                    path2savefig = display_fig_name_path+"/bg_Fixed/"
+                elif bg_choice == "_bgNone":
+                    path2savefig = display_fig_name_path+"/bg_None/"
+                display_fig_name = path2savefig+"star_"+str(st)+"_"+case+bg_choice+".jpg"
+                tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
                                      vlim, savefile=save_centroid_disp, fig_name=display_fig_name)  
                 if single_star:
-                    tf.display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
+                    tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
                     vlim, savefile=save_centroid_disp, fig_name=display_fig_name)  
                     print ("Recursive test script finished. \n")
                     exit()
@@ -293,14 +304,14 @@ if 'frac' not in bg_method:
     ymin, ymax = ax1.get_ylim()
     plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
     #plt.legend(loc='lower right')
-    plt.legend(loc='upper right')
+    plt.legend(loc='upper left')
     textinfig3 = r'$\sigma3$ = %0.2f    $\mu3$ = %0.2f' % (sig3, mean3)
     textinfig5 = r'$\sigma5$ = %0.2f    $\mu5$ = %0.2f' % (sig5, mean5)
     textinfig7 = r'$\sigma7$ = %0.2f    $\mu7$ = %0.2f' % (sig7, mean7)
     ax1.annotate(textinfig3, xy=(0.15, 0.055), xycoords='axes fraction' )
     ax1.annotate(textinfig5, xy=(0.15, 0.03), xycoords='axes fraction' )
     ax1.annotate(textinfig7, xy=(0.15, 0.005), xycoords='axes fraction' )
-    for si,xi,yi in zip(star_number, offsets[0], offsets[1]): 
+    for si,xi,yi in zip(bench_star, offsets[0], offsets[1]): 
         if yi>=1.0 or yi<=-1.0 or xi>=1.0 or xi<=-1.0:
             si = int(si)
             subxcoord = 5
@@ -312,7 +323,7 @@ if 'frac' not in bg_method:
             bg = 'None_'
         else:
             bg = 'fix_'
-        destination = os.path.abspath("../PFforMaria/electron_rate_maps/plots/XoffsetVsYoffset_"+bg+case+plot_type)
+        destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_"+bg+case+plot_type)
         fig1.savefig(destination)
         print ("\n Plot saved: ", destination)
     if show_plot:
@@ -421,7 +432,7 @@ else:
     box = ax3.get_position()
     ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     if save_plot:
-        destination = os.path.abspath("../PFforMaria/electron_rate_maps/plots/XoffsetVsYoffset_frac_"+case+plot_type)
+        destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_frac_"+case+plot_type)
         fig2.savefig(destination)
         print ("\n Plot saved: ", destination)
     if show_plot:
@@ -447,7 +458,7 @@ if "s2" in case:
         plt.plot(mag, offsets[5], 'ro', ms=8, alpha=0.7, label='Checkbox=7')
         #plt.legend(loc='lower left')
         plt.legend(loc='upper right')
-        for si,xi,yi in zip(star_number, mag, offsets[1]): 
+        for si,xi,yi in zip(bench_star, mag, offsets[1]): 
             if yi>=1.0 or yi<=-1.0:
                 si = int(si)
                 subxcoord = 5
@@ -467,7 +478,7 @@ if "s2" in case:
                 bg = 'None_'
             else:
                 bg = 'fix_'
-            destination = os.path.abspath("../PFforMaria/electron_rate_maps/plots/MagVsYoffset_"+bg+case+plot_type)
+            destination = os.path.abspath(main_path_outfiles+"/plots/MagVsYoffset_"+bg+case+plot_type)
             fig3.savefig(destination)
             print ("\n Plot saved: ", destination)
         if show_plot:
@@ -564,7 +575,7 @@ if "s2" in case:
         box = ax3.get_position()
         ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
         if save_plot:
-            destination = os.path.abspath("../PFforMaria/electron_rate_maps/plots/MagVsYoffset_frac_"+case+plot_type)
+            destination = os.path.abspath(main_path_outfiles+"/plots/MagVsYoffset_frac_"+case+plot_type)
             fig4.savefig(destination)
             print ("\n Plot saved: ", destination)
         if show_plot:
