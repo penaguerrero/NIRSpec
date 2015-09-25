@@ -29,7 +29,7 @@ Output(s):
 
 Example usage:
     import least_squares_iterate as lsi
-    deltas, sigmas = lsi.ls_fit_iter(niter, x_input, y_input, xtrue, ytrue)
+    deltas, sigmas, lines2print = lsi.ls_fit_iter(niter, x_input, y_input, xtrue, ytrue)
 
 
 *** Testing suite of the script at the bottom
@@ -46,8 +46,9 @@ def ls_fit_iter(niter, xt, yt, x, y):
     """  
     # do up to niter iterations of sigma-clipping (first time through is 
     # initial calculation, then up to niter iterations)
-    n = len(x)
+    original_elements = len(x)
     for nit in range(niter):
+        n = len(x)
         # Initialize the sums
         sum_tot = 0.0
         sum_x = 0.0
@@ -84,8 +85,8 @@ def ls_fit_iter(niter, xt, yt, x, y):
         delta_theta = delta_theta/det    # roll angle correction  (what units??)
         
         # outputs:  delta_x, delta_y, delta_theta, sigma_x, sigma_y, sigma_theta
-        print ('(least_squares_iterate):  iteration no.: ', nit)
-        print ('(least_squares_iterate):  delta_x = {}   delta_y = {}   delta_theta = {}'.format(delta_x, delta_y, delta_theta))
+        line1 = '(least_squares_iterate):  iteration number: {}'.format(nit)
+        line2 = '(least_squares_iterate):  delta_x = {}   delta_y = {}   delta_theta = {}'.format(delta_x, delta_y, delta_theta*(180.0/np.pi)*3600.0)
         deltas = [delta_x, delta_y, delta_theta]
         
         # verify this coding for sigma_xtrue and sigma_ytrue
@@ -102,7 +103,7 @@ def ls_fit_iter(niter, xt, yt, x, y):
         # for now set sigma_thera to bogus value  (we don't presently know how to calculate it)
         sigma_theta = -999.0
         
-        print ('(least_squares_iterate):  sigma_x = {}   sigma_y = {}   sigma_theta = {}'.format(sigma_x, sigma_y, sigma_theta))
+        line3 = '(least_squares_iterate):  sigma_x = {}   sigma_y = {}   sigma_theta = {}'.format(sigma_x, sigma_y, sigma_theta)
         sigmas = [sigma_x, sigma_y, sigma_theta]
         
         # calculate new best position and residuals for each coordinate (neglect any roll correction for now)
@@ -133,6 +134,8 @@ def ls_fit_iter(niter, xt, yt, x, y):
         x_new = x[(np.where((np.abs(xdiff)<=thres_x) & (np.abs(ydiff)<=thres_y) & (np.abs(xdiff)<=zerop7) & (np.abs(ydiff)<=zerop7)))]
         y_new = y[(np.where((np.abs(xdiff)<=thres_x) & (np.abs(ydiff)<=thres_y) & (np.abs(xdiff)<=zerop7) & (np.abs(ydiff)<=zerop7)))]
         """
+        elements_left = len(xcentroids_new)
+        line4 = '(least_squares_iterate):  elements_left={} out of original_elements={}'.format(elements_left, original_elements)
         if len(xcentroids_new) == len(xt):
             break   # exit the loop since no additional rejections on this iteration
         else:
@@ -140,8 +143,12 @@ def ls_fit_iter(niter, xt, yt, x, y):
             yt = ycentroids_new
             x = x_new
             y = y_new
-    
-    return deltas, sigmas
+    print (line1)
+    print (line2)
+    print (line3)
+    print (line4)
+    lines2print = [line1, line2, line3, line4]
+    return deltas, sigmas, lines2print
     
     # Still do not know how to do delta_theta sigma  -- is this calculation needed?
 
@@ -158,12 +165,13 @@ if testing:
     ytrue = np.array(range(1, 11))  # true y-coordinate of each reference star: from 1 to 10
     xinput = xtrue + 0.02     # measured centroid x-coordinate of each reference star
     yinput = ytrue + 0.01     # measured centroid y-coordinate of each reference star
-    deltas, sigmas = ls_fit_iter(n, xinput, yinput, xtrue, ytrue)
+    deltas, sigmas, _ = ls_fit_iter(n, xinput, yinput, xtrue, ytrue)
     """
     With these parameters output should be:
         (least_squares_iterate): Least squares iteration algorithm Version 1.0 loaded!
-        (least_squares_iterate):  iteration no.:  0
-        (least_squares_iterate):  delta_x = -0.02   delta_y = -0.01   delta_theta = 7.57912251477e-16
+        (least_squares_iterate):  elements_left=10 out of original_elements=10
+        (least_squares_iterate):  iteration number: 0
+        (least_squares_iterate):  delta_x = -0.02   delta_y = -0.01   delta_theta = -0.00667878787879
         (least_squares_iterate):  sigma_x = 4.564982887e-15   sigma_y = 3.69348008392e-15   sigma_theta = -999.0
     """
     
