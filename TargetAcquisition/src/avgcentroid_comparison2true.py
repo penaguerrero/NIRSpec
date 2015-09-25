@@ -28,11 +28,11 @@ versus number of stars. It finds the standard deviations and means for checkbox 
 
 
 # Set script parameters
-detector = 491                     # Which detector are we working with: 491 or 492
+detector = 492                     # Which detector are we working with: 491 or 492
 centroid_in_full_detector = False  # Give resulting coordinates in terms of full detector: True or False
 save_text_file = False             # Want to save the text file of comparison? True or False
 save_figs = False                  # Save the distribution figures: True or False
-show_plot = True                   # Show plots: True or False
+show_plot = False                  # Show plots: True or False
 
 
 ###########################################################################################################
@@ -54,7 +54,7 @@ def write_txt_file(Scenario_all_centroids_list, Scenario_centroid_names, TrueXpo
         #raw_input()
         # prepare text file
         case_idx = Scenario_all_centroids_list.index(case)
-        name_txt_file_path = "PFforMaria/comparison_txt_positions"
+        name_txt_file_path = "../PFforMaria/detector_"+str(detector)+"_comparison_txt_positions"
         name_txt_file = os.path.join(name_txt_file_path, Scenario_centroid_names[case_idx]+".txt")
         line0 = '{:<5} {:<6} {:<42} {:<30} {:<20} {:<40} {:<30} {:<20} {:<40} {:<30} {:<20} {:<40} {:<30} {:<26} {:<22} {:<21} {:<43} {:<30} {:<20}'.format(
                                               'Star', 'BkGd',
@@ -117,7 +117,7 @@ def write_txt_file(Scenario_all_centroids_list, Scenario_centroid_names, TrueXpo
             print (line1)   
             print (line2)
             print ("\n Finished case: ", name_txt_file)
-        raw_input(" PRESS ENTER TO CONTINUE")
+        #raw_input(" PRESS ENTER TO CONTINUE")
 
 
 def gaus(a, mu, sigma, x):
@@ -191,7 +191,7 @@ def get_distriution(txt_file, save_figs):
     ax.legend(loc='upper left')           
     # obtain title for figure
     fig_name_list = string.rsplit(txt_file, sep='/')
-    fig_name = fig_name_list[2].replace('.txt', '') 
+    fig_name = fig_name_list[3].replace('.txt', '') 
     plt.title(fig_name)
     if fig_name == 'Scene2_centroids_slow_nonoise_fixed':
         ax.annotate(textinfig3, xy=(0.03, 0.7), xycoords='axes fraction' )
@@ -203,7 +203,7 @@ def get_distriution(txt_file, save_figs):
         ax.annotate(textinfig7, xy=(0.68, 0.83), xycoords='axes fraction' )
 
     if save_figs:
-        destination = os.path.abspath("PFforMaria/plots_comparison/"+fig_name+'.jpg')
+        destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots_comparison/"+fig_name+'.jpg')
         fig.savefig(destination)
         print ("\n Plot saved: ", destination) 
     if show_plot:
@@ -218,7 +218,7 @@ def get_distriution(txt_file, save_figs):
 # ---> CODE
 
 # Set the path for comparison files and store them accordingly
-all_files = glob("../PFforMaria/Resulting_centroid_txt_files_redo/*")
+all_files = glob("../PFforMaria/detector_"+str(detector)+"_resulting_centroid_txt_files_redo/*")
 Scene1_centroids_rapid_nonoise_None, Scene2_centroids_rapid_nonoise_None  = [], []
 Scene1_centroids_rapid_nonoise_fixed,Scene2_centroids_rapid_nonoise_fixed = [], []
 Scene1_centroids_rapid_nonoise_frac, Scene2_centroids_rapid_nonoise_frac  = [], []
@@ -231,111 +231,76 @@ Scene1_centroids_slow_nonoise_frac,  Scene2_centroids_slow_nonoise_frac   = [], 
 Scene1_centroids_slow_real_None,     Scene2_centroids_slow_real_None      = [], []
 Scene1_centroids_slow_real_fixed,    Scene2_centroids_slow_real_fixed     = [], []
 Scene1_centroids_slow_real_frac,     Scene2_centroids_slow_real_frac      = [], []
+
 for f in all_files:
     #print (f)
     if "scene1" in f:
         if "rapid" in f:
-            if "_nonoise_redo_bgNone" in f:
-                Scene1_centroids_rapid_nonoise_None.append(f)
-            if "_nonoise_shifted_redo_bgNone" in f:
-                Scene1_centroids_rapid_nonoise_None.append(f)
-            if "_nonoise_redo_bgFix" in f:
-                Scene1_centroids_rapid_nonoise_fixed.append(f)
-            if "_nonoise_shifted_redo_bgFix" in f:
-                Scene1_centroids_rapid_nonoise_fixed.append(f)
-            if "_nonoise_redo_bgFrac" in f:
-                Scene1_centroids_rapid_nonoise_frac.append(f)
-            if "_nonoise_shifted_redo_bgFrac" in f:
-                Scene1_centroids_rapid_nonoise_frac.append(f)
-            if "_real_redo_bgNone" in f:
-                Scene1_centroids_rapid_real_None.append(f)
-            if "_real_shifted_redo_bgNone" in f:
-                Scene1_centroids_rapid_real_None.append(f)
-            if "_real_redo_bgFix" in f:
-                Scene1_centroids_rapid_real_fixed.append(f)
-            if "_real_shifted_redo_bgFix" in f:
-                Scene1_centroids_rapid_real_fixed.append(f)
-            if "_real_redo_bgFrac" in f:
-                Scene1_centroids_rapid_real_frac.append(f)
-            if "_real_shifted_redo_bgFrac" in f:
-                Scene1_centroids_rapid_real_frac.append(f)
+            if "_bgNone_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene1_centroids_rapid_nonoise_None.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene1_centroids_rapid_real_None.append(f)
+            if "_bgFixed_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene1_centroids_rapid_nonoise_fixed.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene1_centroids_rapid_real_fixed.append(f)
+            if "_bgFrac_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene1_centroids_rapid_nonoise_frac.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene1_centroids_rapid_real_frac.append(f)
         if "slow" in f:
-            if "_nonoise_redo_bgNone" in f:
-                Scene1_centroids_slow_nonoise_None.append(f)
-            if "_nonoise_shifted_redo_bgNone" in f:
-                Scene1_centroids_slow_nonoise_None.append(f)
-            if "_nonoise_redo_bgFix" in f:
-                Scene1_centroids_slow_nonoise_fixed.append(f)
-            if "_nonoise_shifted_redo_bgFix" in f:
-                Scene1_centroids_slow_nonoise_fixed.append(f)
-            if "_nonoise_redo_bgFrac" in f:
-                Scene1_centroids_slow_nonoise_frac.append(f)
-            if "_nonoise_shifted_redo_bgFrac" in f:
-                Scene1_centroids_slow_nonoise_frac.append(f)
-            if "_real_redo_bgNone" in f:
-                Scene1_centroids_slow_real_None.append(f)
-            if "_real_shifted_redo_bgNone" in f:
-                Scene1_centroids_slow_real_None.append(f)
-            if "_real_redo_bgFix" in f:
-                Scene1_centroids_slow_real_fixed.append(f)
-            if "_real_shifted_redo_bgFix" in f:
-                Scene1_centroids_slow_real_fixed.append(f)
-            if "_real_redo_bgFrac" in f:
-                Scene1_centroids_slow_real_frac.append(f)
-            if "_real_shifted_redo_bgFrac" in f:
-                Scene1_centroids_slow_real_frac.append(f)
+            if "_bgNone_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene1_centroids_slow_nonoise_None.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene1_centroids_slow_real_None.append(f)
+            if "_bgFixed_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene1_centroids_slow_nonoise_fixed.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene1_centroids_slow_real_fixed.append(f)
+            if"_bgFrac_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene1_centroids_slow_nonoise_frac.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene1_centroids_slow_real_frac.append(f)
     if "scene2"in f:
         if "rapid" in f:
-            if "_nonoise_redo_bgNone" in f:
-                Scene2_centroids_rapid_nonoise_None.append(f)
-            if "_nonoise_shifted_redo_bgNone" in f:
-                Scene2_centroids_rapid_nonoise_None.append(f)
-            if "_nonoise_redo_bgFix" in f:
-                Scene2_centroids_rapid_nonoise_fixed.append(f)
-            if "_nonoise_shifted_redo_bgFix" in f:
-                Scene2_centroids_rapid_nonoise_fixed.append(f)
-            if "_nonoise_redo_bgFrac" in f:
-                Scene2_centroids_rapid_nonoise_frac.append(f)
-            if "_nonoise_shifted_redo_bgFrac" in f:
-                Scene2_centroids_rapid_nonoise_frac.append(f)
-            if "_real_redo_bgNone" in f:
-                Scene2_centroids_rapid_real_None.append(f)
-            if "_real_shifted_redo_bgNone" in f:
-                Scene2_centroids_rapid_real_None.append(f)
-            if "_real_redo_bgFix" in f:
-                Scene2_centroids_rapid_real_fixed.append(f)
-            if "_real_shifted_redo_bgFix" in f:
-                Scene2_centroids_rapid_real_fixed.append(f)
-            if "_real_redo_bgFrac" in f:
-                Scene2_centroids_rapid_real_frac.append(f)
-            if "_real_shifted_redo_bgFrac" in f:
-                Scene2_centroids_rapid_real_frac.append(f)
+            if "_bgNone_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene2_centroids_rapid_nonoise_None.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene2_centroids_rapid_real_None.append(f)
+            if "_bgFixed_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene2_centroids_rapid_nonoise_fixed.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene2_centroids_rapid_real_fixed.append(f)
+            if "_bgFrac_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene2_centroids_rapid_nonoise_frac.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene2_centroids_rapid_real_frac.append(f)
         if "slow" in f:#_real_shifted_redo_bgFixed
-            if "_nonoise_redo_bgNone" in f:
-                Scene2_centroids_slow_nonoise_None.append(f)
-            if "_nonoise_shifted_redo_bgNone" in f:
-                Scene2_centroids_slow_nonoise_None.append(f)
-            if "_nonoise_redo_bgFix" in f:
-                Scene2_centroids_slow_nonoise_fixed.append(f)
-            if "_nonoise_shifted_redo_bgFix" in f:
-                Scene2_centroids_slow_nonoise_fixed.append(f)
-            if "_nonoise_redo_bgFrac" in f:
-                Scene2_centroids_slow_nonoise_frac.append(f)
-            if "_nonoise_shifted_redo_bgFrac" in f:
-                Scene2_centroids_slow_nonoise_frac.append(f)
-            if "_real_redo_bgNone" in f:
-                Scene2_centroids_slow_real_None.append(f)
-            if "_real_shifted_redo_bgNone" in f:
-                Scene2_centroids_slow_real_None.append(f)
-            if "_real_redo_bgFix" in f:
-                Scene2_centroids_slow_real_fixed.append(f)
-            if "_real_shifted_redo_bgFix" in f:
-                Scene2_centroids_slow_real_fixed.append(f)
-            if "_real_redo_bgFrac" in f:
-                Scene2_centroids_slow_real_frac.append(f)
-            if "_real_shifted_redo_bgFrac" in f:
-                Scene2_centroids_slow_real_frac.append(f)
-        
+            if "_bgNone_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene2_centroids_slow_nonoise_None.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene2_centroids_slow_real_None.append(f)
+            if "_bgFixed_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene2_centroids_slow_nonoise_fixed.append(f)
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene2_centroids_slow_real_fixed.append(f)
+            if "_bgFrac_redo" in f:
+                if "_nonoise" in f or "_nonoise_shifted" in f:
+                    Scene2_centroids_slow_nonoise_frac.append(f) 
+                elif "_real" in f or "_real_shifted" in f:
+                    Scene2_centroids_slow_real_frac.append(f)
+
 Scene1_all_centroids = [Scene1_centroids_rapid_nonoise_None, Scene1_centroids_rapid_nonoise_fixed, Scene1_centroids_rapid_nonoise_frac,
                         Scene1_centroids_rapid_real_None, Scene1_centroids_rapid_real_fixed, Scene1_centroids_rapid_real_frac,
                         Scene1_centroids_slow_nonoise_None, Scene1_centroids_slow_nonoise_fixed, Scene1_centroids_slow_nonoise_frac,
@@ -358,30 +323,31 @@ Scene2_centroid_names = ['Scene2_centroids_rapid_nonoise_None', 'Scene2_centroid
                         'Scene2_centroids_slow_real_None', 'Scene2_centroids_slow_real_fixed', 'Scene2_centroids_slow_real_frac']
 
 # Get true positions from Pierre's position files
-path2listfileScene1 = "../PFforMaria/Scene_1_AB23"
+main_path_infiles = "../PFforMaria/"
+path2listfileScene1 = main_path_infiles+"Scene_1_AB23"
 positions_file = "simuTA20150528-F140X-S50-K-AB23_positions.fits" 
 shifted_positions_file = "simuTA20150528-F140X-S50-K-AB23-shifted_positions.fits"
 pf = os.path.join(path2listfileScene1, positions_file)
-spf = os.path.join(path2listfileScene1, shifted_positions_file)
+psf = os.path.join(path2listfileScene1, shifted_positions_file)
 S1star_number, S1TrueXpos, S1TrueYpos = tf.read_positionsfile(pf, detector)
-_, S1ShiftTrueXpos, S1ShiftTrueYpos = tf.read_positionsfile(spf, detector)
+_, S1ShiftTrueXpos, S1ShiftTrueYpos, S1ShiftTrueV2, S1ShiftTrueV3 = tf.read_positionsfile(psf, detector)
 
-path2listfileScene2 = "../PFforMaria/Scene_2_AB1823"
+path2listfileScene2 = main_path_infiles+"Scene_2_AB1823"
 positions_file = "simuTA20150528-F140X-S50-K-AB18to23_positions.fits"
 shifted_positions_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted_positions.fits"
 pf = os.path.join(path2listfileScene2, positions_file)
-spf = os.path.join(path2listfileScene2, shifted_positions_file)
+psf = os.path.join(path2listfileScene2, shifted_positions_file)
 S2star_number, S2TrueXpos, S2TrueYpos = tf.read_positionsfile(pf, detector)
-_, S2ShiftTrueXpos, S2ShiftTrueYpos = tf.read_positionsfile(spf, detector)
+_, S2ShiftTrueXpos, S2ShiftTrueYpos, S2ShiftTrueV2, S2ShiftTrueV3 = tf.read_positionsfile(psf, detector)
 
 # Do Scenario 1
-#write_txt_file(Scene1_all_centroids, Scene1_centroid_names, S1TrueXpos, S1TrueYpos, save_text_file)
+write_txt_file(Scene1_all_centroids, Scene1_centroid_names, S1TrueXpos, S1TrueYpos, save_text_file)
 
 # Do Scenario 2
-#write_txt_file(Scene2_all_centroids, Scene2_centroid_names, S2TrueXpos, S2TrueYpos, save_text_file)
+write_txt_file(Scene2_all_centroids, Scene2_centroid_names, S2TrueXpos, S2TrueYpos, save_text_file)
 
 # Get the distribution, standard deviations, and means
-name_txt_file_path = "../PFforMaria/comparison_txt_positions"
+name_txt_file_path = "../PFforMaria/detector_"+str(detector)+"_comparison_txt_positions"
 #txt_file = name_txt_file_path+'/Scene1_centroids_rapid_nonoise_fixed.txt'
 txt_files_list = glob(name_txt_file_path+'/Scene*.txt')
 for txt_file in txt_files_list:
