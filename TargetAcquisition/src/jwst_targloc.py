@@ -208,7 +208,7 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
     checkbox_ctr = np.array((xpeak, ypeak))
     checkbox_hfw = np.array((xhw, yhw))
     
-    print('(checkbox_2D): Checkbox centroid is given in Python indexing: starting at 0')
+    print('(checkbox_2D): Checkbox centroid is given in indexing: starting at 1')
     
     return checkbox_ctr, checkbox_hfw
 # *************************** checkbox_2D ***************************
@@ -297,7 +297,7 @@ def checkbox_1D(image, checkbox, xwidth=0, debug=False):
 #    # image coordinates
 #    xpeak = xpeak + xhw
     
-    print('(checkbox_1D): Checkbox centroid is given in Python indexing: starting at 0')
+    print('(checkbox_1D): Checkbox centroid is given in indexing: starting at 1')
     
     return xpeak, xhw
 # *************************** checkbox_1D ***************************
@@ -364,10 +364,10 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     """
     
     # Added by M. Pena-Guerrero   ->   Remove the -1 if centroid is given in Python indexing (starting at 0)
-    lolim_x = int(xpeak - xhw)# - 1)
-    uplim_x = int(xpeak + xhw)# - 1)
-    lolim_y = int(ypeak - yhw)# - 1)
-    uplim_y = int(ypeak + yhw)# - 1)
+    lolim_x = int(xpeak - xhw - 1)
+    uplim_x = int(xpeak + xhw - 1)
+    lolim_y = int(ypeak - yhw - 1)
+    uplim_y = int(ypeak + yhw - 1)
     
     if debug:
         print ('\n xpeak, ypeak, xhw, yhw', xpeak, ypeak, xhw, yhw)
@@ -395,10 +395,10 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
 
             # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
             if xloc > 32:
-                xloc = 31
+                xloc = 32
                 print ('(centroid_2D): WARNING - Upper limit in x is out of data, setting to 31.')
             if yloc > 32:
-                yloc = 31
+                yloc = 32
                 print ('(centroid_2D): WARNING - Upper limit in y is out of data, setting to 31.')
 
             c_sum = c_sum + image[jj, ii]
@@ -485,11 +485,11 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 
                 # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
                 if ii >= 32:
-                    ii = 31
-                    print ('(centroid_2D): WARNING - X index is out of data, setting to 31.')
+                    ii = 32
+                    print ('(centroid_2D): WARNING - X index is out of data, setting to 32.')
                 if jj >= 32:
-                    jj = 31
-                    print ('(centroid_2D): WARNING - Y index is out of data, setting to 31.')
+                    jj = 32
+                    print ('(centroid_2D): WARNING - Y index is out of data, setting to 32.')
                 
                 c_sum = c_sum + image[jj, ii] * weight
                 xsum = xsum + xloc * image[jj, ii] * weight
