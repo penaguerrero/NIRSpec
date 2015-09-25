@@ -2,6 +2,7 @@ from __future__ import print_function, division
 from astropy.io import fits
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 # Tommy's code
 import tautils as tu
@@ -89,6 +90,7 @@ def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list
     loleft_x = np.floor(corrected_x) - 16.0
     loleft_y = np.floor(corrected_y) - 16.0
     loleftcoords = [loleft_x, loleft_y]
+    print(loleft_x, loleft_y)
 
     if centroid_in_full_detector:    
         # Add lower left corner to centroid location to get it in terms of full detector
@@ -163,7 +165,7 @@ def read_listfile(list_file_name, detector, background_method):
     # convert the flux into magnitude (factor=1.0 is equivalent to magnitude=23.0,
     #  and factor=100.0 is equivalent to magnitude=18.0)
     mag = -2.5*np.log10(factor) + 23.0
-    #mag = 2.5*np.log10(factor) + 18.0
+    #mag = 2.5*np.log10(factor) + 18.0   # --> this conversion is wrong!
     # Get the correct slices according to detector
     if detector == 491:   # slice from star 101 to 200
         star_number, xpos, ypos, factor, mag = star_number[100:], xpos[100:], ypos[100:], factor[100:], mag[100:]
@@ -179,20 +181,24 @@ def read_positionsfile(positions_file_name, detector):
     """ This function reads the fits table that contains the true full detector positions of all simulated stars. """
     posfiledata = fits.getdata(positions_file_name)
     star_number, xpos491, ypos491, xpos492, ypos492 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])  
+    trueV2, trueV3 = np.array([]), np.array([])
     for row in posfiledata:
         star_number = np.append(star_number, row[0]) 
         xpos491 = np.append(xpos491, row[3]) 
         ypos491 = np.append(ypos491, row[4])
         xpos492 = np.append(xpos492, row[5]) 
         ypos492 = np.append(ypos492, row[6])
+        trueV2 = np.append(trueV2, row[13])
+        trueV3 = np.append(trueV3, row[14])
     # Get the correct slices according to detector
     if detector == 491:   # slice from star 101 to 200
-        star_number, xpos, ypos = star_number[100:], xpos491[100:], ypos491[100:]
+        star_number, xpos, ypos, trueV2, trueV3 = star_number[100:], xpos491[100:], ypos491[100:], trueV2[100:], trueV3[100:]
     elif detector == 492:   # slice from star 1 to 100
-        star_number, xpos, ypos = star_number[:100], xpos492[:100], ypos492[:100:]
+        star_number, xpos, ypos, trueV2, trueV3 = star_number[:100], xpos492[:100], ypos492[:100], trueV2[:100], trueV3[:100]
     #for s, x, y in zip(star_number, xpos, ypos):
     #    print(s, x, y)
-    return star_number, xpos, ypos
+    #    raw_input()
+    return star_number, xpos, ypos, trueV2, trueV3
 
 
 def get_fracdata(offsets):
@@ -328,13 +334,13 @@ def get_fracdata(offsets):
 def find_std(arr):
     """ This function determines the standard deviation of the given array. """
     N = float(len(arr))
-    mean = np.sum(arr) / N
+    mean = sum(arr) / N
     diff2meansq_list = []
     for a in arr:
         diff = a - mean
         diffsq = diff * diff
         diff2meansq_list.append(diffsq)
-    std = ( 1.0/(N-1.0) * sum(diff2meansq_list) )**(0.5)
+    std = ( 1.0/(N) * sum(diff2meansq_list) )**(0.5)
     #print ('sigma = ', std, '    mean = ', mean)
     return std, mean
 
@@ -356,15 +362,15 @@ def get_frac_stdevs(frac_data):
     return sig3, mean3, sig5, mean5, sig7, mean7
 
 
-def display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, vlims=None, savefile=False, fig_name=None, redos=False):    
+def display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, vlims=None, savefile=False, fig_name=None, redos=False):    
     fig_title = "star_"+str(st)+"_"+case
     # Display both centroids for comparison.
     _, ax = plt.subplots(figsize=(8, 8))
     ax.set_title(fig_title)
     ax.autoscale(enable=False, axis='both')
     ax.imshow(psf, cmap='gray', interpolation='nearest')
-    ax.set_ylim(0.0, np.shape(psf)[0])
-    ax.set_xlim(0.0, np.shape(psf)[1])
+    ax.set_ylim(1.0, np.shape(psf)[0])
+    ax.set_xlim(1.0, np.shape(psf)[1])
     ax.plot(corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1], marker='*', ms=20, mec='black', mfc='blue', ls='', label='Checkbox=3')
     ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='Checkbox=5')
     ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='Checkbox=7')
@@ -380,8 +386,8 @@ def display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid
     ax.set_title(fig_title)
     ax.autoscale(enable=False, axis='both')
     ax.imshow(psf, cmap='gray', interpolation='nearest')
-    ax.set_ylim(0.0, np.shape(psf)[0])
-    ax.set_xlim(0.0, np.shape(psf)[1])
+    ax.set_ylim(1.0, np.shape(psf)[0])
+    ax.set_xlim(1.0, np.shape(psf)[1])
     ax.plot(corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1], marker='*', ms=20, mec='black', mfc='blue', ls='', label='Checkbox=3')
     ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='Checkbox=5')
     ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='Checkbox=7')
@@ -396,7 +402,7 @@ def display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid
     else:
         plt.close('all')
     if savefile:
-        path4fig = "PFforMaria/centroid_figs"
+        path4fig = "../PFforMaria/detector_"+str(detector)+"_centroid_figs"
         if "scene1" in fig_title:
             if "slow" in fig_title:
                 if "real" in fig_title:
@@ -447,6 +453,63 @@ def get_cutouts(ref_star_position, detector_x, detector_y):
     print (len(cutout_x), len(cutout_y))
     
     
+def Nsigma_rejection(N, x, y, max_iterations=10):
+    """ This function will reject any residuals that are not within N*sigma in EITHER coordinate. 
+        Input: 
+                 - x and y must be the arrays of the differences with respect to true values: True-Measured 
+                 - N is the factor (integer or float) by which sigma will be multiplied
+                 - max_iterations is the maximum integer allowed iterations 
+        Output:
+                 - sigma_x = the standard deviation of the new array x 
+                 - mean_x  = the mean of the new array x 
+                 - sigma_y = the standard deviation of the new array y
+                 - mean_y  = the mean of the new array y
+                 - x_new   = the new array x (with rejections) 
+                 - y_new   = the new array y (with rejections) 
+                 - niter   = the number of iterations to reach a convergence (no more rejections)
+        Usage:
+             import testing_finctions as tf
+             sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter = tf.Nsigma_rejection(N, x, y, max_iterations=10)
+    """
+    N = float(N)
+    or_sigma_x, or_mean_x = find_std(x)
+    or_sigma_y, or_mean_y = find_std(y)
+    x_new = copy.deepcopy(x)
+    y_new = copy.deepcopy(y)
+    for nit in range(max_iterations):
+        # Determine the standard deviation for each array
+        sigma_x, mean_x = find_std(x_new)
+        sigma_y, mean_y = find_std(y_new)
+        thres_x = N*sigma_x
+        thres_y = N*sigma_y
+        xdiff = np.abs(x_new - mean_x) 
+        ydiff = np.abs(y_new - mean_y)
+        xn = x_new[(np.where((xdiff<=thres_x) & (ydiff<=thres_y)))]
+        yn = y_new[(np.where((xdiff<=thres_x) & (ydiff<=thres_y)))]
+        if len(xn) == len(x_new): 
+            niter = nit
+            break   # exit the loop since no additional rejections on this iteration
+        else:
+            x_new, y_new = xn, yn
+            niter = nit
+    line0 = "N-sigma rejection function:  values calculated from differences"
+    line1 = "                             - stopped at {} iterations".format(niter)
+    line2 = "                             - arrays have {} elements left out of {} initial".format(len(x_new), len(x))
+    line3 = "                             - original sigma and mean in X = {}  {}".format(or_sigma_x, or_mean_x)
+    line4 = "                             - original sigma and mean in Y = {}  {}".format(or_sigma_y, or_mean_y)
+    line5 = "                             - new sigma and mean in X = {}  {}".format(sigma_x, mean_x)
+    line6 = "                             - new sigma and mean in Y {}  {}".format(sigma_y, mean_y)
+    lines2print = [line0, line1, line2, line3, line4, line5, line6]
+    print (line0)
+    print (line1)
+    print (line2)
+    print (line3)
+    print (line4)
+    print (line5)
+    print (line6)
+    return sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter, lines2print
+
+
 
 # Print diagnostic load message
 print("(testing_functions): testing functions script Version {} loaded!".format(__version__))
