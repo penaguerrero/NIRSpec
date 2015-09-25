@@ -44,22 +44,22 @@ DESCRIPTION:
 """
 
 # Paths to Scenes 1 and 2 local directories: /Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/
-path_scene1_slow = "../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS/postage"
-path_scene1_slow_nonoise = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage")
-path_scene1_rapid = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRSRAPID/postage")
-path_scene1_rapid_nonoise = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage")
-path_scene1_slow_shifted = "../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS/postage"
-path_scene1_slow_shifted_nonoise = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage")
-path_scene1_rapid_shifted = os.path.abspath("../PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRSRAPID/postage")
-path_scene1_rapid_shifted_nonoise = os.path.abspath("PFforMaria/Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage")
-path_scene2_slow = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS/postage")
-path_scene2_slow_nonoise = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS no_noise/postage")
-path_scene2_rapid = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID/postage")
-path_scene2_rapid_nonoise = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID no_noise/postage")
-path_scene2_slow_shifted = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS/postage")
-path_scene2_slow_shifted_nonoise = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS no_noise/postage")
-path_scene2_rapid_shifted = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID/postage")
-path_scene2_rapid_shifted_nonoise = os.path.abspath("../PFforMaria/Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID no_noise/postage")
+path_scene1_slow = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS/postage"
+path_scene1_slow_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage"
+path_scene1_rapid = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRSRAPID/postage"
+path_scene1_rapid_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage"
+path_scene1_slow_shifted = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS/postage"
+path_scene1_slow_shifted_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage"
+path_scene1_rapid_shifted = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRSRAPID/postage"
+path_scene1_rapid_shifted_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage"
+path_scene2_slow = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS/postage"
+path_scene2_slow_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS no_noise/postage"
+path_scene2_rapid = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID/postage"
+path_scene2_rapid_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID no_noise/postage"
+path_scene2_slow_shifted = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS/postage"
+path_scene2_slow_shifted_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS no_noise/postage"
+path_scene2_rapid_shifted = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID/postage"
+path_scene2_rapid_shifted_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID no_noise/postage"
 #                      0                   1                     2                      3            
 paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, path_scene1_rapid_nonoise,
 #                      4                        5                                   6                           7            
@@ -74,41 +74,42 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 
 # Set test parameters
-path_number = 15             # Select 0 through 15 from paths_list above OR  
-redos = True                 # Use the re-do postage stamps?
-save_text_file = False
-just_read_text_file = False  # skip the for loop to the plotting part
-save_centroid_disp = True   # To modify go to lines 306 and 307
-single_star = True          # If only want to test one star set to True and type the path for a single star
-# NOTE: for the names of stars, single numbers before the .fits require 8 spaces after quad_star, 
-#       while 2 numbers require 7 spaces.  
-star_file_name = '/postageout_star_     105 quad_       3 quad_star        5.fits'
-display_master_img = False  # Want to see the combined ramped images for every star?
-vlim = (0.001,10)             # sensitivity limits of image, i.e. (0.001, 0.1) 
-debug = False               # see all debug messages (i.e. values of all calculations)
-centroid_in_full_detector = False   # Want results in full detector coordinates or 32x32? 
-checkbox_size = 3
-background_method = None#'frac'  # Select either 'fractional', 'fixed', or None   
-xwidth_list = [3, 5, 7]     # Number of rows of the centroid region
-ywidth_list = [3, 5, 7]     # Number of columns of the centroid region
+detector = 491                     # Which detector are we working with: 491 or 492
+path_number = 15                   # Select 0 through 4 from paths_list above 
+vlim = (1.0,30)                  # sensitivity limits of image, i.e. (0.001, 0.1) 
+checkbox_size = 3                  # Real checkbox size
+xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
+ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
 max_iter = 50
 threshold = 1e-5
-detector = 491
-determine_moments = False   # Want to determine 2nd and 3rd moments?
-# make plot of magnitude (in x) versus radial offset distance (in y) for Scene2 
-show_plot = False
-save_plot = False   # legend can be moved in line 789
-plot_type = '.jpg'
+background_method = None           # Select either 'fractional', 'fixed', or None   
+redos = True                       # Use the re-do postage stamps?
+debug = False                      # see all debug messages (i.e. values of all calculations)
+determine_moments = False          # Want to determine 2nd and 3rd moments?
+display_master_img = False         # Want to see the combined ramped images for every star?
+just_read_text_file = False        # skip the for loop to the plotting part
+centroid_in_full_detector = False  # Give resulting coordinates in terms of full detector: True or False
+show_disp = True                   # Show display of resulting positions: True or False
+save_centroid_disp = False         # To modify go to lines 306 and 307
+show_plot = True                   # Show plot(s) of x_offset vs y_offset and y_offset vs magnitude: True or False 
+plot_type = '.jpg'                 # Type of image to be saved: pdf, jpg, eps (it is better to convert from jpg to eps) 
+save_plot = False                  # legend can be moved in line xxx
+save_text_file = False             # Want to save the text file of comparison? True or False
+perform_avgcorr = False            # Correct for average values given by Pierre? True or False
+single_star = False                # If only want to test one star set to True and type the path for a single star
+# NOTE: for the names of stars, single numbers before the .fits require 8 spaces after quad_star, 
+#       while 2 numbers require 7 spaces.  
+star_file_name = '/postageout_star_     134 quad_       3 quad_star       34.fits'
 
 
 ###########################################################################################################
 
-show_disp = True
 
 # Set path of test directory
-dir2test = paths_list[path_number]
+main_path_infiles = "../PFforMaria/"
+dir2test = main_path_infiles+paths_list[path_number]
 if redos:
-    dir2test = paths_list[path_number]+"_redo"
+    dir2test = main_path_infiles+paths_list[path_number]+"_redo"
     
 if single_star:
     single_star_path = dir2test+star_file_name   
@@ -168,7 +169,7 @@ elif path_number == 14:
 elif path_number == 15:
     case = "scene2_rapid_nonoise_shifted"
 
-output_file_path = "../PFforMaria/Resulting_centroid_txt_files/"
+output_file_path = "../PFforMaria/detector_"+str(detector)+"_resulting_centroid_txt_files/"
 
 line0 = "Centroid indexing starting at 1 !"
 line0a = "{:<5} {:<15} {:<16} {:>23} {:>32} {:>33} {:>26} {:>15} {:>35} {:>38} {:>43}".format("Star", "Background", 
@@ -183,8 +184,7 @@ line0b = "{:>25} {:>12} {:>16} {:>14} {:>16} {:>14} {:>16} {:>14} {:>12} {:>10} 
 lines4screenandfile = [line0, line0a, line0b]
 
 if redos:
-    case = case+"_redo"
-    output_file_path = "../PFforMaria/Resulting_centroid_txt_files_redo/"
+    output_file_path = "../PFforMaria/detector_"+str(detector)+"_resulting_centroid_txt_files_redo/"
 
 output_file = os.path.join(output_file_path, "TA_testcases_for_"+case+bg_choice+".txt")
 if redos:
@@ -207,6 +207,9 @@ if dir_exist == False:
     print ("The directory: ", dir2test, "\n    does NOT exist. Exiting the script.")
     exit()
 
+"""
+*** WE ARE NOT USING THIS PART RIGHT NOW BECAUSE THE star_parameters FILES HAVE THE SAME DATA FOR 
+BOTH DETECTORS.
 # Read the star parameters file to compare results. 
 # NOTE: These positions are all 0-indexed!
 # if reading the redos:
@@ -214,27 +217,28 @@ if dir_exist == False:
 #    xR: x-coord of right edge of the postage stamp
 #    yL: y-coord of the lower edge of the postage stamp
 #    yU:  y-coord of the upper edge of the postage stamp
-
 star_param_txt = os.path.join(dir2test,"star parameters.txt")
+if detector ==492:
+    star_param_txt = os.path.join(dir2test,"star parameters_492.txt")
 if redos:
     benchmark_data = np.loadtxt(star_param_txt, skiprows=3, unpack=True)
     bench_star, quadrant, star_in_quad, x_491, y_491, x_492, y_492, V2, V3, xL, xR, yL, yU = benchmark_data
 else:
     benchmark_data = np.loadtxt(star_param_txt, skiprows=2, unpack=True)
     bench_star, quadrant, star_in_quad, x_491, y_491, x_492, y_492, V2, V3 = benchmark_data
+
 # Select appropriate set of stars to test according to chosen detector
 if detector == 491:
-    stars_detector = stars_491
     true_x = x_491
     true_y = y_491
 elif detector == 492:
-    stars_detector = stars_492
     true_x = x_492
     true_y = y_492
+"""
 
 # Read fits table with benchmark data
 if "scene1" in case:
-    path2listfile = "../PFforMaria/Scene_1_AB23"
+    path2listfile = main_path_infiles+"Scene_1_AB23"
     list_file = "simuTA20150528-F140X-S50-K-AB23.list"
     positions_file = "simuTA20150528-F140X-S50-K-AB23_positions.fits" 
     if 'shifted' in case: 
@@ -242,7 +246,7 @@ if "scene1" in case:
         positions_file = "simuTA20150528-F140X-S50-K-AB23-shifted_positions.fits"
 if "scene2" in case:
     # Read the text file just written to get the offsets from the "real" positions of the fake stars
-    path2listfile = "../PFforMaria/Scene_2_AB1823"
+    path2listfile = main_path_infiles+"Scene_2_AB1823"
     list_file = "simuTA20150528-F140X-S50-K-AB18to23.list"
     positions_file = "simuTA20150528-F140X-S50-K-AB18to23_positions.fits"
     if 'shifted' in case: 
@@ -250,8 +254,16 @@ if "scene2" in case:
         positions_file = "simuTA20150528-F140X-S50-K-AB18to23-shifted_positions.fits"
 lf = os.path.join(path2listfile,list_file)
 pf = os.path.join(path2listfile,positions_file)
+print (case)
+print (pf)
 star_number, xpos_arcsec, ypos_arcsec, factor, mag, bg_method = tf.read_listfile(lf, detector, background_method)
-_, xpos, ypos = tf.read_positionsfile(pf, detector)
+_, true_x, true_y, trueV2, trueV3 = tf.read_positionsfile(pf, detector)
+
+# Select appropriate set of stars to test according to chosen detector
+if detector == 491:
+    stars_detector = stars_491
+elif detector == 492:
+    stars_detector = stars_492
 
 # Start the loop in the given directory
 if just_read_text_file != True:
@@ -259,9 +271,10 @@ if just_read_text_file != True:
     for star in dir_stars:
         if single_star:
             star = single_star_path
+        dir_star_number = int(os.path.basename(star).split()[1])
         # Test stars of detector of choice
         for st in stars_detector:
-            if str(st)+" quad_       " in star:
+            if st == dir_star_number: #if str(st)+" quad_       " in star:
                 print ("Will test star in directory: \n     ", dir2test)
                 print ("Star: ", os.path.basename(star))
                 # Make sure the file actually exists
@@ -311,7 +324,7 @@ if just_read_text_file != True:
                         corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
                                                                                                       centroid_in_full_detector,
                                                                                                       cb_centroid_list, ESA_center, 
-                                                                                                      true_center, perform_avgcorr=False)
+                                                                                                      true_center, perform_avgcorr=perform_avgcorr)
                         # Write output into text file
                         bg = bg_frac
                         data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
@@ -331,25 +344,29 @@ if just_read_text_file != True:
                     corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
                                                                                                   centroid_in_full_detector,
                                                                                                   cb_centroid_list, ESA_center, 
-                                                                                                  true_center, perform_avgcorr=False)
+                                                                                                  true_center, perform_avgcorr=perform_avgcorr)
                     print ('***** cb_centroid_list = ', cb_centroid_list)
-                    raw_input()
+                    #raw_input()
                     # Write output into text file
                     bg = background
                     data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
                     tf.write2file(data2write, lines4screenandfile) 
                 
-                tf.display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
+                tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
                                      vlim, savefile=save_centroid_disp, redos=redos)  
                 if single_star:
-                    tf.display_centroids(st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
+                    tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
                      vlim, savefile=save_centroid_disp, redos=redos)  
                     print ("Recursive test script finished. \n")
                     exit()
 
 ### Obtain standard deviation from true star positions
 # Read the text file just written to get the offsets from the "real" positions of the fake stars
+print ("reading from: ", output_file)
+print (os.path.isfile(output_file))
 offsets = np.loadtxt(output_file, skiprows=3, usecols=(13,14,15,16,17,18), unpack=True)
+print (offsets)
+raw_input()
 sig3, mean3 = tf.find_std(offsets[1])
 sig5, mean5 = tf.find_std(offsets[3])
 sig7, mean7 = tf.find_std(offsets[5])
@@ -366,7 +383,8 @@ if 'frac' not in bg_method:
     plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
     ymin, ymax = ax1.get_ylim()
     plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
-    plt.legend(loc='lower right')
+    #plt.legend(loc='lower right')
+    plt.legend(loc='upper right')
     textinfig3 = r'$\sigma3$ = %0.2f    $\mu3$ = %0.2f' % (sig3, mean3)
     textinfig5 = r'$\sigma5$ = %0.2f    $\mu5$ = %0.2f' % (sig5, mean5)
     textinfig7 = r'$\sigma7$ = %0.2f    $\mu7$ = %0.2f' % (sig7, mean7)
@@ -385,9 +403,9 @@ if 'frac' not in bg_method:
             bg = 'None_'
         else:
             bg = 'fix_'
-        destination = os.path.abspath("../PFforMaria/plots/XoffsetVsYoffset_"+bg+case+plot_type)
+        destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots/XoffsetVsYoffset_"+bg+case+plot_type)
         if redos:
-            destination = os.path.abspath("../PFforMaria/plots_redo/XoffsetVsYoffset_"+bg+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots_redo/XoffsetVsYoffset_"+bg+case+"_redo"+plot_type)
         fig1.savefig(destination)
         print ("\n Plot saved: ", destination)
     if show_plot:
@@ -496,9 +514,9 @@ else:
     box = ax3.get_position()
     ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     if save_plot:
-        destination = os.path.abspath("../PFforMaria/plots/XoffsetVsYoffset_frac_"+case+plot_type)
+        destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots/XoffsetVsYoffset_frac_"+case+plot_type)
         if redos:
-            destination = os.path.abspath("../PFforMaria/plots_redo/XoffsetVsYoffset_frac"+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots_redo/XoffsetVsYoffset_frac"+case+"_redo"+plot_type)
         fig2.savefig(destination)
         print ("\n Plot saved: ", destination)
     if show_plot:
@@ -551,9 +569,9 @@ if "scene2" in case:
                 bg = 'None_'
             else:
                 bg = 'fix_'
-            destination = os.path.abspath("../PFforMaria/plots/MagVsYoffset_"+bg+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots/MagVsYoffset_"+bg+case+plot_type)
             if redos:
-                destination = os.path.abspath("../PFforMaria/plots_redo/MagVsYoffset_"+bg+case+plot_type)
+                destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots_redo/MagVsYoffset_"+bg+case+"_redo"+plot_type)
             fig3.savefig(destination)
             print ("\n Plot saved: ", destination)
         if show_plot:
@@ -650,9 +668,9 @@ if "scene2" in case:
         box = ax3.get_position()
         ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
         if save_plot:
-            destination = os.path.abspath("../PFforMaria/plots/MagVsYoffset_frac_"+case+plot_type)
+            destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots/MagVsYoffset_frac_"+case+plot_type)
             if redos:
-                destination = os.path.abspath("../PFforMaria/plots_redo/MagVsYoffset_frac"+case+plot_type)
+                destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots_redo/MagVsYoffset_frac"+case+"_redo"+plot_type)
             fig4.savefig(destination)
             print ("\n Plot saved: ", destination)
         if show_plot:
