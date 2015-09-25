@@ -46,7 +46,7 @@ else:
     xout_sky, yout_sky = ct.coords_transf(transf_direction, detector, filter_input, det_x, det_y, tilt, debug)
 
 # out file name
-out_file = "../Coords_transforms/"+str(detector)+"_"+filter_input+"_notilt.txt"
+out_file = "../Coords_transforms/testing_coordstransf_"+str(detector)+"_"+filter_input+"_notilt.txt"
 line0 = "{:<10} {:<16} {:<20} {:<16} {:<16}".format("\nTest_No.", "Detector_X", "Detector_Y", "Sky_X", "Sky_Y")
 print (line0)
 if single_case != None:
