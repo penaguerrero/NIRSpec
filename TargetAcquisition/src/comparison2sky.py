@@ -39,182 +39,8 @@ single_case = None       # test only a particular case: integer number of star, 
 
 #######################################################################################################################
 
-#  --> FUNCTIONS
-
-def convert2fulldetector(detector, stars, P1P2data, bench_stars, benchmark_xLyL_P1, benchmark_xLyL_P2, Pier_corr=True):
-    """ This function simply converts from 32x32 pixel to full detector coordinates according to 
-    background method - lengths are different for the fractional case. """
-    x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = P1P2data
-    benchxL_P1, benchyL_P1 = benchmark_xLyL_P1
-    benchxL_P2, benchyL_P2 = benchmark_xLyL_P2
-    if len(stars) == len(bench_stars):   # for the fixed and None background case
-        x13, y13 = x13+benchxL_P1, y13+benchyL_P1
-        x23, y23 = x23+benchxL_P2, y23+benchyL_P2
-        x15, y15 = x15+benchxL_P1, y15+benchyL_P1
-        x25, y25 = x25+benchxL_P2, y25+benchyL_P2
-        x17, y17 = x17+benchxL_P1, y17+benchyL_P1
-        x27, y27 = x27+benchxL_P2, y27+benchyL_P2
-    else:                               # for the fractional background case
-        for i, s in enumerate(stars):
-            if s in bench_stars:
-                j = bench_stars.tolist().index(s)
-                x13[i], y13[i] = x13[i]+benchxL_P1[j], y13[i]+benchyL_P1[j]
-                x23[i], y23[i] = x23[i]+benchxL_P2[j], y23[i]+benchyL_P2[j]
-                x15[i], y15[i] = x15[i]+benchxL_P1[j], y15[i]+benchyL_P1[j]
-                x25[i], y25[i] = x25[i]+benchxL_P2[j], y25[i]+benchyL_P2[j]
-                x17[i], y17[i] = x17[i]+benchxL_P1[j], y17[i]+benchyL_P1[j]
-                x27[i], y27[i] = x27[i]+benchxL_P2[j], y27[i]+benchyL_P2[j]
-    # Include Pier's corrections
-    x_corr = 0.086
-    y_corr = 0.077
-    if detector == 491:
-        x13 = x13 - x_corr
-        x15 = x15 - x_corr
-        x17 = x17 - x_corr
-        y13 = y13 - y_corr
-        y15 = y15 - y_corr
-        y17 = y17 - y_corr
-        x23 = x23 - x_corr
-        x25 = x25 - x_corr
-        x27 = x27 - x_corr
-        y23 = y23 - y_corr
-        y25 = y25 - y_corr
-        y27 = y27 - y_corr
-    elif detector == 492:
-        x13 = x13 + x_corr
-        x15 = x15 + x_corr
-        x17 = x17 + x_corr
-        y13 = y13 + y_corr
-        y15 = y15 + y_corr
-        y17 = y17 + y_corr
-        x23 = x23 + x_corr
-        x25 = x25 + x_corr
-        x27 = x27 + x_corr
-        y23 = y23 + y_corr
-        y25 = y25 + y_corr
-        y27 = y27 + y_corr        
-    return x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27
+#  --> FUNCTIONS        
     
-    
-def read_star_param_files(detector, test_case, path4starfiles, paths_list):
-    """ This function reads the corresponding star parameters file and returns the data for P1 and P2. """
-    cases_list = ["Scene1_slow_real", "Scene1_slow_nonoise", "Scene1_rapid_real", "Scene1_rapid_nonoise",
-                  "Scene2_slow_real", "Scene2_slow_nonoise", "Scene2_rapid_real", "Scene2_rapid_nonoise"]
-    bench_dirs = [[path4starfiles+paths_list[0], path4starfiles+paths_list[4]],
-                  [path4starfiles+paths_list[1], path4starfiles+paths_list[5]],
-                  [path4starfiles+paths_list[2], path4starfiles+paths_list[6]],
-                  [path4starfiles+paths_list[3], path4starfiles+paths_list[7]],
-                  [path4starfiles+paths_list[8], path4starfiles+paths_list[12]],
-                  [path4starfiles+paths_list[9], path4starfiles+paths_list[13]],
-                  [path4starfiles+paths_list[10], path4starfiles+paths_list[14]],
-                  [path4starfiles+paths_list[11], path4starfiles+paths_list[15]]]
-    for i, case in enumerate(cases_list):
-        if case in test_case:
-            dirs4test = bench_dirs[i]
-    """
-    *** WE ARE NOT USING THIS PART RIGHT NOW BECAUSE THE star_parameters FILES HAVE THE SAME DATA FOR 
-    BOTH DETECTORS.
-    #    xL:  x-coordinate of the left edge of the postge stamp in the full image (range 0-2047)
-    #    xR: x-coord of right edge of the postage stamp
-    #    yL: y-coord of the lower edge of the postage stamp
-    #    yU:  y-coord of the upper edge of the postage stamp
-    # Load parameters of Position 1
-    star_param_txt = os.path.join(dirs4test[0],"star parameters.txt")
-    if detector == 492:
-        star_param_txt = os.path.join(dirs4test[0],"star parameters_492.txt")
-    benchmark_dataP1 = np.loadtxt(star_param_txt, skiprows=3, unpack=True)
-    # benchmark_data is list of: bench_star, quadrant, star_in_quad, x_491, y_491, x_492, y_492, V2, V3, xL, xR, yL, yU 
-    bench_starP1, _, _, x_491P1, y_491P1, x_492P1, y_492P1, V2P1, V3P1, xLP1, _, yLP1, _ = benchmark_dataP1
-    if detector == 491:
-        bench_P1 = [bench_starP1, x_491P1, y_491P1, V2P1, V3P1, xLP1, yLP1]
-    elif detector == 492:
-        bench_P1 = [bench_starP1, x_492P1, y_492P1, V2P1, V3P1, xLP1, yLP1]        
-    # Load parameters of Position 2
-    star_param_txt = os.path.join(dirs4test[1],"star parameters.txt")
-    if detector == 492:
-        star_param_txt = os.path.join(dirs4test[1],"star parameters_492.txt")
-    benchmark_dataP2 = np.loadtxt(star_param_txt, skiprows=3, unpack=True)
-    #bench_star, quadrant, star_in_quad, x_491, y_491, x_492, y_492, V2, V3, xL, xR, yL, yU = benchmark_data
-    bench_starP2, _, _, x_491P2, y_491P2, x_492P2, y_492P2, V2P2, V3P2, xLP2, _, yLP2, _ = benchmark_dataP2
-    if detector == 491:
-        bench_P2 = [bench_starP2, x_491P2, y_491P2, V2P2, V3P2, xLP2, yLP2]
-    elif detector == 492:
-        bench_P2 = [bench_starP2, x_492P2, y_492P2, V2P2, V3P2, xLP2, yLP2]        
-    """
-    # Read fits table with benchmark data
-    main_path_infiles = "../PFforMaria/"
-    if "Scene1" in test_case:
-        path2listfile = main_path_infiles+"Scene_1_AB23"
-        list_file1 = "simuTA20150528-F140X-S50-K-AB23.list"
-        positions_file1 = "simuTA20150528-F140X-S50-K-AB23_positions.fits" 
-        list_file2 = "simuTA20150528-F140X-S50-K-AB23-shifted.list"
-        positions_file2 = "simuTA20150528-F140X-S50-K-AB23-shifted_positions.fits"
-    if "Scene2" in test_case:
-        # Read the text file just written to get the offsets from the "real" positions of the fake stars
-        path2listfile = main_path_infiles+"Scene_2_AB1823"
-        list_file1 = "simuTA20150528-F140X-S50-K-AB18to23.list"
-        positions_file1 = "simuTA20150528-F140X-S50-K-AB18to23_positions.fits"
-        list_file2 = "simuTA20150528-F140X-S50-K-AB18to23-shifted.list"
-        positions_file2 = "simuTA20150528-F140X-S50-K-AB18to23-shifted_positions.fits"
-    lf1 = os.path.join(path2listfile, list_file1)
-    pf1 = os.path.join(path2listfile, positions_file1)
-    lf2 = os.path.join(path2listfile, list_file2)
-    pf2 = os.path.join(path2listfile, positions_file2)
-    if "None" in test_case:
-        background_method = None
-    elif "fix" in test_case:
-        background_method = "fix"
-    elif "frac" in test_case:
-        background_method = "frac"
-    bench_starP1, xpos_arcsecP1, ypos_arcsecP1, factorP1, magP1, bg_methodP1 = tf.read_listfile(lf1, detector, background_method)
-    _, true_xP1, true_yP1, trueV2P1, trueV3P1 = tf.read_positionsfile(pf1, detector)
-    bench_starP2, xpos_arcsecP2, ypos_arcsecP2, factorP2, magP2, bg_methodP2 = tf.read_listfile(lf2, detector, background_method)
-    _, true_xP2, true_yP2, trueV2P2, trueV3P2 = tf.read_positionsfile(pf2, detector)
-    # Get the lower left corner coordinates in terms of full detector. We subtract 15.0 because indexing
-    # starts with 0
-    xLP1 = np.floor(true_xP1) - 16.0
-    yLP1 = np.floor(true_yP1) - 16.0
-    xLP2 = np.floor(true_xP2) - 16.0
-    yLP2 = np.floor(true_yP2) - 16.0
-    #for i, _ in enumerate(trueV2P1):
-    #    print(bench_starP1[i], true_xP1[i], true_yP1[i], trueV2P1[i], trueV3P1[i], xLP1[i], yLP1[i])
-    #    print(bench_starP2[i], true_xP2[i], true_yP2[i], trueV2P2[i], trueV3P2[i], xLP2[i], yLP2[i])
-        #raw_input()
-    # Organize elements of positions 1 and 2
-    bench_P1 = [bench_starP1, true_xP1, true_yP1, trueV2P1, trueV3P1, xLP1, yLP1]
-    bench_P2 = [bench_starP2, true_xP2, true_yP2, trueV2P2, trueV3P2, xLP2, yLP2]
-    benchmark_data = [bench_P1, bench_P2]
-    return benchmark_data
-    
-    
-def compare2ref(case, path4starfiles, paths_list, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=True):
-    """ This function obtains the differences of the input arrays with the reference or benchmark data. """
-    # calculate the differences with respect to the benchmark data
-    multiply_by = 1.0          # keep differences in degrees
-    if arcsecs:
-        multiply_by = 3600.0   # to convert from degrees to arcsecs
-    if len(stars) == len(bench_stars):   # for the fixed and None background case
-        diffV2 = (benchV2 - V2in) * multiply_by
-        diffV3 = (benchV3 - V3in) * multiply_by
-        bench_V2_list = benchV2.tolist()
-        bench_V3_list = benchV3.tolist()
-    else:                               # for the fractional background case
-        bench_V2_list, bench_V3_list = [], []
-        diffV2, diffV3 = [], []
-        for i, s in enumerate(stars):
-            if s in bench_stars:
-                j = bench_stars.tolist().index(s)
-                dsV2 = (benchV2[j] - V2in[i]) * multiply_by
-                dsV3 = (benchV3[j] - V3in[i]) * multiply_by 
-                diffV2.append(dsV2)
-                diffV3.append(dsV3)
-                bench_V2_list.append(benchV2[j])
-                bench_V3_list.append(benchV3[j])
-        diffV2 = np.array(diffV2)
-        diffV3 = np.array(diffV3)
-    return diffV2, diffV3, bench_V2_list, bench_V3_list
-
-
 def get_mindiff(d1, d2, d3):
     """ This function determines the minimum difference from checkboxes 3, 5, and 7,
     and counts the number of repetitions. """
@@ -380,7 +206,7 @@ for infile in input_files_list:
     print ("* studying case: ", case)
     
     # get the benchmark data
-    benchmark_data = read_star_param_files(detector, case, path4starfiles, paths_list)
+    benchmark_data = tf.read_star_param_files(case, detector, path4starfiles, paths_list)
     bench_P1, bench_P2 = benchmark_data
     bench_starP1, bench_xP1, bench_yP1, bench_V2P1, bench_V3P1, bench_xLP1, bench_yLP1 = bench_P1
     bench_starP2, bench_xP2, bench_yP2, bench_V2P2, bench_V3P2, bench_xLP2, bench_yLP2 = bench_P2
@@ -460,7 +286,7 @@ for infile in input_files_list:
     P1P2data = [x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27]
     benchmark_xLyL_P1 = [bench_xLP1, bench_yLP1]
     benchmark_xLyL_P2 = [bench_xLP2, bench_yLP2]
-    x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = convert2fulldetector(detector, stars, P1P2data, bench_starP1, benchmark_xLyL_P1, benchmark_xLyL_P2, Pier_corr=Pier_corr)
+    x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = tf.convert2fulldetector(detector, stars, P1P2data, bench_starP1, benchmark_xLyL_P1, benchmark_xLyL_P2, Pier_corr=Pier_corr)
     
     # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)
     transf_direction = "forward"
@@ -476,9 +302,9 @@ for infile in input_files_list:
     T1_V2_5, T1_V3_5 = ct.coords_transf(transf_direction, detector, filter_input, avgx5, avgy5, tilt, debug)
     T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, debug)
     # Step (c) - comparison
-    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_5, T1_diffV3_5, _, _ = compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_7, T1_diffV3_7, _, _ = compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_5, T1_diffV3_5, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_7, T1_diffV3_7, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
     # get the minimum of the differences
     T1_min_diff, T1_counter = get_mindiff(T1_diffV2_3, T1_diffV2_5, T1_diffV2_7)
     # get the fractional value that has the smaller difference
@@ -521,9 +347,9 @@ for infile in input_files_list:
     T2_V2_7 = (T2_V2_17 + T2_V2_27)/2.0
     T2_V3_7 = (T2_V3_17 + T2_V3_27)/2.0
     # Step (c) - comparison
-    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_5, T2_diffV3_5, _, _ = compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_7, T2_diffV3_7, _, _ = compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_5, T2_diffV3_5, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_7, T2_diffV3_7, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
     # get the minimum of the differences
     T2_min_diff, T2_counter = get_mindiff(T2_diffV2_3, T2_diffV2_5, T2_diffV2_7)
     # get the fractional value that has the smaller difference
@@ -558,12 +384,12 @@ for infile in input_files_list:
     T3_V2_25, T3_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, debug)
     T3_V2_27, T3_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, debug)
     # Step (b) - comparison
-    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_15, T3_diffV3_15, _, _ = compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_25, T3_diffV3_25, _, _ = compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_17, T3_diffV3_17, _, _ = compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_27, T3_diffV3_27, _, _ = compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_15, T3_diffV3_15, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_25, T3_diffV3_25, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_17, T3_diffV3_17, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_27, T3_diffV3_27, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27, arcsecs=diffs_in_arcsecs)
     # get the minimum of the differences
     T3_min_diff1, T3_counter1 = get_mindiff(T3_diffV2_13, T3_diffV2_15, T3_diffV2_17)
     T3_min_diff2, T3_counter2 = get_mindiff(T3_diffV2_23, T3_diffV2_25, T3_diffV2_27)
@@ -869,7 +695,7 @@ for infile in input_files_list:
     if save_txt_file:
         to.close()
         print (" * Results saved in file: ", txt_out)
-    raw_input(" * Press enter to continue... \n")
+    #raw_input(" * Press enter to continue... \n")
 
     # Text file 3
     line0 = "{}".format("Differences = True_Positions - Measured_Positions")
@@ -1050,7 +876,8 @@ for infile in input_files_list:
         print (" * Results saved in file: ", txt_out)
     if single_case:
         exit()
-    #else:
-    #    raw_input(" * Press enter to continue... \n")
+    else:
+        raw_input(" * Press enter to continue... \n")
+
 
 print ("\n Script 'comparison2sky.py' finished! ")
