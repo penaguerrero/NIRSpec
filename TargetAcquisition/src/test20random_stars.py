@@ -173,6 +173,8 @@ def second_smallest(numbers):
 
 def TEST1(detector, transf_direction, stars, avg_benchV23, case, x13, x23, y13, y23, x15, y15, x25, y25, x17, y17, x27, y27):
     # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)
+    x13, y13, x15, y15, x17, y17 = pos1
+    x23, y23, x25, y25, x27, y27 = pos2
     avg_benchV2, avg_benchV3 = avg_benchV23
     # Step (a) - averages
     avgx3 = (x13+x23)/2.0
@@ -567,6 +569,10 @@ for i in star_idx_list:
     bench_V3P2 = np.append(bench_V3P2, allbench_V3P2[i])
     bench_xLP2 = np.append(bench_xLP2, allbench_xLP2[i])
     bench_yLP2 = np.append(bench_yLP2, allbench_yLP2[i])
+trueVsP1 = [bench_V2P1, bench_V3P1]
+trueVsP2 = [bench_V2P2, bench_V3P2]
+LoLeftCornersP1 = [bench_xLP1, bench_yLP1]
+LoLeftCornersP2 = [bench_xLP2, bench_yLP2]
 
 # get the lists of the text files for measured centroid positions
 measured_centroids491 = glob(path4starfiles+"detector_491_resulting_centroid_txt_files_redo/*")
@@ -606,10 +612,43 @@ if shutters != "all" and bkgd_method != "all":
                                                                     bench_xLP1[i], bench_yLP1[i],
                                                                     factor1[i])
         print (line1)
+        
+    # compact results for functions
+    pos1 = [x13, y13, x15, y15, x17, y17]
+    pos2 = [x23, y23, x25, y25, x27, y27]
+    
+    # show the displays with positions for the sample of stars
     if show_display:
-        pos1 = [x13, y13, x15, y15, x17, y17]
-        pos2 = [x23, y23, x25, y25, x27, y27]
         show_star_displays(star_idx_list, case2study, centroid_figs491, centroid_figs492)
+    
+    # Now run the tests
+    transf_direction = "forward"
+    
+    if test2perform == "T1" or "all":
+        # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)
+    
+def runTEST1(case, transf_direction, pos1, pos2, trueVsP1, trueVsP2, LoLeftCornersP1, LoLeftCornersP2):
+    bench_V2P1, bench_V3P1 = trueVsP1
+    bench_V2P2, bench_V3P2 = trueVsP2
+    bench_xLP1, bench_yLP1 = LoLeftCornersP1
+    bench_xLP2, bench_yLP2 = LoLeftCornersP2
+    avg_benchV2 = (bench_V2P1 + bench_V2P2)/2.0
+    avg_benchV3 = (bench_V3P1 + bench_V3P2)/2.0
+    avg_benchV23 = [avg_benchV2, avg_benchV3]
+    resTEST1 = TEST1(detector, transf_direction, avg_benchV23, case, pos1, pos2)
+    resultsTEST1.append(resTEST1)
+
+
+    if test2perform == "T2" or "all":
+        # TEST 2: (a) Transform individual P1 and P2 to V2-V3, (b) avg V2-V3 space positions, (c) compare to avg reference positions
+        resTEST2 = TEST2(detector, transf_direction, avg_benchV23, case, x13, x23, y13, y23, x15, y15, y25, y25, x17, y17, x27, y27)
+        resultsTEST2.append(resTEST2)
+    
+    if test2perform == "T3" or "all":
+        # TEST 3: (a) Transform P1 and P2 individually to V2-V3 (b) compare star by star and position by position
+        resTEST3 = TEST3(detector, transf_direction, bench_V23, case, x13, x23, y13, y23, x15, y15, y25, y25, x17, y17, x27, y27)
+        resultsTEST3.append(resTEST3)
+    
     exit()
 
 
