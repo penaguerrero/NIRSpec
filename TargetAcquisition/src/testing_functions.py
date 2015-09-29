@@ -3,6 +3,7 @@ from astropy.io import fits
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
+import os
 
 # Tommy's code
 import tautils as tu
@@ -150,7 +151,7 @@ def write2file(data2write, lines4screenandfile):
     print(line1) 
 
 
-def read_listfile(list_file_name, detector, background_method):    
+def read_listfile(list_file_name, detector=None, background_method=None):    
     """ This function reads the fits table that contains the flux and converts to magnitude for the 
     simulated stars. """
     listfiledata = fits.getdata(list_file_name)
@@ -166,18 +167,19 @@ def read_listfile(list_file_name, detector, background_method):
     #  and factor=100.0 is equivalent to magnitude=18.0)
     mag = -2.5*np.log10(factor) + 23.0
     #mag = 2.5*np.log10(factor) + 18.0   # --> this conversion is wrong!
-    # Get the correct slices according to detector
-    if detector == 491:   # slice from star 101 to 200
-        star_number, xpos, ypos, factor, mag = star_number[100:], xpos[100:], ypos[100:], factor[100:], mag[100:]
-    elif detector == 492:   # slice from star 1 to 100
-        star_number, xpos, ypos, factor, mag = star_number[:100], xpos[:100], ypos[:100:], factor[:100], mag[:100]
+    # Get the correct slices according to detector or return all if no detector was chosen
+    if detector is not None:
+        if detector == 491:   # slice from star 101 to 200
+            star_number, xpos, ypos, factor, mag = star_number[100:], xpos[100:], ypos[100:], factor[100:], mag[100:]
+        elif detector == 492:   # slice from star 1 to 100
+            star_number, xpos, ypos, factor, mag = star_number[:100], xpos[:100], ypos[:100:], factor[:100], mag[:100]
     bg_method = background_method
     if background_method is None:   # convert the None value to string
         bg_method = 'None'
     return star_number, xpos, ypos, factor, mag, bg_method
 
 
-def read_positionsfile(positions_file_name, detector):
+def read_positionsfile(positions_file_name, detector=None):
     """ This function reads the fits table that contains the true full detector positions of all simulated stars. """
     posfiledata = fits.getdata(positions_file_name)
     star_number, xpos491, ypos491, xpos492, ypos492 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])  
@@ -190,11 +192,18 @@ def read_positionsfile(positions_file_name, detector):
         ypos492 = np.append(ypos492, row[6])
         trueV2 = np.append(trueV2, row[13])
         trueV3 = np.append(trueV3, row[14])
-    # Get the correct slices according to detector
-    if detector == 491:   # slice from star 101 to 200
-        star_number, xpos, ypos, trueV2, trueV3 = star_number[100:], xpos491[100:], ypos491[100:], trueV2[100:], trueV3[100:]
-    elif detector == 492:   # slice from star 1 to 100
-        star_number, xpos, ypos, trueV2, trueV3 = star_number[:100], xpos492[:100], ypos492[:100], trueV2[:100], trueV3[:100]
+    # Get the correct slices according to detector or return all if no detector was chosen
+    xpos, ypos = np.array([]), np.array([])
+    if detector is not None:
+        if detector == 491:   # slice from star 101 to 200
+            star_number, xpos, ypos, trueV2, trueV3 = star_number[100:], xpos491[100:], ypos491[100:], trueV2[100:], trueV3[100:]
+        elif detector == 492:   # slice from star 1 to 100
+            star_number, xpos, ypos, trueV2, trueV3 = star_number[:100], xpos492[:100], ypos492[:100], trueV2[:100], trueV3[:100]
+    else:
+        xpos = np.append(xpos, xpos491[100:])
+        xpos = np.append(xpos, xpos492[:100])
+        ypos = np.append(ypos, ypos491[100:])
+        ypos = np.append(ypos, ypos492[:100])
     #for s, x, y in zip(star_number, xpos, ypos):
     #    print(s, x, y)
     #    raw_input()
@@ -510,6 +519,192 @@ def Nsigma_rejection(N, x, y, max_iterations=10):
     return sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter, lines2print
 
 
+def read_star_param_files(test_case, detector=None, path4starfiles=None, paths_list=None):
+    """ This function reads the corresponding star parameters file and returns the data for P1 and P2. """
+    cases_list = ["Scene1_slow_real", "Scene1_slow_nonoise", "Scene1_rapid_real", "Scene1_rapid_nonoise",
+                  "Scene2_slow_real", "Scene2_slow_nonoise", "Scene2_rapid_real", "Scene2_rapid_nonoise"]
+    if path4starfiles is not None and paths_list is not None:
+        bench_dirs = [[path4starfiles+paths_list[0], path4starfiles+paths_list[4]],
+                      [path4starfiles+paths_list[1], path4starfiles+paths_list[5]],
+                      [path4starfiles+paths_list[2], path4starfiles+paths_list[6]],
+                      [path4starfiles+paths_list[3], path4starfiles+paths_list[7]],
+                      [path4starfiles+paths_list[8], path4starfiles+paths_list[12]],
+                      [path4starfiles+paths_list[9], path4starfiles+paths_list[13]],
+                      [path4starfiles+paths_list[10], path4starfiles+paths_list[14]],
+                      [path4starfiles+paths_list[11], path4starfiles+paths_list[15]]]
+        for i, case in enumerate(cases_list):
+            if case in test_case:
+                dirs4test = bench_dirs[i]
+            
+        """
+        *** WE ARE NOT USING THIS PART RIGHT NOW BECAUSE THE star_parameters FILES HAVE THE SAME DATA FOR 
+        BOTH DETECTORS.
+        #    xL:  x-coordinate of the left edge of the postge stamp in the full image (range 0-2047)
+        #    xR: x-coord of right edge of the postage stamp
+        #    yL: y-coord of the lower edge of the postage stamp
+        #    yU:  y-coord of the upper edge of the postage stamp
+        
+        # Load parameters of Position 1
+        star_param_txt = os.path.join(dirs4test[0],"star parameters.txt")
+        if detector == 492:
+            star_param_txt = os.path.join(dirs4test[0],"star parameters_492.txt")
+        benchmark_dataP1 = np.loadtxt(star_param_txt, skiprows=3, unpack=True)
+        # benchmark_data is list of: bench_star, quadrant, star_in_quad, x_491, y_491, x_492, y_492, V2, V3, xL, xR, yL, yU 
+        bench_starP1, _, _, x_491P1, y_491P1, x_492P1, y_492P1, V2P1, V3P1, xLP1, _, yLP1, _ = benchmark_dataP1
+        if detector == 491:
+            bench_P1 = [bench_starP1, x_491P1, y_491P1, V2P1, V3P1, xLP1, yLP1]
+        elif detector == 492:
+            bench_P1 = [bench_starP1, x_492P1, y_492P1, V2P1, V3P1, xLP1, yLP1]        
+        # Load parameters of Position 2
+        star_param_txt = os.path.join(dirs4test[1],"star parameters.txt")
+        if detector == 492:
+            star_param_txt = os.path.join(dirs4test[1],"star parameters_492.txt")
+        benchmark_dataP2 = np.loadtxt(star_param_txt, skiprows=3, unpack=True)
+        #bench_star, quadrant, star_in_quad, x_491, y_491, x_492, y_492, V2, V3, xL, xR, yL, yU = benchmark_data
+        bench_starP2, _, _, x_491P2, y_491P2, x_492P2, y_492P2, V2P2, V3P2, xLP2, _, yLP2, _ = benchmark_dataP2
+        if detector == 491:
+            bench_P2 = [bench_starP2, x_491P2, y_491P2, V2P2, V3P2, xLP2, yLP2]
+        elif detector == 492:
+            bench_P2 = [bench_starP2, x_492P2, y_492P2, V2P2, V3P2, xLP2, yLP2]        
+        """
+    #else:
+    # Read fits table with benchmark data
+    main_path_infiles = "../PFforMaria/"
+    S1path2listfile = main_path_infiles+"Scene_1_AB23"
+    S1list_file1 = "simuTA20150528-F140X-S50-K-AB23.list"
+    S1positions_file1 = "simuTA20150528-F140X-S50-K-AB23_positions.fits" 
+    S1list_file2 = "simuTA20150528-F140X-S50-K-AB23-shifted.list"
+    S1positions_file2 = "simuTA20150528-F140X-S50-K-AB23-shifted_positions.fits"
+    S2path2listfile = main_path_infiles+"Scene_2_AB1823"
+    S2list_file1 = "simuTA20150528-F140X-S50-K-AB18to23.list"
+    S2positions_file1 = "simuTA20150528-F140X-S50-K-AB18to23_positions.fits"
+    S2list_file2 = "simuTA20150528-F140X-S50-K-AB18to23-shifted.list"
+    S2positions_file2 = "simuTA20150528-F140X-S50-K-AB18to23-shifted_positions.fits"
+    if "Scene1" in test_case:
+        benchmark_data = read_TruePosFromFits(S1path2listfile, S1list_file1, S1positions_file1, S1list_file2, S1positions_file2)
+    if "Scene2" in test_case:
+        benchmark_data = read_TruePosFromFits(S2path2listfile, S2list_file1, S2positions_file1, S2list_file2, S2positions_file2)
+    return benchmark_data
+
+def read_TruePosFromFits(path2listfile, list_file1, positions_file1, list_file2, positions_file2, test_case=None, detector=None):
+    # Read the text file just written to get the offsets from the "real" positions of the fake stars
+    lf1 = os.path.join(path2listfile, list_file1)
+    pf1 = os.path.join(path2listfile, positions_file1)
+    lf2 = os.path.join(path2listfile, list_file2)
+    pf2 = os.path.join(path2listfile, positions_file2)
+    if test_case is not None:
+        if "None" in test_case:
+            background_method = None
+        elif "fix" in test_case:
+            background_method = "fix"
+        elif "frac" in test_case:
+            background_method = "frac"
+    else:
+        background_method = None
+    bench_starP1, xpos_arcsecP1, ypos_arcsecP1, factorP1, magP1, bg_methodP1 = read_listfile(lf1, detector, background_method)
+    _, true_xP1, true_yP1, trueV2P1, trueV3P1 = read_positionsfile(pf1, detector)
+    bench_starP2, xpos_arcsecP2, ypos_arcsecP2, factorP2, magP2, bg_methodP2 = read_listfile(lf2, detector, background_method)
+    _, true_xP2, true_yP2, trueV2P2, trueV3P2 = read_positionsfile(pf2, detector)
+    # Get the lower left corner coordinates in terms of full detector. We subtract 15.0 because indexing
+    # starts with 0
+    xLP1 = np.floor(true_xP1) - 16.0
+    yLP1 = np.floor(true_yP1) - 16.0
+    xLP2 = np.floor(true_xP2) - 16.0
+    yLP2 = np.floor(true_yP2) - 16.0
+    #for i, _ in enumerate(trueV2P1):
+    #    print(bench_starP1[i], true_xP1[i], true_yP1[i], trueV2P1[i], trueV3P1[i], xLP1[i], yLP1[i])
+    #    print(bench_starP2[i], true_xP2[i], true_yP2[i], trueV2P2[i], trueV3P2[i], xLP2[i], yLP2[i])
+        #raw_input()
+    # Organize elements of positions 1 and 2
+    bench_P1 = [bench_starP1, true_xP1, true_yP1, trueV2P1, trueV3P1, xLP1, yLP1]
+    bench_P2 = [bench_starP2, true_xP2, true_yP2, trueV2P2, trueV3P2, xLP2, yLP2]
+    benchmark_data = [bench_P1, bench_P2]
+    return benchmark_data
+
+
+def compare2ref(case, path4starfiles, paths_list, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=True):
+    """ This function obtains the differences of the input arrays with the reference or benchmark data. """
+    # calculate the differences with respect to the benchmark data
+    multiply_by = 1.0          # keep differences in degrees
+    if arcsecs:
+        multiply_by = 3600.0   # to convert from degrees to arcsecs
+    if len(stars) == len(bench_stars):   # for the fixed and None background case
+        diffV2 = (benchV2 - V2in) * multiply_by
+        diffV3 = (benchV3 - V3in) * multiply_by
+        bench_V2_list = benchV2.tolist()
+        bench_V3_list = benchV3.tolist()
+    else:                               # for the fractional background case
+        bench_V2_list, bench_V3_list = [], []
+        diffV2, diffV3 = [], []
+        for i, s in enumerate(stars):
+            if s in bench_stars:
+                j = bench_stars.tolist().index(s)
+                dsV2 = (benchV2[j] - V2in[i]) * multiply_by
+                dsV3 = (benchV3[j] - V3in[i]) * multiply_by 
+                diffV2.append(dsV2)
+                diffV3.append(dsV3)
+                bench_V2_list.append(benchV2[j])
+                bench_V3_list.append(benchV3[j])
+        diffV2 = np.array(diffV2)
+        diffV3 = np.array(diffV3)
+    return diffV2, diffV3, bench_V2_list, bench_V3_list
+
+
+def convert2fulldetector(detector, stars, P1P2data, bench_stars, benchmark_xLyL_P1, benchmark_xLyL_P2, Pier_corr=True):
+    """ This function simply converts from 32x32 pixel to full detector coordinates according to 
+    background method - lengths are different for the fractional case. """
+    x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = P1P2data
+    benchxL_P1, benchyL_P1 = benchmark_xLyL_P1
+    benchxL_P2, benchyL_P2 = benchmark_xLyL_P2
+    if len(stars) == len(bench_stars):   # for the fixed and None background case
+        x13, y13 = x13+benchxL_P1, y13+benchyL_P1
+        x23, y23 = x23+benchxL_P2, y23+benchyL_P2
+        x15, y15 = x15+benchxL_P1, y15+benchyL_P1
+        x25, y25 = x25+benchxL_P2, y25+benchyL_P2
+        x17, y17 = x17+benchxL_P1, y17+benchyL_P1
+        x27, y27 = x27+benchxL_P2, y27+benchyL_P2
+    else:                               # for the fractional background case
+        for i, s in enumerate(stars):
+            if s in bench_stars:
+                j = bench_stars.tolist().index(s)
+                x13[i], y13[i] = x13[i]+benchxL_P1[j], y13[i]+benchyL_P1[j]
+                x23[i], y23[i] = x23[i]+benchxL_P2[j], y23[i]+benchyL_P2[j]
+                x15[i], y15[i] = x15[i]+benchxL_P1[j], y15[i]+benchyL_P1[j]
+                x25[i], y25[i] = x25[i]+benchxL_P2[j], y25[i]+benchyL_P2[j]
+                x17[i], y17[i] = x17[i]+benchxL_P1[j], y17[i]+benchyL_P1[j]
+                x27[i], y27[i] = x27[i]+benchxL_P2[j], y27[i]+benchyL_P2[j]
+    # Include Pier's corrections
+    x_corr = 0.086
+    y_corr = 0.077
+    if detector == 491:
+        x13 = x13 - x_corr
+        x15 = x15 - x_corr
+        x17 = x17 - x_corr
+        y13 = y13 - y_corr
+        y15 = y15 - y_corr
+        y17 = y17 - y_corr
+        x23 = x23 - x_corr
+        x25 = x25 - x_corr
+        x27 = x27 - x_corr
+        y23 = y23 - y_corr
+        y25 = y25 - y_corr
+        y27 = y27 - y_corr
+    elif detector == 492:
+        x13 = x13 + x_corr
+        x15 = x15 + x_corr
+        x17 = x17 + x_corr
+        y13 = y13 + y_corr
+        y15 = y15 + y_corr
+        y17 = y17 + y_corr
+        x23 = x23 + x_corr
+        x25 = x25 + x_corr
+        x27 = x27 + x_corr
+        y23 = y23 + y_corr
+        y25 = y25 + y_corr
+        y27 = y27 + y_corr        
+    return x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27
+        
+    
 
 # Print diagnostic load message
 print("(testing_functions): testing functions script Version {} loaded!".format(__version__))
