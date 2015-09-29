@@ -5,8 +5,6 @@ import numpy as np
 import collections
 import random
 import PIL.Image as Image
-#import matplotlib.pyplot as plt
-#import matplotlib.image as mpimg
 # other code
 import coords_transform as ct
 import testing_functions as tf 
@@ -48,7 +46,7 @@ shutters = "rapid"       # string, shutter velocity: "rapid", "slow", "all"
 bkgd_method = "None"     # background to test, string: "all", "None", "fixed", "frac"  
 noise = "real"           # string, noise level: "nonoise" or "real"
 filter_input = "F140X"   # Filter, string: for now only test case is "F140X"
-show_display = True      # Show display of resulting positions: True or False
+show_display = False     # Show display of resulting positions: True or False
 save_txt_file = False    # Save text file with resulting transformations: True or False
 Pier_corr = True         # Include Pier's corrections to measured positions
 show_positions = False   # Print positions on file and screen: True or False
