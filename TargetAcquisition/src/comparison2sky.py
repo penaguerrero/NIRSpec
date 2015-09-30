@@ -302,9 +302,9 @@ for infile in input_files_list:
     T1_V2_5, T1_V3_5 = ct.coords_transf(transf_direction, detector, filter_input, avgx5, avgy5, tilt, debug)
     T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, debug)
     # Step (c) - comparison
-    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_5, T1_diffV3_5, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_7, T1_diffV3_7, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_5, T1_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_7, T1_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
     # get the minimum of the differences
     T1_min_diff, T1_counter = get_mindiff(T1_diffV2_3, T1_diffV2_5, T1_diffV2_7)
     # get the fractional value that has the smaller difference
@@ -347,9 +347,9 @@ for infile in input_files_list:
     T2_V2_7 = (T2_V2_17 + T2_V2_27)/2.0
     T2_V3_7 = (T2_V3_17 + T2_V3_27)/2.0
     # Step (c) - comparison
-    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_5, T2_diffV3_5, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_7, T2_diffV3_7, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_5, T2_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_7, T2_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
     # get the minimum of the differences
     T2_min_diff, T2_counter = get_mindiff(T2_diffV2_3, T2_diffV2_5, T2_diffV2_7)
     # get the fractional value that has the smaller difference
@@ -384,12 +384,12 @@ for infile in input_files_list:
     T3_V2_25, T3_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, debug)
     T3_V2_27, T3_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, debug)
     # Step (b) - comparison
-    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_15, T3_diffV3_15, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_25, T3_diffV3_25, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_17, T3_diffV3_17, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_27, T3_diffV3_27, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_15, T3_diffV3_15, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_25, T3_diffV3_25, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_17, T3_diffV3_17, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_27, T3_diffV3_27, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27, arcsecs=diffs_in_arcsecs)
     # get the minimum of the differences
     T3_min_diff1, T3_counter1 = get_mindiff(T3_diffV2_13, T3_diffV2_15, T3_diffV2_17)
     T3_min_diff2, T3_counter2 = get_mindiff(T3_diffV2_23, T3_diffV2_25, T3_diffV2_27)
