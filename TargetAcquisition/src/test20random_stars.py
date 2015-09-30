@@ -171,11 +171,10 @@ def second_smallest(numbers):
     return m2
 
 
-def TEST1(detector, transf_direction, stars, avg_benchV23, case, x13, x23, y13, y23, x15, y15, x25, y25, x17, y17, x27, y27):
+def TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P1P2data):
     # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)
-    x13, y13, x15, y15, x17, y17 = pos1
-    x23, y23, x25, y25, x27, y27 = pos2
     avg_benchV2, avg_benchV3 = avg_benchV23
+    x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = P1P2data
     # Step (a) - averages
     avgx3 = (x13+x23)/2.0
     avgy3 = (y13+y23)/2.0
@@ -189,9 +188,9 @@ def TEST1(detector, transf_direction, stars, avg_benchV23, case, x13, x23, y13, 
     T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, debug)
     # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)
     # Step (c) - comparison
-    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_5, T1_diffV3_5, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_7, T1_diffV3_7, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_5, T1_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_7, T1_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
     if debug:
         print ("TEST 1: ")
         print ("transformations: detector (avgx, avgy),  sky (V2, V3),  true (avgV2, avgV3)")
@@ -205,9 +204,99 @@ def TEST1(detector, transf_direction, stars, avg_benchV23, case, x13, x23, y13, 
     T1_benchVs_list = [T1bench_V2_list, T1bench_V3_list]
     return T1_transformations, T1_diffs, T1_benchVs_list
     
+def runTest1_and_append_results(data4test1, Vs, diffs, benchVs):
+    """ This function runs the test for the specified detector and sliced arrays, and appends it to the results. """
+    detector, transf_direction, case, stars, P1P2data, bench_starP1, avg_benchV23, LoLeftCornersP1, LoLeftCornersP2, Pier_corr = data4test1
+    T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7 = Vs
+    T1_diffV2_3, T1_diffV3_3, T1_diffV2_5, T1_diffV3_5, T1_diffV2_7, T1_diffV3_7 = diffs
+    T1bench_V2_list, T1bench_V3_list = benchVs
+    # convert from 32x32 pixel to full detector coordinates
+    x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = tf.convert2fulldetector(detector, stars, P1P2data, bench_starP1, LoLeftCornersP1, LoLeftCornersP2, Pier_corr=Pier_corr)
+    P1P2data = [x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27]
+    transformations, diffs, benchVs_list = TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P1P2data)
+    V2_3, V3_3, V2_5, V3_5, V2_7, V3_7 = transformations
+    diffV2_3, diffV3_3, diffV2_5, diffV3_5, diffV2_7, diffV3_7 = diffs
+    bench_V2_list, bench_V3_list = benchVs_list
+    for v23, v33, v25, v35, v27, v37 in zip(V2_3, V3_3, V2_5, V3_5, V2_7, V3_7):
+        T1_V2_3.append(v23)
+        T1_V3_3.append(v33)
+        T1_V2_5.append(v25)
+        T1_V3_5.append(v35)
+        T1_V2_7.append(v27)
+        T1_V3_7.append(v37)
+    for dv23, dv33, dv25, dv35, dv27, dv37 in zip(diffV2_3, diffV3_3, diffV2_5, diffV3_5, diffV2_7, diffV3_7):
+        T1_diffV2_3.append(dv23)
+        T1_diffV3_3.append(dv33)
+        T1_diffV2_5.append(dv25)
+        T1_diffV3_5.append(dv35)
+        T1_diffV2_7.append(dv27)
+        T1_diffV3_7.append(dv37)
+    for bv2, bv3 in zip(bench_V2_list, bench_V3_list):
+        T1bench_V2_list.append(bv2)
+        T1bench_V3_list.append(bv3)
+    Vs = [T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7]
+    diffs = [T1_diffV2_3, T1_diffV3_3, T1_diffV2_5, T1_diffV3_5, T1_diffV2_7, T1_diffV3_7]
+    benchVs = [T1bench_V2_list, T1bench_V3_list]
+    return Vs, diffs, benchVs
 
-def TEST2(detector, transf_direction, stars, avg_benchV23, case, x13, x23, y13, y23, x15, y15, x25, y25, x17, y17, x27, y27):
+def runTEST1(detectors, transf_direction, case, stars, P1P2data, bench_starP1, trueVsP1, trueVsP2, LoLeftCornersP1, LoLeftCornersP2, Pier_corr):
+    """ This function runs the test 1 for both detectors and returns the results for the 20 star sample """
+    x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = P1P2data
+    bench_V2P1, bench_V3P1 = trueVsP1
+    bench_V2P2, bench_V3P2 = trueVsP2
+    avg_benchV2 = (bench_V2P1 + bench_V2P2)/2.0
+    avg_benchV3 = (bench_V3P1 + bench_V3P2)/2.0
+    T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7 = [], [], [], [], [], [] 
+    T1_diffV2_3, T1_diffV3_3, T1_diffV2_5, T1_diffV3_5, T1_diffV2_7, T1_diffV3_7 = [], [], [], [], [], []
+    T1bench_V2_list, T1bench_V3_list = [], []
+    Vs = [T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7]
+    diffs = [T1_diffV2_3, T1_diffV3_3, T1_diffV2_5, T1_diffV3_5, T1_diffV2_7, T1_diffV3_7]
+    benchVs = [T1bench_V2_list, T1bench_V3_list]
+    # Find the index at which to change detector
+    for st in stars:
+        if st >= 100:
+            change_detector_idx = stars.tolist().index(st)
+            break
+    # slice arrays according to detector and run test
+    # detector 492
+    detector = detectors[1]   
+    d2x13, d2y13 = x13[:change_detector_idx], y13[:change_detector_idx]
+    d2x23, d2y23 = x23[:change_detector_idx], y23[:change_detector_idx]
+    d2x15, d2y15 = x15[:change_detector_idx], y15[:change_detector_idx]
+    d2x25, d2y25 = x25[:change_detector_idx], y25[:change_detector_idx]
+    d2x17, d2y17 = x17[:change_detector_idx], y17[:change_detector_idx]
+    d2x27, d2y27 = x27[:change_detector_idx], y27[:change_detector_idx]
+    P1P2data = [d2x13, d2y13, d2x23, d2y23, d2x15, d2y15, d2x25, d2y25, d2x17, d2y17, d2x27, d2y27]
+    d2bench_starP1 = bench_starP1[:change_detector_idx]
+    d2avg_benchV23 = [avg_benchV2[:change_detector_idx], avg_benchV3[:change_detector_idx]]
+    d2stars = stars[:change_detector_idx]
+    d2LoLeftCornersP1 = [LoLeftCornersP1[0][:change_detector_idx], LoLeftCornersP1[1][:change_detector_idx]]
+    d2LoLeftCornersP2 = [LoLeftCornersP2[0][:change_detector_idx], LoLeftCornersP2[1][:change_detector_idx]]
+    data4test1 = [detector, transf_direction, case, d2stars, P1P2data, d2bench_starP1, d2avg_benchV23, d2LoLeftCornersP1, d2LoLeftCornersP2, Pier_corr]
+    Vs, diffs, benchVs = runTest1_and_append_results(data4test1, Vs, diffs, benchVs)
+    # detector 491
+    detector = detectors[0]  
+    d1x13, d1y13 = x13[change_detector_idx:], y13[change_detector_idx:]
+    d1x23, d1y23 = x23[change_detector_idx:], y23[change_detector_idx:]
+    d1x15, d1y15 = x15[change_detector_idx:], y15[change_detector_idx:]
+    d1x25, d1y25 = x25[change_detector_idx:], y25[change_detector_idx:]
+    d1x17, d1y17 = x17[change_detector_idx:], y17[change_detector_idx:]
+    d1x27, d1y27 = x27[change_detector_idx:], y27[change_detector_idx:]
+    P1P2data = [d1x13, d1y13, d1x23, d1y23, d1x15, d1y15, d1x25, d1y25, d1x17, d1y17, d1x27, d1y27]
+    d1bench_starP1 = bench_starP1[change_detector_idx:]
+    d1avg_benchV23 = [avg_benchV2[change_detector_idx:], avg_benchV3[change_detector_idx:]]
+    d1stars = stars[change_detector_idx:]
+    d1LoLeftCornersP1 = [LoLeftCornersP1[0][change_detector_idx:], LoLeftCornersP1[1][change_detector_idx:]]
+    d1LoLeftCornersP2 = [LoLeftCornersP2[0][change_detector_idx:], LoLeftCornersP2[1][change_detector_idx:]]
+    data4test1 = [detector, transf_direction, case, d1stars, P1P2data, d1bench_starP1, d1avg_benchV23, d1LoLeftCornersP1, d1LoLeftCornersP2, Pier_corr]
+    Vs, diffs, benchVs = runTest1_and_append_results(data4test1, Vs, diffs, benchVs)
+    resultsTEST1 = [Vs, diffs, benchVs]
+    return resultsTEST1
+
+
+def TEST2(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P1P2data):
     # TEST 2: (a) Transform individual P1 and P2 to V2-V3, (b) avg V2-V3 space positions, (c) compare to avg reference positions
+    x13, y13, x23, y23, x15, y15, x25, y25, x17, y17, x27, y27 = P1P2data
     avg_benchV2, avg_benchV3 = avg_benchV23
     # Step (a) - transformations
     T2_V2_13, T2_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, debug)
@@ -224,9 +313,9 @@ def TEST2(detector, transf_direction, stars, avg_benchV23, case, x13, x23, y13, 
     T2_V2_7 = (T2_V2_17 + T2_V2_27)/2.0
     T2_V3_7 = (T2_V3_17 + T2_V3_27)/2.0
     # Step (c) - comparison
-    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_5, T2_diffV3_5, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_7, T2_diffV3_7, _, _ = tf.compare2ref(case, path4starfiles, paths_list, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_5, T2_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_7, T2_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
     if debug:
         print ("TEST 2: ")
         print ("transformations: detector P1 and P2 (x, y),  sky (avgV2, avgV3),  true (avgV2, avgV3)")
@@ -586,10 +675,12 @@ centroid_figs492 = glob(path4starfiles+"detector_492_centroid_figs_redo/*")
 shutters_list = ["rapid", "slow"]
 bkgd_method_list = ["None", "fixed", "frac"]
 noise_list = ["nonoise", "real"]
+
 # for a single case
 if shutters != "all" and bkgd_method != "all":
     case2study = [scene, shutters, noise, bkgd_method]
-    print ("Analyzing case: ", "Scene"+str(scene)+"_"+shutters+"_"+noise+"_"+bkgd_method)
+    case = "Scene"+str(scene)+"_"+shutters+"_"+noise+"_"+bkgd_method
+    print ("Analyzing case: ", case)
     sample_pos1, sample_pos2 = get_sample_data4case(star_idx_list, case2study, measured_centroids491, measured_centroids492)
     stars1, bg1, factor1, x13, y13, x15, y15, x17, y17 = sample_pos1
     stars2, bg2, factor2, x23, y23, x25, y25, x27, y27 = sample_pos2
@@ -612,33 +703,28 @@ if shutters != "all" and bkgd_method != "all":
                                                                     bench_xLP1[i], bench_yLP1[i],
                                                                     factor1[i])
         print (line1)
-        
+            
     # compact results for functions
-    pos1 = [x13, y13, x15, y15, x17, y17]
-    pos2 = [x23, y23, x25, y25, x27, y27]
-    
+    P1P2data = [x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27]
+
     # show the displays with positions for the sample of stars
     if show_display:
-        show_star_displays(star_idx_list, case2study, centroid_figs491, centroid_figs492)
+        show_star_displays(star_idx_list, case, centroid_figs491, centroid_figs492)
     
     # Now run the tests
     transf_direction = "forward"
     
     if test2perform == "T1" or "all":
         # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)
+        resultsTEST1 = runTEST1(detectors, transf_direction, case, stars1, P1P2data, bench_starP1, trueVsP1, trueVsP2, LoLeftCornersP1, LoLeftCornersP2, Pier_corr)
+        T1_transformations, T1_diffs, T1_benchVs_list = resultsTEST1
+        T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7 = T1_transformations
+        T1_diffV2_3, T1_diffV3_3, T1_diffV2_5, T1_diffV3_5, T1_diffV2_7, T1_diffV3_7 = T1_diffs
+        T1bench_V2_list, T1bench_V3_list = T1_benchVs_list
+        print(len(resultsTEST1))
+    exit()
     
-def runTEST1(case, transf_direction, pos1, pos2, trueVsP1, trueVsP2, LoLeftCornersP1, LoLeftCornersP2):
-    bench_V2P1, bench_V3P1 = trueVsP1
-    bench_V2P2, bench_V3P2 = trueVsP2
-    bench_xLP1, bench_yLP1 = LoLeftCornersP1
-    bench_xLP2, bench_yLP2 = LoLeftCornersP2
-    avg_benchV2 = (bench_V2P1 + bench_V2P2)/2.0
-    avg_benchV3 = (bench_V3P1 + bench_V3P2)/2.0
-    avg_benchV23 = [avg_benchV2, avg_benchV3]
-    resTEST1 = TEST1(detector, transf_direction, avg_benchV23, case, pos1, pos2)
-    resultsTEST1.append(resTEST1)
-
-
+"""
     if test2perform == "T2" or "all":
         # TEST 2: (a) Transform individual P1 and P2 to V2-V3, (b) avg V2-V3 space positions, (c) compare to avg reference positions
         resTEST2 = TEST2(detector, transf_direction, avg_benchV23, case, x13, x23, y13, y23, x15, y15, y25, y25, x17, y17, x27, y27)
@@ -659,7 +745,6 @@ def runTEST1(case, transf_direction, pos1, pos2, trueVsP1, trueVsP2, LoLeftCorne
 #elif shutters == "all" and bkgd_method != "all":
 
 
-"""
 bench_starP1_list, bench_xP1_list, bench_yP1_list, bench_V2P1_list = [], [], [], []
 bench_V3P1_list, bench_xLP1_list, bench_yLP1_list = [], [], []
 bench_starP2_list, bench_xP2_list, bench_yP2_list, bench_V2P2_list = [], [], [], []
