@@ -636,12 +636,9 @@ def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=
     else:                               # for the fractional background case
         bench_V2_list, bench_V3_list = [], []
         diffV2, diffV3 = [], []
-        print ("len(stars), len(benchV2), len(V2in): ", len(stars), len(benchV2), len(V2in))
-        print (len(bench_stars), bench_stars)
         for i, s in enumerate(stars):
             if s in bench_stars:
                 j = bench_stars.tolist().index(s)
-                print(i,s,j)
                 dsV2 = (benchV2[j] - V2in[i]) * multiply_by
                 dsV3 = (benchV3[j] - V3in[i]) * multiply_by 
                 diffV2.append(dsV2)
