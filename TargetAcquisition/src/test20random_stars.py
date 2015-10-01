@@ -36,7 +36,7 @@ random_sample = True     # choose a random sample of 20 stars from either detect
 # if wanting a specific sample of stars, input integer numbers into following list
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
 stars_sample = []
-test2perform = "T1"     # string, type "all" for 3 tests or "T1", "T2", "T3" for test 1, 2, and 3, respectively
+test2perform = "T3"     # string, type "all" for 3 tests or "T1", "T2", "T3" for test 1, 2, and 3, respectively
 Nsigma = 3               # N-sigma rejection of bad stars, integer or float
 max_iterations = 10      # Max number of iterations for N-sigma function, integer
 scene = 1                # integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
@@ -467,6 +467,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     T_V2_5, T_V3_5 = np.array(T_V2_5), np.array(T_V3_5)
     T_V2_7, T_V3_7 = np.array(T_V2_7), np.array(T_V3_7)
     T_diffV2_3, T_diffV3_3, T_diffV2_5, T_diffV3_5, T_diffV2_7, T_diffV3_7 = T_diffs
+    T_diffV2_3, T_diffV3_3 = np.array(T_diffV2_3), np.array(T_diffV3_3)
+    T_diffV2_5, T_diffV3_5 = np.array(T_diffV2_5), np.array(T_diffV3_5)
+    T_diffV2_7, T_diffV3_7 = np.array(T_diffV2_7), np.array(T_diffV3_7)
     Tbench_V2_list, Tbench_V3_list = T_benchVs_list
     # calculate standard deviations and means
     Tstdev_V2_3, Tmean_V2_3 = tf.find_std(T_diffV2_3)
@@ -862,20 +865,37 @@ if shutters != "all" and bkgd_method != "all":
         T3_diffV3_15, T3_diffV3_25 = T_diffV3_5
         T3_diffV2_17, T3_diffV2_27 = T_diffV2_7
         T3_diffV3_17, T3_diffV3_27 = T_diffV3_7
-        Tbench_V2_list, Tbench_V3_list = T3_benchVs_list
-        bench_V2_listP1, bench_V2_listP2 = Tbench_V2_list
-        bench_V3_listP1, bench_V3_listP2 = Tbench_V3_list
-        # Get the statistics
-        results_stats = get_stats(case, T3_transformations, T3_diffs, T3_benchVs_list, Nsigma, max_iterations)
-        T3_st_devsAndMeans, T3_diff_counter, T3_bench_values, T3_sigmas_deltas, T3_sigma_reject = results_stats
+        T3bench_V2_list, T3bench_V3_list = T3_benchVs_list
+        T3bench_V2_listP1, T3bench_V2_listP2 = T3bench_V2_list
+        T3bench_V3_listP1, T3bench_V3_listP2 = T3bench_V3_list
+        # Get the statistics for position 1 
+        T3_transformationsP1 = [T3_V2_13, T3_V3_13, T3_V2_15, T3_V3_15, T3_V2_17, T3_V3_17]
+        T3_diffsP1 = [T3_diffV2_13, T3_diffV3_13, T3_diffV2_15, T3_diffV3_15, T3_diffV2_17, T3_diffV3_17]
+        T3_benchVs_listP1 = [T3bench_V2_listP1, T3bench_V3_listP1] 
+        results_stats = get_stats(case, T3_transformationsP1, T3_diffsP1, T3_benchVs_listP1, Nsigma, max_iterations)
+        T3_st_devsAndMeansP1, T3_diff_counterP1, T3_bench_valuesP1, T3_sigmas_deltasP1, T3_sigma_rejectP1 = results_stats
         if "frac" in case:
-            T3_st_devsAndMeans, T3_diff_counter, T3_bench_values, T3_sigmas_deltas, T3_sigma_reject, T3_best_frac_values = results_stats
-            T3list_best_frbg_value_V2_3, T3list_best_frbg_value_V3_3, T3counterV2_3, T3counterV3_3, T3list_best_frbg_value_V2_5, T3list_best_frbg_value_V3_5, T3counterV2_5, T3counterV3_5, T3list_best_frbg_value_V2_7, T3list_best_frbg_value_V3_7, T3counterV2_7, T3counterV3_7 = T3_best_frac_values
-        T3stdev_V2_3, T3mean_V2_3, T3stdev_V2_5, T3mean_V2_5, T3stdev_V2_7, T3mean_V2_7, T3stdev_V3_3, T3mean_V3_3, T3stdev_V3_5, T3mean_V3_5, T3stdev_V3_7, T3mean_V3_7 = T3_st_devsAndMeans
-        T3_min_diff, T3_counter = T3_diff_counter
-        T3bench_V2, T3bench_V3 = T3_bench_values
-        T3LSdeltas_3, T3LSsigmas_3, T3LSlines2print_3, T3LSdeltas_5, T3LSsigmas_5, T3LSlines2print_5, T3LSdeltas_7, T3LSsigmas_7, T3LSlines2print_7 = T3_sigmas_deltas
-        T3sigmaV2_3, T3meanV2_3, T3sigmaV3_3, T3meanV3_3, T3newV2_3, T3newV3_3, T3niter_3, T3lines2print_3, T3sigmaV2_5, T3meanV2_5, T3sigmaV3_5, T3meanV3_5, T3newV2_5, T3newV3_5, T3niter_5, T3lines2print_5, T3sigmaV2_7, T3meanV2_7, T3sigmaV3_7, T3meanV3_7, T3newV2_7, T3newV3_7, T3niter_7, T3lines2print_7 = T3_sigma_reject
+            T3_st_devsAndMeansP1, T3_diff_counterP1, T3_bench_valuesP1, T3_sigmas_deltasP1, T3_sigma_rejectP1, T3_best_frac_valuesP1 = results_stats
+            T3list_best_frbg_value_V2_3P1, T3list_best_frbg_value_V3_3P1, T3counterV2_3P1, T3counterV3_3P1, T3list_best_frbg_value_V2_5P1, T3list_best_frbg_value_V3_5P1, T3counterV2_5P1, T3counterV3_5P1, T3list_best_frbg_value_V2_7P1, T3list_best_frbg_value_V3_7P1, T3counterV2_7P1, T3counterV3_7P1 = T3_best_frac_valuesP1
+        T3stdev_V2_3P1, T3mean_V2_3P1, T3stdev_V2_5P1, T3mean_V2_5P1, T3stdev_V2_7P1, T3mean_V2_7P1, T3stdev_V3_3P1, T3mean_V3_3P1, T3stdev_V3_5P1, T3mean_V3_5P1, T3stdev_V3_7P1, T3mean_V3_7P1 = T3_st_devsAndMeansP1
+        T3_min_diffP1, T3_counterP1 = T3_diff_counterP1
+        T3bench_V2P1, T3bench_V3P1 = T3_bench_valuesP1
+        T3LSdeltas_3P1, T3LSsigmas_3P1, T3LSlines2print_3P1, T3LSdeltas_5P1, T3LSsigmas_5P1, T3LSlines2print_5P1, T3LSdeltas_7P1, T3LSsigmas_7P1, T3LSlines2print_7P1 = T3_sigmas_deltasP1
+        T3sigmaV2_3P1, T3meanV2_3P1, T3sigmaV3_3P1, T3meanV3_3P1, T3newV2_3P1, T3newV3_3P1, T3niter_3P1, T3lines2print_3P1, T3sigmaV2_5P1, T3meanV2_5P1, T3sigmaV3_5P1, T3meanV3_5P1, T3newV2_5P1, T3newV3_5P1, T3niter_5P1, T3lines2print_5P1, T3sigmaV2_7P1, T3meanV2_7P1, T3sigmaV3_7P1, T3meanV3_7P1, T3newV2_7P1, T3newV3_7P1, T3niter_7P1, T3lines2print_7P1 = T3_sigma_rejectP1
+        # Get the statistics for position 2 
+        T3_transformationsP2 = [T3_V2_23, T3_V3_23, T3_V2_25, T3_V3_25, T3_V2_27, T3_V3_27]
+        T3_diffsP2 = [T3_diffV2_23, T3_diffV3_23, T3_diffV2_25, T3_diffV3_25, T3_diffV2_27, T3_diffV3_27]
+        T3_benchVs_listP2 = [T3bench_V2_listP2, T3bench_V3_listP2] 
+        results_stats = get_stats(case, T3_transformationsP2, T3_diffsP2, T3_benchVs_listP2, Nsigma, max_iterations)
+        T3_st_devsAndMeansP2, T3_diff_counterP2, T3_bench_valuesP2, T3_sigmas_deltasP2, T3_sigma_rejectP2 = results_stats
+        if "frac" in case:
+            T3_st_devsAndMeansP2, T3_diff_counterP2, T3_bench_valuesP2, T3_sigmas_deltasP2, T3_sigma_rejectP2, T3_best_frac_valuesP2 = results_stats
+            T3list_best_frbg_value_V2_3P2, T3list_best_frbg_value_V3_3P2, T3counterV2_3P2, T3counterV3_3P2, T3list_best_frbg_value_V2_5P2, T3list_best_frbg_value_V3_5P2, T3counterV2_5P2, T3counterV3_5P2, T3list_best_frbg_value_V2_7P2, T3list_best_frbg_value_V3_7P2, T3counterV2_7P2, T3counterV3_7P2 = T3_best_frac_valuesP2
+        T3stdev_V2_3P2, T3mean_V2_3P2, T3stdev_V2_5P2, T3mean_V2_5P2, T3stdev_V2_7P2, T3mean_V2_7P2, T3stdev_V3_3P2, T3mean_V3_3P2, T3stdev_V3_5P2, T3mean_V3_5P2, T3stdev_V3_7P2, T3mean_V3_7P2 = T3_st_devsAndMeansP2
+        T3_min_diffP2, T3_counterP2 = T3_diff_counterP2
+        T3bench_V2P2, T3bench_V3P2 = T3_bench_valuesP2
+        T3LSdeltas_3P2, T3LSsigmas_3P2, T3LSlines2print_3P2, T3LSdeltas_5P2, T3LSsigmas_5P2, T3LSlines2print_5P2, T3LSdeltas_7P2, T3LSsigmas_7P2, T3LSlines2print_7P2 = T3_sigmas_deltasP2
+        T3sigmaV2_3P2, T3meanV2_3P2, T3sigmaV3_3P2, T3meanV3_3P2, T3newV2_3P2, T3newV3_3P2, T3niter_3P1, T3lines2print_3P2, T3sigmaV2_5P2, T3meanV2_5P2, T3sigmaV3_5P2, T3meanV3_5P2, T3newV2_5P2, T3newV3_5P2, T3niter_5P2, T3lines2print_5P2, T3sigmaV2_7P2, T3meanV2_7P2, T3sigmaV3_7P2, T3meanV3_7P2, T3newV2_7P2, T3newV3_7P2, T3niter_7P2, T3lines2print_7P2 = T3_sigma_rejectP2
 
     exit()
     
