@@ -33,10 +33,12 @@ Outputs:
 
 # general settings
 random_sample = True     # choose a random sample of 20 stars from either detector: True or False
+stars_in_sample = 20     # number of stars in sample
 # if wanting a specific sample of stars, input integer numbers into following list
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
-stars_sample = []
-test2perform = "T3"     # string, type "all" for 3 tests or "T1", "T2", "T3" for test 1, 2, and 3, respectively
+#stars_sample = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]   # test sample
+stars_sample = [1, 15, 60, 65, 67, 72, 81, 124, 132, 133, 139, 156, 166, 167, 182, 183, 187, 189, 198, 200]
+test2perform = "T3"      # string, type "T1", "T2", "T3" for test 1, 2, and 3, respectively
 Nsigma = 3               # N-sigma rejection of bad stars, integer or float
 max_iterations = 10      # Max number of iterations for N-sigma function, integer
 scene = 1                # integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
@@ -44,7 +46,7 @@ scene = 1                # integer or string, scene=1 is constant Mag 23, scene=
 # to study both rapid and slow shutters
 shutters = "rapid"       # string, shutter velocity: "rapid", "slow", "all"
 bkgd_method = "None"     # background to test, string: "all", "None", "fixed", "frac"  
-noise = "real"           # string, noise level: "nonoise" or "real"
+noise = "nonoise"        # string, noise level: "nonoise" or "real"
 filter_input = "F140X"   # Filter, string: for now only test case is "F140X"
 show_display = False     # Show display of resulting positions: True or False
 save_txt_file = False    # Save text file with resulting transformations: True or False
@@ -194,9 +196,9 @@ def TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     if debug:
         print ("TEST 1: ")
         print ("transformations: detector (avgx, avgy),  sky (V2, V3),  true (avgV2, avgV3)")
-        print ("            ChBx3: ", avgx3, avgy3, T1_V2_3, T1_V3_3, avg_benchV2, avg_benchV3)
-        print ("            ChBx5: ", avgx5, avgy5, T1_V2_5, T1_V3_5, avg_benchV2, avg_benchV3)
-        print ("            ChBx7: ", avgx7, avgy7, T1_V2_7, T1_V3_7, avg_benchV2, avg_benchV3)
+        print ("            ChBx3: ", avgx3[0], avgy3[0], T1_V2_3[0], T1_V3_3[0], avg_benchV2[0], avg_benchV3[0])
+        print ("            ChBx5: ", avgx5[0], avgy5[0], T1_V2_5[0], T1_V3_5[0], avg_benchV2[0], avg_benchV3[0])
+        print ("            ChBx7: ", avgx7[0], avgy7[0], T1_V2_7[0], T1_V3_7[0], avg_benchV2[0], avg_benchV3[0])
         raw_input(" * press enter to continue... \n")
     # Organize results
     T1_transformations = [T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7]
@@ -229,9 +231,9 @@ def TEST2(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     if debug:
         print ("TEST 2: ")
         print ("transformations: detector P1 and P2 (x, y),  sky (avgV2, avgV3),  true (avgV2, avgV3)")
-        print ("            ChBx3: ", x13, y13, x23, y23, T2_V2_3, T2_V3_3, avg_benchV2, avg_benchV3)
-        print ("            ChBx5: ", x15, y15, x25, y25, T2_V2_5, T2_V3_5, avg_benchV2, avg_benchV3)
-        print ("            ChBx7: ", x17, y17, x27, y27, T2_V2_7, T2_V3_7, avg_benchV2, avg_benchV3)
+        print ("            ChBx3: ", x13[0], y13[0], x23[0], y23[0], T2_V2_3[0], T2_V3_3[0], avg_benchV2[0], avg_benchV3[0])
+        print ("            ChBx5: ", x15[0], y15[0], x25[0], y25[0], T2_V2_5[0], T2_V3_5[0], avg_benchV2[0], avg_benchV3[0])
+        print ("            ChBx7: ", x17[0], y17[0], x27[0], y27[0], T2_V2_7[0], T2_V3_7[0], avg_benchV2[0], avg_benchV3[0])
         raw_input(" * press enter to continue... \n")
     # Organize results
     T2_transformations = [T2_V2_3, T2_V3_3, T2_V2_5, T2_V3_5, T2_V2_7, T2_V3_7]
@@ -261,9 +263,9 @@ def TEST3(detector, transf_direction, stars, case, bench_starP1, bench_Vs, P1P2d
     if debug:
         print ("TEST 3: ")
         print ("transformations: detector P1 and P2 (x, y),  sky P1 and P2 (V2, V3),  true P1 and P2 (V2, V3)")
-        print ("            ChBx3: ", x13, y13, x23, y23, T3_V2_13, T3_V3_13, T3_V2_23, T3_V3_23, bench_V2P1, bench_V3P1, bench_V2P2, bench_V3P2)
-        print ("            ChBx5: ", x15, y15, x25, y25, T3_V2_13, T3_V3_13, T3_V2_23, T3_V3_23, bench_V2P1, bench_V3P1, bench_V2P2, bench_V3P2)
-        print ("            ChBx7: ", x17, y17, x27, y27, T3_V2_13, T3_V3_13, T3_V2_23, T3_V3_23, bench_V2P1, bench_V3P1, bench_V2P2, bench_V3P2)
+        print ("            ChBx3: ", x13[0], y13[0], x23[0], y23[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print ("            ChBx5: ", x15[0], y15[0], x25[0], y25[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print ("            ChBx7: ", x17[0], y17[0], x27[0], y27[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
         raw_input(" * press enter to continue... \n")
     # Organize results
     T3_transformationsP1 = [T3_V2_13, T3_V3_13, T3_V2_15, T3_V3_15, T3_V2_17, T3_V3_17]
@@ -382,11 +384,11 @@ def runTest_and_append_results(test2run, data4test1, Vs, diffs, benchVs):
         for bv2, bv3 in zip(bench_V2_listP2, bench_V3_listP2):
             Tbench_V2_listP2.append(bv2)
             Tbench_V3_listP2.append(bv3)
-        Tbench_V2_list, Tbench_V3_list = [bench_V2_listP1, bench_V2_listP2], [bench_V3_listP1, bench_V3_listP2]
+        Tbench_V2_list, Tbench_V3_list = [Tbench_V2_listP1, Tbench_V3_listP1], [Tbench_V2_listP2, Tbench_V3_listP2]
     Vs = [T_V2_3, T_V3_3, T_V2_5, T_V3_5, T_V2_7, T_V3_7]
     diffs = [T_diffV2_3, T_diffV3_3, T_diffV2_5, T_diffV3_5, T_diffV2_7, T_diffV3_7]
     benchVs = [Tbench_V2_list, Tbench_V3_list]
-    return Vs, diffs, benchVs
+    return P1P2data, Vs, diffs, benchVs
 
 def runTEST(test2run, detectors, transf_direction, case, stars, P1P2data, bench_starP1, trueVsP1, trueVsP2, LoLeftCornersP1, LoLeftCornersP2, Pier_corr):
     """ This function runs the test for both detectors and returns the results for the 20 star sample """
@@ -414,6 +416,7 @@ def runTEST(test2run, detectors, transf_direction, case, stars, P1P2data, bench_
     diffs = [diffV2_3, diffV3_3, diffV2_5, diffV3_5, diffV2_7, diffV3_7]
     benchVs = [bench_V2_list, bench_V3_list]
     # Find the index at which to change detector
+    change_detector_idx = len(stars)   # just in case all stars are from the same detector
     for st in stars:
         if st >= 100:
             change_detector_idx = stars.tolist().index(st)
@@ -429,7 +432,6 @@ def runTEST(test2run, detectors, transf_direction, case, stars, P1P2data, bench_
     d2x27, d2y27 = x27[:change_detector_idx], y27[:change_detector_idx]
     P1P2data = [d2x13, d2y13, d2x23, d2y23, d2x15, d2y15, d2x25, d2y25, d2x17, d2y17, d2x27, d2y27]
     d2bench_starP1 = bench_starP1[:change_detector_idx]
-    #d2avg_benchV23 = [avg_benchV2[:change_detector_idx], avg_benchV3[:change_detector_idx]]
     d2bench_V2P1, d2bench_V3P1  = bench_V2P1[:change_detector_idx], bench_V3P1[:change_detector_idx]
     d2bench_V2P2, d2bench_V3P2  = bench_V2P2[:change_detector_idx], bench_V3P2[:change_detector_idx]
     d2benchV23 = [d2bench_V2P1, d2bench_V3P1, d2bench_V2P2, d2bench_V3P2]
@@ -437,31 +439,34 @@ def runTEST(test2run, detectors, transf_direction, case, stars, P1P2data, bench_
     d2LoLeftCornersP1 = [LoLeftCornersP1[0][:change_detector_idx], LoLeftCornersP1[1][:change_detector_idx]]
     d2LoLeftCornersP2 = [LoLeftCornersP2[0][:change_detector_idx], LoLeftCornersP2[1][:change_detector_idx]]
     data4test1 = [detector, transf_direction, case, d2stars, P1P2data, d2bench_starP1, d2benchV23, d2LoLeftCornersP1, d2LoLeftCornersP2, Pier_corr]
-    Vs, diffs, benchVs = runTest_and_append_results(test2run, data4test1, Vs, diffs, benchVs)
+    P1P2data, Vs, diffs, benchVs = runTest_and_append_results(test2run, data4test1, Vs, diffs, benchVs)
     # detector 491
     detector = detectors[0]  
-    d1x13, d1y13 = x13[change_detector_idx:], y13[change_detector_idx:]
-    d1x23, d1y23 = x23[change_detector_idx:], y23[change_detector_idx:]
-    d1x15, d1y15 = x15[change_detector_idx:], y15[change_detector_idx:]
-    d1x25, d1y25 = x25[change_detector_idx:], y25[change_detector_idx:]
-    d1x17, d1y17 = x17[change_detector_idx:], y17[change_detector_idx:]
-    d1x27, d1y27 = x27[change_detector_idx:], y27[change_detector_idx:]
-    P1P2data = [d1x13, d1y13, d1x23, d1y23, d1x15, d1y15, d1x25, d1y25, d1x17, d1y17, d1x27, d1y27]
-    d1bench_starP1 = bench_starP1[change_detector_idx:]
-    #d1avg_benchV23 = [avg_benchV2[change_detector_idx:], avg_benchV3[change_detector_idx:]]
-    d1bench_V2P1, d1bench_V3P1  = bench_V2P1[change_detector_idx:], bench_V3P1[change_detector_idx:]
-    d1bench_V2P2, d1bench_V3P2  = bench_V2P2[change_detector_idx:], bench_V3P2[change_detector_idx:]
-    d1benchV23 = [d1bench_V2P1, d1bench_V3P1, d1bench_V2P2, d1bench_V3P2]
-    d1stars = stars[change_detector_idx:]
-    d1LoLeftCornersP1 = [LoLeftCornersP1[0][change_detector_idx:], LoLeftCornersP1[1][change_detector_idx:]]
-    d1LoLeftCornersP2 = [LoLeftCornersP2[0][change_detector_idx:], LoLeftCornersP2[1][change_detector_idx:]]
-    data4test1 = [detector, transf_direction, case, d1stars, P1P2data, d1bench_starP1, d1benchV23, d1LoLeftCornersP1, d1LoLeftCornersP2, Pier_corr]
-    Vs, diffs, benchVs = runTest_and_append_results(test2run, data4test1, Vs, diffs, benchVs)
-    resultsTEST = [Vs, diffs, benchVs]
+    if change_detector_idx != len(stars):   # in case all stars are from the same detector skip this part
+        d1x13, d1y13 = x13[change_detector_idx:], y13[change_detector_idx:]
+        d1x23, d1y23 = x23[change_detector_idx:], y23[change_detector_idx:]
+        d1x15, d1y15 = x15[change_detector_idx:], y15[change_detector_idx:]
+        d1x25, d1y25 = x25[change_detector_idx:], y25[change_detector_idx:]
+        d1x17, d1y17 = x17[change_detector_idx:], y17[change_detector_idx:]
+        d1x27, d1y27 = x27[change_detector_idx:], y27[change_detector_idx:]
+        P1P2data = [d1x13, d1y13, d1x23, d1y23, d1x15, d1y15, d1x25, d1y25, d1x17, d1y17, d1x27, d1y27]
+        d1bench_starP1 = bench_starP1[change_detector_idx:]
+        d1bench_V2P1, d1bench_V3P1  = bench_V2P1[change_detector_idx:], bench_V3P1[change_detector_idx:]
+        d1bench_V2P2, d1bench_V3P2  = bench_V2P2[change_detector_idx:], bench_V3P2[change_detector_idx:]
+        d1benchV23 = [d1bench_V2P1, d1bench_V3P1, d1bench_V2P2, d1bench_V3P2]
+        d1stars = stars[change_detector_idx:]
+        d1LoLeftCornersP1 = [LoLeftCornersP1[0][change_detector_idx:], LoLeftCornersP1[1][change_detector_idx:]]
+        d1LoLeftCornersP2 = [LoLeftCornersP2[0][change_detector_idx:], LoLeftCornersP2[1][change_detector_idx:]]
+        data4test1 = [detector, transf_direction, case, d1stars, P1P2data, d1bench_starP1, d1benchV23, d1LoLeftCornersP1, d1LoLeftCornersP2, Pier_corr]
+        P1P2data, Vs, diffs, benchVs = runTest_and_append_results(test2run, data4test1, Vs, diffs, benchVs)
+    resultsTEST = [P1P2data, Vs, diffs, benchVs]
     return resultsTEST
 
 
 def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iterations):
+    """ This function obtains the standard deviations through regular statistics as well as through
+    a sigma clipping algorithm and an iterative least square algorithm. It also obtains the minimum
+    differences from checkbox sizes 3, 5, and 7, and returns the counter for each."""
     T_V2_3, T_V3_3, T_V2_5, T_V3_5, T_V2_7, T_V3_7 = T_transformations
     T_V2_3, T_V3_3 = np.array(T_V2_3), np.array(T_V3_3)
     T_V2_5, T_V3_5 = np.array(T_V2_5), np.array(T_V3_5)
@@ -515,32 +520,32 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
 
 
 def dat4case(case, measured_centroids491, measured_centroids492):
+    """ This function reads the data for all 200 stars and returns arrays of 200 elements so that the 
+    sample stars data can be sliced from them. """
     scene, shutters, noise, bkgd_method = case
-    scene = "scene"+str(scene)
+    scene = "Scene"+str(scene)
     # Create the 200 element arrays
     stars1, stars2 = np.array([]), np.array([])
-    bg1, x13, y13, x15, y15, x17, y17, factor1 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
-    bg2, x23, y23, x25, y25, x27, y27, factor2 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    bg1, x13, y13, x15, y15, x17, y17 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    bg2, x23, y23, x25, y25, x27, y27 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    # Read the file with both positions
     for mc1, mc2 in zip(measured_centroids491, measured_centroids492):
-        if scene in mc1 and shutters in mc1 and noise in mc1 and bkgd_method in mc1:   # detector 491
-            # Position 1
-            d1stars1, d1bg1, d1x13, d1y13, d1x15, d1y15, d1x17, d1y17, d1factor1 = np.loadtxt(mc1, skiprows=3, usecols=(0,1,2,3,4,5,6,7,12), unpack=True)
-            if scene in mc1 and shutters in mc1 and noise in mc1 and bkgd_method in mc1 and "shifted" in mc1:    # Position 2 (or shifted position)
-                # Position 2
-                d1stars2, d1bg2, d1x23, d1y23, d1x25, d1y25, d1x27, d1y27, d1factor2 = np.loadtxt(mc1, skiprows=3, usecols=(0,1,2,3,4,5,6,7,12), unpack=True)
-        if scene in mc2 and shutters in mc2 and noise in mc2 and bkgd_method in mc2:   # detector 492
-            # Position 1
-            d2stars1, d2bg1, d2x13, d2y13, d2x15, d2y15, d2x17, d2y17, d2factor1 = np.loadtxt(mc2, skiprows=3, usecols=(0,1,2,3,4,5,6,7,12), unpack=True)
-            if scene in mc2 and shutters in mc2 and noise in mc2 and bkgd_method in mc2 and "shifted" in mc2:   # detector 492
-                # Position 2
-                d2stars2, d2bg2, d2x23, d2y23, d2x25, d2y25, d2x27, d2y27, d2factor2 = np.loadtxt(mc2, skiprows=3, usecols=(0,1,2,3,4,5,6,7,12), unpack=True)
+        if scene in mc1 and shutters in mc1 and noise in mc1 and bkgd_method in mc1:
+            # detector 491
+            #print (mc1)
+            d491data = np.loadtxt(mc1, skiprows=2, usecols=(0,1,2,3,4,5,6,7,8,9,10,11,12,13), unpack=True)
+            d1stars, d1bg, d1x13, d1y13, d1x15, d1y15, d1x17, d1y17, d1x23, d1y23, d1x25, d1y25, d1x27, d1y27 = d491data
+        # detector 492
+        if scene in mc2 and shutters in mc2 and noise in mc2 and bkgd_method in mc2:
+            #print (mc2)
+            d492data = np.loadtxt(mc2, skiprows=2, usecols=(0,1,2,3,4,5,6,7,8,9,10,11,12,13), unpack=True)
+            d2stars, d2bg, d2x13, d2y13, d2x15, d2y15, d2x17, d2y17, d2x23, d2y23, d2x25, d2y25, d2x27, d2y27 = d492data
+    
     # Position 1
-    stars1 = np.append(stars1, d2stars1)  # append fist stars of detector 492, then 491
-    stars1 = np.append(stars1, d1stars1)
-    bg1 = np.append(bg1, d2bg1)
-    bg1 = np.append(bg1, d1bg1)
-    factor1 = np.append(factor1, d2factor1)
-    factor1 = np.append(factor1, d1factor1)
+    stars1 = np.append(stars1, d2stars)  # append fist stars of detector 492, then 491
+    stars1 = np.append(stars1, d1stars)
+    bg1 = np.append(bg1, d2bg)
+    bg1 = np.append(bg1, d1bg)
     x13 = np.append(x13, d2x13)
     x13 = np.append(x13, d1x13)
     y13 = np.append(y13, d2y13)
@@ -554,12 +559,10 @@ def dat4case(case, measured_centroids491, measured_centroids492):
     y17 = np.append(y17, d2y17)
     y17 = np.append(y17, d1y17)
     # Position 2
-    stars2 = np.append(stars2, d2stars2)  # append fist stars of detector 492, then 491
-    stars2 = np.append(stars2, d1stars2)
-    bg2 = np.append(bg2, d2bg2)
-    bg2 = np.append(bg2, d1bg2)
-    factor2 = np.append(factor2, d2factor2)
-    factor2 = np.append(factor2, d1factor2)
+    stars2 = np.append(stars2, d2stars)  # append fist stars of detector 492, then 491
+    stars2 = np.append(stars2, d1stars)
+    bg2 = np.append(bg2, d2bg)
+    bg2 = np.append(bg2, d1bg)
     x23 = np.append(x23, d2x23)
     x23 = np.append(x23, d1x23)
     y23 = np.append(y23, d2y23)
@@ -573,25 +576,24 @@ def dat4case(case, measured_centroids491, measured_centroids492):
     y27 = np.append(y27, d2y27)
     y27 = np.append(y27, d1y27)
     # organize return arrays
-    measured_positions1 = [stars1, bg1, factor1, x13, y13, x15, y15, x17, y17]
-    measured_positions2 = [stars2, bg2, factor2, x23, y23, x25, y25, x27, y27]
+    measured_positions1 = [stars1, bg1, x13, y13, x15, y15, x17, y17]
+    measured_positions2 = [stars2, bg2, x23, y23, x25, y25, x27, y27]
     return measured_positions1, measured_positions2
 
-
-def get_sample_data4case(star_idx_list, case2study, measured_centroids491, measured_centroids492):    
+def get_sample_data4case(star_idx_list, case2study, measured_centroids491, measured_centroids492):   
+    """ This function selects the sample stars data from the 200 star arrays. """ 
     # get the 200 element arrays for measured centroid positions
     measured_positions1, measured_positions2 = dat4case(case2study, measured_centroids491, measured_centroids492)
-    allstars1, allbg1, allfactor1, allx13, ally13, allx15, ally15, allx17, ally17 = measured_positions1
-    allstars2, allbg2, allfactor2, allx23, ally23, allx25, ally25, allx27, ally27 = measured_positions2
+    allstars1, allbg1, allx13, ally13, allx15, ally15, allx17, ally17 = measured_positions1
+    allstars2, allbg2, allx23, ally23, allx25, ally25, allx27, ally27 = measured_positions2
     # get the data for the sample of stars
     stars1, stars2 = np.array([]), np.array([])
-    bg1, x13, y13, x15, y15, x17, y17, factor1 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
-    bg2, x23, y23, x25, y25, x27, y27, factor2 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    bg1, x13, y13, x15, y15, x17, y17 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    bg2, x23, y23, x25, y25, x27, y27 = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for i in star_idx_list:
         # Positions 1 and 2
         stars1 = np.append(stars1, allstars1[i])
         bg1 = np.append(bg1, allbg1[i])
-        factor1 = np.append(factor1, allfactor1[i])
         x13 = np.append(x13, allx13[i])
         y13 = np.append(y13, ally13[i])
         x15 = np.append(x15, allx15[i])
@@ -600,7 +602,6 @@ def get_sample_data4case(star_idx_list, case2study, measured_centroids491, measu
         y17 = np.append(y17, ally17[i])
         stars2 = np.append(stars2, allstars2[i])
         bg2 = np.append(bg2, allbg2[i])
-        factor2 = np.append(factor2, allfactor2[i])
         x23 = np.append(x23, allx23[i])
         y23 = np.append(y23, ally23[i])
         x25 = np.append(x25, allx25[i])
@@ -608,8 +609,8 @@ def get_sample_data4case(star_idx_list, case2study, measured_centroids491, measu
         x27 = np.append(x27, allx27[i])
         y27 = np.append(y27, ally27[i])
     # organize return arrays
-    sample_pos1 = [stars1, bg1, factor1, x13, y13, x15, y15, x17, y17]
-    sample_pos2 = [stars2, bg2, factor2, x23, y23, x25, y25, x27, y27]
+    sample_pos1 = [stars1, bg1, x13, y13, x15, y15, x17, y17]
+    sample_pos2 = [stars2, bg2, x23, y23, x25, y25, x27, y27]
     return sample_pos1, sample_pos2
 
 
@@ -660,7 +661,7 @@ def display_figs(figs1, figs2):
 def show_star_displays(star_idx_list, case, centroid_figs491, centroid_figs492):
     figs1, figs2 = get_figs(star_idx_list, case, centroid_figs491, centroid_figs492)
     display_figs(figs1, figs2)
-
+    
 
 #######################################################################################################################
 
@@ -668,51 +669,27 @@ def show_star_displays(star_idx_list, case, centroid_figs491, centroid_figs492):
 
 # Paths to Scenes 1 and 2 local directories: /Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/
 path4starfiles = "../PFforMaria/"
-path_scene1_slow = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS/postage_redo"
-path_scene1_slow_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage_redo"
-path_scene1_rapid = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRSRAPID/postage_redo"
-path_scene1_rapid_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage_redo"
-path_scene1_slow_shifted = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS/postage_redo"
-path_scene1_slow_shifted_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage_redo"
-path_scene1_rapid_shifted = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRSRAPID/postage_redo"
-path_scene1_rapid_shifted_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage_redo"
-path_scene2_slow = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS/postage_redo"
-path_scene2_slow_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS no_noise/postage_redo"
-path_scene2_rapid = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID/postage_redo"
-path_scene2_rapid_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID no_noise/postage_redo"
-path_scene2_slow_shifted = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS/postage_redo"
-path_scene2_slow_shifted_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS no_noise/postage_redo"
-path_scene2_rapid_shifted = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID/postage_redo"
-path_scene2_rapid_shifted_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID no_noise/postage_redo"
-
-paths_list = [path_scene1_slow, path_scene1_slow_nonoise, 
-              path_scene1_rapid, path_scene1_rapid_nonoise,
-              path_scene1_slow_shifted, path_scene1_slow_shifted_nonoise, 
-              path_scene1_rapid_shifted, path_scene1_rapid_shifted_nonoise, 
-              path_scene2_slow, path_scene2_slow_nonoise, 
-              path_scene2_rapid, path_scene2_rapid_nonoise,
-              path_scene2_slow_shifted, path_scene2_slow_shifted_nonoise, 
-              path_scene2_rapid_shifted, path_scene2_rapid_shifted_nonoise]
 
 detectors = [491, 492]
 
 # Stars of detector 491 and 492
 stars_detectors = range(1, 201)
-
+    
 if random_sample:
-    # select 20 stars from 1 to 200
+    # select stars_in_sample stars from 1 to 200
     stars_sample = []
-    for i in range(20):
+    for i in range(stars_in_sample):
         random_star = random.choice(stars_detectors)
         stars_sample.append(random_star)
     # make sure that there are no repetitions
-    list(set(stars_sample))
-    while len(stars_sample) != 20:
+    stars_sample = list(set(stars_sample))
+    while len(stars_sample) != stars_in_sample:
         random_star = random.choice(stars_detectors)
         stars_sample.append(random_star)  
-        list(set(stars_sample))      
+        stars_sample = list(set(stars_sample)) 
 else:
     stars_sample = stars_sample
+
 # order the star list 
 stars_sample.sort(key=lambda xx: xx)
 
@@ -723,7 +700,7 @@ path4results = "../results20randomstars/"
 case2study = "Scene"+str(scene)+"_"
 
 # get the benchmark data according to Scene selected
-benchmark_data = tf.read_star_param_files(case2study)
+benchmark_data, magnitudes = tf.read_star_param_files(case2study)
 bench_P1, bench_P2 = benchmark_data
 allbench_starP1, allbench_xP1, allbench_yP1, allbench_V2P1, allbench_V3P1, allbench_xLP1, allbench_yLP1 = bench_P1
 allbench_starP2, allbench_xP2, allbench_yP2, allbench_V2P2, allbench_V3P2, allbench_xLP2, allbench_yLP2 = bench_P2
@@ -731,7 +708,7 @@ allbench_stars = allbench_starP1.tolist()
 
 # get the index for the sample stars
 star_idx_list = []
-print ("stars_sample: ")
+print ("stars_sample: ", stars_sample)
 for st in stars_sample:
     st_idx = allbench_stars.index(st)
     star_idx_list.append(st_idx)
@@ -760,8 +737,8 @@ LoLeftCornersP1 = [bench_xLP1, bench_yLP1]
 LoLeftCornersP2 = [bench_xLP2, bench_yLP2]
 
 # get the lists of the text files for measured centroid positions
-measured_centroids491 = glob(path4starfiles+"detector_491_resulting_centroid_txt_files_redo/*")
-measured_centroids492 = glob(path4starfiles+"detector_492_resulting_centroid_txt_files_redo/*")
+measured_centroids491 = glob(path4starfiles+"detector_491_comparison_txt_positions/*")
+measured_centroids492 = glob(path4starfiles+"detector_492_comparison_txt_positions/*")
 
 # get the lists of the paths for centroid displays
 centroid_figs491 = glob(path4starfiles+"detector_491_centroid_figs_redo/*")
@@ -776,18 +753,32 @@ noise_list = ["nonoise", "real"]
 if shutters != "all" and bkgd_method != "all":
     case2study = [scene, shutters, noise, bkgd_method]
     case = "Scene"+str(scene)+"_"+shutters+"_"+noise+"_"+bkgd_method
-    print ("Analyzing case: ", case)
     sample_pos1, sample_pos2 = get_sample_data4case(star_idx_list, case2study, measured_centroids491, measured_centroids492)
-    stars1, bg1, factor1, x13, y13, x15, y15, x17, y17 = sample_pos1
-    stars2, bg2, factor2, x23, y23, x25, y25, x27, y27 = sample_pos2
+    stars1, bg1, x13, y13, x15, y15, x17, y17 = sample_pos1
+    stars2, bg2, x23, y23, x25, y25, x27, y27 = sample_pos2
+    if debug:
+        print ("Check that read BENCHMARK values correspond to expected for case: ", case)
+        print ("Star, xP1, yP1, V2P1, V3P1, xLP1, yLP1")
+        print (bench_starP1[0], bench_xP1[0], bench_yP1[0], bench_V2P1[0], bench_V3P1[0], bench_xLP1[0], bench_yLP1[0])
+        print ("Star, xP2, yP2, V2P2, V3P2, xLP2, yLP2")
+        print (bench_starP2[0], bench_xP2[0], bench_yP2[0], bench_V2P2[0], bench_V3P2[0], bench_xLP2[0], bench_yLP2[0])
+        print ("Check that read MEASURED values correspond to expected for the same case: ", case)
+        print ("   -> reading measured info from: ", case)
+        print ("Star, BG, x13, y13, x15, y15, x17, y17, LoLeftP1 (x, y), TrueP1 (x, y)")
+        print (stars_sample[0], bg1[0], x13[0], y13[0], x15[0], y15[0], x17[0], y17[0], bench_xLP1[0], bench_yLP1[0], bench_xP1[0], bench_yP1[0])
+        print ("Star, BG, x23, y23, x25, y25, x27, y27, LoLeftP2 (x, y), TrueP2 (x, y)")
+        print (stars_sample[0], bg2[0], x23[0], y23[0], x25[0], y25[0], x27[0], y27[0], bench_xLP2[0], bench_yLP2[0], bench_xP2[0], bench_yP2[0])
+        raw_input(" * press enter to continue... \n")
+    
     line0 = "Centroid indexing starting at 1 !"
     line0a = "{:<5} {:<15} {:<16} {:>23} {:>30} {:>44} {:>17} {:>15}".format("Star", "Background", 
                                                                       "Checkbox: 3", "5", "7", 
                                                                       "TruePositions", "LoLeftCoords",
-                                                                      "Factor")
+                                                                      "Mag")
     line0b = "{:>25} {:>12} {:>16} {:>14} {:>16} {:>14} {:>16} {:>18} {:>12} {:>10}".format(
                                                                            "x", "y", "x", "y", "x", "y", 
                                                                            "TrueX", "TrueY", "LoLeftX", "LoLeftY")
+    print ("Analyzing case: ", case)
     print (line0)
     print (line0a)
     print (line0b)
@@ -797,7 +788,7 @@ if shutters != "all" and bkgd_method != "all":
                                                                     x13[i], y13[i], x15[i], y15[i], x17[i], y17[i],
                                                                     bench_xP1[i]-bench_xLP1[i], bench_yP1[i]-bench_yLP1[i],
                                                                     bench_xLP1[i], bench_yLP1[i],
-                                                                    factor1[i])
+                                                                    magnitudes[i])
         print (line1)
             
     # compact results for functions
@@ -812,12 +803,19 @@ if shutters != "all" and bkgd_method != "all":
     # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)    
     if test2perform == "T1" or test2perform == "all":
         resultsTEST1 = runTEST(test2perform, detectors, transf_direction, case, stars1, P1P2data, bench_starP1, trueVsP1, trueVsP2, LoLeftCornersP1, LoLeftCornersP2, Pier_corr)
-        T1_transformations, T1_diffs, T1_benchVs_list = resultsTEST1
+        T1P1P2data, T1_transformations, T1_diffs, T1_benchVs_list = resultsTEST1
         T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7 = T1_transformations
         T1_diffV2_3, T1_diffV3_3, T1_diffV2_5, T1_diffV3_5, T1_diffV2_7, T1_diffV3_7 = T1_diffs
         T1bench_V2_list, T1bench_V3_list = T1_benchVs_list
+        # get the fractional value that has the smaller difference
+        if "frac" in case:
+            T1list_best_frbg_value_V2_3, T1list_best_frbg_value_V3_3, T1counterV2_3, T1counterV3_3 = find_best_fracbgvalue(T1_diffV2_3, T1_diffV3_3)
+            T1list_best_frbg_value_V2_5, T1list_best_frbg_value_V3_5, T1counterV2_5, T1counterV3_5 = find_best_fracbgvalue(T1_diffV2_5, T1_diffV3_5)
+            T1list_best_frbg_value_V2_7, T1list_best_frbg_value_V3_7, T1counterV2_7, T1counterV3_7 = find_best_fracbgvalue(T1_diffV2_7, T1_diffV3_7)
         # Get the statistics
+        print ("For TEST 1: ")
         results_stats = get_stats(case, T1_transformations, T1_diffs, T1_benchVs_list, Nsigma, max_iterations)
+        # unfold results
         T1_st_devsAndMeans, T1_diff_counter, T1_bench_values, T1_sigmas_deltas, T1_sigma_reject = results_stats
         if "frac" in case:
             T1_st_devsAndMeans, T1_diff_counter, T1_bench_values, T1_sigmas_deltas, T1_sigma_reject, T1_best_frac_values = results_stats
@@ -827,16 +825,22 @@ if shutters != "all" and bkgd_method != "all":
         T1bench_V2, T1bench_V3 = T1_bench_values
         T1LSdeltas_3, T1LSsigmas_3, T1LSlines2print_3, T1LSdeltas_5, T1LSsigmas_5, T1LSlines2print_5, T1LSdeltas_7, T1LSsigmas_7, T1LSlines2print_7 = T1_sigmas_deltas
         T1sigmaV2_3, T1meanV2_3, T1sigmaV3_3, T1meanV3_3, T1newV2_3, T1newV3_3, T1niter_3, T1lines2print_3, T1sigmaV2_5, T1meanV2_5, T1sigmaV3_5, T1meanV3_5, T1newV2_5, T1newV3_5, T1niter_5, T1lines2print_5, T1sigmaV2_7, T1meanV2_7, T1sigmaV3_7, T1meanV3_7, T1newV2_7, T1newV3_7, T1niter_7, T1lines2print_7 = T1_sigma_reject
-
+        
     # TEST 2: (a) Transform individual P1 and P2 to V2-V3, (b) avg V2-V3 space positions, (c) compare to avg reference positions
     if test2perform == "T2" or test2perform == "all":
         resultsTEST2 = runTEST(test2perform, detectors, transf_direction, case, stars1, P1P2data, bench_starP1, trueVsP1, trueVsP2, LoLeftCornersP1, LoLeftCornersP2, Pier_corr)
-        T2_transformations, T2_diffs, T2_benchVs_list = resultsTEST2
+        T2P1P2data, T2_transformations, T2_diffs, T2_benchVs_list = resultsTEST2
         T2_V2_3, T2_V3_3, T2_V2_5, T2_V3_5, T2_V2_7, T2_V3_7 = T2_transformations
         T2_diffV2_3, T2_diffV3_3, T2_diffV2_5, T2_diffV3_5, T2_diffV2_7, T2_diffV3_7 = T2_diffs
         T2bench_V2_list, T2bench_V3_list = T2_benchVs_list
+        # get the fractional value that has the smaller difference
+        if "frac" in case:
+            T2list_best_frbg_value_V2_3, T2list_best_frbg_value_V3_3, T2counterV2_3, T2counterV3_3 = find_best_fracbgvalue(T2_diffV2_3, T2_diffV3_3)
+            T2list_best_frbg_value_V2_5, T2list_best_frbg_value_V3_5, T2counterV2_5, T2counterV3_5 = find_best_fracbgvalue(T2_diffV2_5, T2_diffV3_5)
+            T2list_best_frbg_value_V2_7, T2list_best_frbg_value_V3_7, T2counterV2_7, T2counterV3_7 = find_best_fracbgvalue(T2_diffV2_7, T2_diffV3_7)
         # Get the statistics
         results_stats = get_stats(case, T2_transformations, T2_diffs, T2_benchVs_list, Nsigma, max_iterations)
+        # unfold results
         T2_st_devsAndMeans, T2_diff_counter, T2_bench_values, T2_sigmas_deltas, T2_sigma_reject = results_stats
         if "frac" in case:
             T2_st_devsAndMeans, T2_diff_counter, T2_bench_values, T2_sigmas_deltas, T2_sigma_reject, T2_best_frac_values = results_stats
@@ -846,11 +850,12 @@ if shutters != "all" and bkgd_method != "all":
         T2bench_V2, T2bench_V3 = T2_bench_values
         T2LSdeltas_3, T2LSsigmas_3, T2LSlines2print_3, T2LSdeltas_5, T2LSsigmas_5, T2LSlines2print_5, T2LSdeltas_7, T2LSsigmas_7, T2LSlines2print_7 = T2_sigmas_deltas
         T2sigmaV2_3, T2meanV2_3, T2sigmaV3_3, T2meanV3_3, T2newV2_3, T2newV3_3, T2niter_3, T2lines2print_3, T2sigmaV2_5, T2meanV2_5, T2sigmaV3_5, T2meanV3_5, T2newV2_5, T2newV3_5, T2niter_5, T2lines2print_5, T2sigmaV2_7, T2meanV2_7, T2sigmaV3_7, T2meanV3_7, T2newV2_7, T2newV3_7, T2niter_7, T2lines2print_7 = T2_sigma_reject
-
+        
     # TEST 3: (a) Transform P1 and P2 individually to V2-V3 (b) compare star by star and position by position
     if test2perform == "T3" or test2perform == "all":
         resultsTEST3 = runTEST(test2perform, detectors, transf_direction, case, stars1, P1P2data, bench_starP1, trueVsP1, trueVsP2, LoLeftCornersP1, LoLeftCornersP2, Pier_corr)
-        T3_transformations, T3_diffs, T3_benchVs_list = resultsTEST3
+        T3P1P2data, T3_transformations, T3_diffs, T3_benchVs_list = resultsTEST3
+        x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = T3P1P2data
         T_V2_3, T_V3_3, T_V2_5, T_V3_5, T_V2_7, T_V3_7 = T3_transformations
         T3_V2_13, T3_V2_23 = T_V2_3
         T3_V3_13, T3_V3_23 = T_V3_3
@@ -865,41 +870,49 @@ if shutters != "all" and bkgd_method != "all":
         T3_diffV3_15, T3_diffV3_25 = T_diffV3_5
         T3_diffV2_17, T3_diffV2_27 = T_diffV2_7
         T3_diffV3_17, T3_diffV3_27 = T_diffV3_7
-        T3bench_V2_list, T3bench_V3_list = T3_benchVs_list
-        T3bench_V2_listP1, T3bench_V2_listP2 = T3bench_V2_list
-        T3bench_V3_listP1, T3bench_V3_listP2 = T3bench_V3_list
+        T3bench_Vs_listP1, T3bench_Vs_listP2 = T3_benchVs_list
+        T3bench_V2_listP1, T3bench_V3_listP1 = T3bench_Vs_listP1
+        T3bench_V2_listP2, T3bench_V3_listP2 = T3bench_Vs_listP2
+        # get the fractional value that has the smaller difference
+        if "frac" in case:
+            T3list_best_frbg_value_V2_13, T3list_best_frbg_value_V3_13, T3counterV2_13, T3counterV3_13 = find_best_fracbgvalue(T3_diffV2_13, T3_diffV3_13)
+            T3list_best_frbg_value_V2_15, T3list_best_frbg_value_V3_15, T3counterV2_15, T3counterV3_15 = find_best_fracbgvalue(T3_diffV2_15, T3_diffV3_15)
+            T3list_best_frbg_value_V2_17, T3list_best_frbg_value_V3_17, T3counterV2_17, T3counterV3_17 = find_best_fracbgvalue(T3_diffV2_17, T3_diffV3_17)
+            T3list_best_frbg_value_V2_23, T3list_best_frbg_value_V3_23, T3counterV2_23, T3counterV3_23 = find_best_fracbgvalue(T3_diffV2_23, T3_diffV3_23)
+            T3list_best_frbg_value_V2_25, T3list_best_frbg_value_V3_25, T3counterV2_25, T3counterV3_25 = find_best_fracbgvalue(T3_diffV2_25, T3_diffV3_25)
+            T3list_best_frbg_value_V2_27, T3list_best_frbg_value_V3_27, T3counterV2_27, T3counterV3_27 = find_best_fracbgvalue(T3_diffV2_27, T3_diffV3_27)
         # Get the statistics for position 1 
+        print ("For TEST 3:  Position 1 (unshifted)")
         T3_transformationsP1 = [T3_V2_13, T3_V3_13, T3_V2_15, T3_V3_15, T3_V2_17, T3_V3_17]
         T3_diffsP1 = [T3_diffV2_13, T3_diffV3_13, T3_diffV2_15, T3_diffV3_15, T3_diffV2_17, T3_diffV3_17]
         T3_benchVs_listP1 = [T3bench_V2_listP1, T3bench_V3_listP1] 
         results_stats = get_stats(case, T3_transformationsP1, T3_diffsP1, T3_benchVs_listP1, Nsigma, max_iterations)
+        # unfold results
         T3_st_devsAndMeansP1, T3_diff_counterP1, T3_bench_valuesP1, T3_sigmas_deltasP1, T3_sigma_rejectP1 = results_stats
         if "frac" in case:
             T3_st_devsAndMeansP1, T3_diff_counterP1, T3_bench_valuesP1, T3_sigmas_deltasP1, T3_sigma_rejectP1, T3_best_frac_valuesP1 = results_stats
             T3list_best_frbg_value_V2_3P1, T3list_best_frbg_value_V3_3P1, T3counterV2_3P1, T3counterV3_3P1, T3list_best_frbg_value_V2_5P1, T3list_best_frbg_value_V3_5P1, T3counterV2_5P1, T3counterV3_5P1, T3list_best_frbg_value_V2_7P1, T3list_best_frbg_value_V3_7P1, T3counterV2_7P1, T3counterV3_7P1 = T3_best_frac_valuesP1
-        T3stdev_V2_3P1, T3mean_V2_3P1, T3stdev_V2_5P1, T3mean_V2_5P1, T3stdev_V2_7P1, T3mean_V2_7P1, T3stdev_V3_3P1, T3mean_V3_3P1, T3stdev_V3_5P1, T3mean_V3_5P1, T3stdev_V3_7P1, T3mean_V3_7P1 = T3_st_devsAndMeansP1
-        T3_min_diffP1, T3_counterP1 = T3_diff_counterP1
-        T3bench_V2P1, T3bench_V3P1 = T3_bench_valuesP1
-        T3LSdeltas_3P1, T3LSsigmas_3P1, T3LSlines2print_3P1, T3LSdeltas_5P1, T3LSsigmas_5P1, T3LSlines2print_5P1, T3LSdeltas_7P1, T3LSsigmas_7P1, T3LSlines2print_7P1 = T3_sigmas_deltasP1
-        T3sigmaV2_3P1, T3meanV2_3P1, T3sigmaV3_3P1, T3meanV3_3P1, T3newV2_3P1, T3newV3_3P1, T3niter_3P1, T3lines2print_3P1, T3sigmaV2_5P1, T3meanV2_5P1, T3sigmaV3_5P1, T3meanV3_5P1, T3newV2_5P1, T3newV3_5P1, T3niter_5P1, T3lines2print_5P1, T3sigmaV2_7P1, T3meanV2_7P1, T3sigmaV3_7P1, T3meanV3_7P1, T3newV2_7P1, T3newV3_7P1, T3niter_7P1, T3lines2print_7P1 = T3_sigma_rejectP1
+        T3stdev_V2_13, T3mean_V2_13, T3stdev_V2_15, T3mean_V2_15, T3stdev_V2_17, T3mean_V2_17, T3stdev_V3_13, T3mean_V3_13, T3stdev_V3_15, T3mean_V3_15, T3stdev_V3_17, T3mean_V3_17 = T3_st_devsAndMeansP1
+        T3_min_diff1, T3_counter1 = T3_diff_counterP1
+        T3bench_V12, T3bench_V13 = T3_bench_valuesP1
+        T3LSdeltas_13, T3LSsigmas_13, T3LSlines2print_13, T3LSdeltas_15, T3LSsigmas_15, T3LSlines2print_15, T3LSdeltas_17, T3LSsigmas_17, T3LSlines2print_17 = T3_sigmas_deltasP1
+        T3sigmaV2_13, T3meanV2_13, T3sigmaV3_13, T3meanV3_13, T3newV2_13, T3newV3_13, T3niter_13, T3lines2print_13, T3sigmaV2_15, T3meanV2_15, T3sigmaV3_15, T3meanV3_15, T3newV2_15, T3newV3_15, T3niter_15, T3lines2print_15, T3sigmaV2_17, T3meanV2_17, T3sigmaV3_17, T3meanV3_17, T3newV2_17, T3newV3_17, T3niter_17, T3lines2print_17 = T3_sigma_rejectP1
         # Get the statistics for position 2 
         T3_transformationsP2 = [T3_V2_23, T3_V3_23, T3_V2_25, T3_V3_25, T3_V2_27, T3_V3_27]
         T3_diffsP2 = [T3_diffV2_23, T3_diffV3_23, T3_diffV2_25, T3_diffV3_25, T3_diffV2_27, T3_diffV3_27]
         T3_benchVs_listP2 = [T3bench_V2_listP2, T3bench_V3_listP2] 
         results_stats = get_stats(case, T3_transformationsP2, T3_diffsP2, T3_benchVs_listP2, Nsigma, max_iterations)
+        # unfold results
         T3_st_devsAndMeansP2, T3_diff_counterP2, T3_bench_valuesP2, T3_sigmas_deltasP2, T3_sigma_rejectP2 = results_stats
         if "frac" in case:
             T3_st_devsAndMeansP2, T3_diff_counterP2, T3_bench_valuesP2, T3_sigmas_deltasP2, T3_sigma_rejectP2, T3_best_frac_valuesP2 = results_stats
             T3list_best_frbg_value_V2_3P2, T3list_best_frbg_value_V3_3P2, T3counterV2_3P2, T3counterV3_3P2, T3list_best_frbg_value_V2_5P2, T3list_best_frbg_value_V3_5P2, T3counterV2_5P2, T3counterV3_5P2, T3list_best_frbg_value_V2_7P2, T3list_best_frbg_value_V3_7P2, T3counterV2_7P2, T3counterV3_7P2 = T3_best_frac_valuesP2
-        T3stdev_V2_3P2, T3mean_V2_3P2, T3stdev_V2_5P2, T3mean_V2_5P2, T3stdev_V2_7P2, T3mean_V2_7P2, T3stdev_V3_3P2, T3mean_V3_3P2, T3stdev_V3_5P2, T3mean_V3_5P2, T3stdev_V3_7P2, T3mean_V3_7P2 = T3_st_devsAndMeansP2
-        T3_min_diffP2, T3_counterP2 = T3_diff_counterP2
-        T3bench_V2P2, T3bench_V3P2 = T3_bench_valuesP2
-        T3LSdeltas_3P2, T3LSsigmas_3P2, T3LSlines2print_3P2, T3LSdeltas_5P2, T3LSsigmas_5P2, T3LSlines2print_5P2, T3LSdeltas_7P2, T3LSsigmas_7P2, T3LSlines2print_7P2 = T3_sigmas_deltasP2
-        T3sigmaV2_3P2, T3meanV2_3P2, T3sigmaV3_3P2, T3meanV3_3P2, T3newV2_3P2, T3newV3_3P2, T3niter_3P1, T3lines2print_3P2, T3sigmaV2_5P2, T3meanV2_5P2, T3sigmaV3_5P2, T3meanV3_5P2, T3newV2_5P2, T3newV3_5P2, T3niter_5P2, T3lines2print_5P2, T3sigmaV2_7P2, T3meanV2_7P2, T3sigmaV3_7P2, T3meanV3_7P2, T3newV2_7P2, T3newV3_7P2, T3niter_7P2, T3lines2print_7P2 = T3_sigma_rejectP2
-
-    exit()
+        T3stdev_V2_23, T3mean_V2_23, T3stdev_V2_25, T3mean_V2_25, T3stdev_V2_27, T3mean_V2_27, T3stdev_V3_23, T3mean_V3_23, T3stdev_V3_25, T3mean_V3_25, T3stdev_V3_27, T3mean_V3_27 = T3_st_devsAndMeansP2
+        T3_min_diff2, T3_counter2 = T3_diff_counterP2
+        T3bench_V22, T3bench_V23 = T3_bench_valuesP2
+        T3LSdeltas_23, T3LSsigmas_23, T3LSlines2print_23, T3LSdeltas_25, T3LSsigmas_25, T3LSlines2print_25, T3LSdeltas_27, T3LSsigmas_27, T3LSlines2print_27 = T3_sigmas_deltasP2
+        T3sigmaV2_23, T3meanV2_23, T3sigmaV3_23, T3meanV3_23, T3newV2_23, T3newV3_23, T3niter_23, T3lines2print_23, T3sigmaV2_25, T3meanV2_25, T3sigmaV3_25, T3meanV3_25, T3newV2_25, T3newV3_25, T3niter_25, T3lines2print_25, T3sigmaV2_27, T3meanV2_27, T3sigmaV3_27, T3meanV3_27, T3newV2_27, T3newV3_27, T3niter_27, T3lines2print_27 = T3_sigma_rejectP2
     
-    """
     # Print results to screen and save into a text file if told so
     # Text file 1
     if test2perform == "T1" or test2perform == "all":
@@ -1000,16 +1013,16 @@ if shutters != "all" and bkgd_method != "all":
                 to.write(line3bisG+"\n")
             to.write(line4+"\n")
             to.write(line5+"\n")
-        for i, st in enumerate(stars):
+        for i, st in enumerate(stars_sample):
             st = int(st)
             if show_positions:
                 line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>10}  {:<14} {:>18}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7}".format(
-                            st, bg_value[i], 
+                            st, bg1[i], 
                             T1_V2_3[i], T1_V3_3[i], T1_V2_5[i], T1_V3_5[i], T1_V2_7[i], T1_V3_7[i], 
                             T1bench_V2_list[i], T1bench_V3_list[i],
                             T1_diffV2_3[i], T1_diffV3_3[i], T1_diffV2_5[i], T1_diffV3_5[i], T1_diffV2_7[i], T1_diffV3_7[i], T1_min_diff[i])
             else:
-                line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7}".format(st, bg_value[i], 
+                line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7}".format(st, bg1[i], 
                         T1_diffV2_3[i], T1_diffV3_3[i], T1_diffV2_5[i], T1_diffV3_5[i], T1_diffV2_7[i], T1_diffV3_7[i], T1_min_diff[i])
             if "frac" in case:
                 line6 = line6 + " {:<4} {:<5} {:<4} {:<5} {:<4} {:<5}".format(
@@ -1120,16 +1133,16 @@ if shutters != "all" and bkgd_method != "all":
                 to.write(line3bisG+"\n")
             to.write(line4+"\n")
             to.write(line5+"\n")
-        for i, st in enumerate(stars):
+        for i, st in enumerate(stars_sample):
             st = int(st)
             if show_positions:
                 line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>10}  {:<14} {:>18}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7}".format(
-                            st, bg_value[i], 
+                            st, bg1[i], 
                             T2_V2_3[i], T2_V3_3[i], T2_V2_5[i], T2_V3_5[i], T2_V2_7[i], T2_V3_7[i], 
                             T2bench_V2_list[i], T2bench_V3_list[i],
                             T2_diffV2_3[i], T2_diffV3_3[i], T2_diffV2_5[i], T2_diffV3_5[i], T2_diffV2_7[i], T2_diffV3_7[i], T2_min_diff[i])
             else:
-                line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7}".format(st, bg_value[i], 
+                line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7}".format(st, bg1[i], 
                         T2_diffV2_3[i], T2_diffV3_3[i], T2_diffV2_5[i], T2_diffV3_5[i], T2_diffV2_7[i], T2_diffV3_7[i], T2_min_diff[i])            
             if "frac" in case:
                 line6 = line6 + " {:<4} {:<5} {:<4} {:<5} {:<4} {:<5}".format(
@@ -1290,11 +1303,11 @@ if shutters != "all" and bkgd_method != "all":
             to.write(line5bisB+"\n")
             to.write(line6+"\n")
             to.write(line7+"\n")
-        for i, st in enumerate(stars):
+        for i, st in enumerate(stars_sample):
             st = int(st)
             if show_positions:
                 line8 = "{:<5} {:<5} {:>16}  {:<19} {:>16}  {:<19} {:>16}  {:<19} {:>16}  {:<19} {:>16}  {:<19} {:>16}  {:<19} {:>14}  {:<14}  {:>14}  {:<14} {:>18}  {:<19} {:>18}  {:<19} {:>18}  {:<19} {:>18}  {:<19} {:>18}  {:<19} {:>18}  {:<19} {:<7} {:<7}".format(
-                            st, bg_value[i], 
+                            st, bg1[i], 
                             T3_V2_13[i], T3_V3_13[i], T3_V2_15[i], T3_V3_15[i], T3_V2_17[i], T3_V3_17[i], 
                             T3_V2_23[i], T3_V3_23[i], T3_V2_25[i], T3_V3_25[i], T3_V2_27[i], T3_V3_27[i], 
                             T3bench_V2_listP1[i], T3bench_V3_listP1[i], T3bench_V2_listP2[i], T3bench_V3_listP2[i],
@@ -1302,7 +1315,7 @@ if shutters != "all" and bkgd_method != "all":
                             T3_diffV2_23[i], T3_diffV3_23[i], T3_diffV2_25[i], T3_diffV3_25[i], T3_diffV2_27[i], T3_diffV3_27[i],
                             T3_min_diff1[i], T3_min_diff2[i])
             else:
-                line8 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7} {:<7}".format(st, bg_value[i], 
+                line8 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7} {:<7}".format(st, bg1[i], 
                         T3_diffV2_13[i], T3_diffV3_13[i], T3_diffV2_15[i], T3_diffV3_15[i], T3_diffV2_17[i], T3_diffV3_17[i], 
                         T3_diffV2_23[i], T3_diffV3_23[i], T3_diffV2_25[i], T3_diffV3_25[i], T3_diffV2_27[i], T3_diffV3_27[i], 
                         T3_min_diff1[i], T3_min_diff2[i])            
@@ -1320,8 +1333,7 @@ if shutters != "all" and bkgd_method != "all":
         if save_txt_file:
             to.close()
             print (" * Results saved in file: ", txt_out)
-        else:
-            raw_input(" * Press enter to continue... \n")
-    """
+        
+        print ("\n * Case finished.  \n")
 
 print ("\n Script 'comparison2sky.py' finished! ")
