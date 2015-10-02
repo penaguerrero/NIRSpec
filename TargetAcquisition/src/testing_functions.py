@@ -200,10 +200,11 @@ def read_positionsfile(positions_file_name, detector=None):
         elif detector == 492:   # slice from star 1 to 100
             star_number, xpos, ypos, trueV2, trueV3 = star_number[:100], xpos492[:100], ypos492[:100], trueV2[:100], trueV3[:100]
     else:
-        xpos = np.append(xpos, xpos491[100:])
+        # return the 200 values
         xpos = np.append(xpos, xpos492[:100])
-        ypos = np.append(ypos, ypos491[100:])
+        xpos = np.append(xpos, xpos491[100:])
         ypos = np.append(ypos, ypos492[:100])
+        ypos = np.append(ypos, ypos491[100:])
     #for s, x, y in zip(star_number, xpos, ypos):
     #    print(s, x, y)
     #    raw_input()
@@ -581,10 +582,10 @@ def read_star_param_files(test_case, detector=None, path4starfiles=None, paths_l
     S2list_file2 = "simuTA20150528-F140X-S50-K-AB18to23-shifted.list"
     S2positions_file2 = "simuTA20150528-F140X-S50-K-AB18to23-shifted_positions.fits"
     if "Scene1" in test_case:
-        benchmark_data = read_TruePosFromFits(S1path2listfile, S1list_file1, S1positions_file1, S1list_file2, S1positions_file2)
+        benchmark_data, magnitudes = read_TruePosFromFits(S1path2listfile, S1list_file1, S1positions_file1, S1list_file2, S1positions_file2)
     if "Scene2" in test_case:
-        benchmark_data = read_TruePosFromFits(S2path2listfile, S2list_file1, S2positions_file1, S2list_file2, S2positions_file2)
-    return benchmark_data
+        benchmark_data, magnitudes = read_TruePosFromFits(S2path2listfile, S2list_file1, S2positions_file1, S2list_file2, S2positions_file2)
+    return benchmark_data, magnitudes
 
 def read_TruePosFromFits(path2listfile, list_file1, positions_file1, list_file2, positions_file2, test_case=None, detector=None):
     # Read the text file just written to get the offsets from the "real" positions of the fake stars
@@ -619,7 +620,7 @@ def read_TruePosFromFits(path2listfile, list_file1, positions_file1, list_file2,
     bench_P1 = [bench_starP1, true_xP1, true_yP1, trueV2P1, trueV3P1, xLP1, yLP1]
     bench_P2 = [bench_starP2, true_xP2, true_yP2, trueV2P2, trueV3P2, xLP2, yLP2]
     benchmark_data = [bench_P1, bench_P2]
-    return benchmark_data
+    return benchmark_data, magP1
 
 
 def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=True):
