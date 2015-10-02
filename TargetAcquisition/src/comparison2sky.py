@@ -23,7 +23,7 @@ It outputs 3 text file with results of test per case into directory TargetAcquis
 #######################################################################################################################
 
 # general settings
-detector = 491           # detector, integer: 491 or 492
+detector = 492           # detector, integer: 491 or 492
 Nsigma = 3               # N-sigma rejection of bad stars, integer or float
 max_iterations = 10      # Max number of iterations for N-sigma function, integer
 bkgd_method = "None"     # background to test, string: all, None, fixed, frac  
@@ -206,7 +206,7 @@ for infile in input_files_list:
     print ("* studying case: ", case)
     
     # get the benchmark data
-    benchmark_data = tf.read_star_param_files(case, detector, path4starfiles, paths_list)
+    benchmark_data, magnitudes = tf.read_star_param_files(case, detector, path4starfiles, paths_list)
     bench_P1, bench_P2 = benchmark_data
     bench_starP1, bench_xP1, bench_yP1, bench_V2P1, bench_V3P1, bench_xLP1, bench_yLP1 = bench_P1
     bench_starP2, bench_xP2, bench_yP2, bench_V2P2, bench_V3P2, bench_xLP2, bench_yLP2 = bench_P2
@@ -276,10 +276,11 @@ for infile in input_files_list:
         print ("Star, xP2, yP2, V2P2, V3P2, xLP2, yLP2")
         print (bench_starP2[0], bench_xP2[0], bench_yP2[0], bench_V2P2[0], bench_V3P2[0], bench_xLP2[0], bench_yLP2[0])
         print ("Check that read MEASURED values correspond to expected for the same case: ", case)
+        print ("   -> reading measured infro from: ", infile)
         print ("Star, BG, x13, y13, x15, y15, x17, y17, LoLeftP1 (x, y), TrueP1 (x, y)")
-        print (stars[0], bg_value[0], x13[0], y13[0], x15[0], y15[0], x17[0], y17[0], bench_xLP1, bench_yLP1, bench_xP1, bench_yP1)
+        print (stars[0], bg_value[0], x13[0], y13[0], x15[0], y15[0], x17[0], y17[0], bench_xLP1[0], bench_yLP1[0], bench_xP1[0], bench_yP1[0])
         print ("Star, BG, x23, y23, x25, y25, x27, y27, LoLeftP2 (x, y), TrueP2 (x, y)")
-        print (stars[0], x23[0], y23[0], x25[0], y25[0], x27[0], y27[0], bench_xLP2, bench_yLP2, bench_xP2, bench_yP2)
+        print (stars[0], x23[0], y23[0], x25[0], y25[0], x27[0], y27[0], bench_xLP2[0], bench_yLP2[0], bench_xP2[0], bench_yP2[0])
         raw_input(" * press enter to continue... \n")
 
     # convert from 32x32 pixel to full detector coordinates
@@ -321,12 +322,12 @@ for infile in input_files_list:
         T1stdev_V3_5, T1mean_V3_5 = tf.find_std(T1_diffV3_5)
         T1stdev_V3_7, T1mean_V3_7 = tf.find_std(T1_diffV3_7)
         T1bench_V2, T1bench_V3 = np.array(T1bench_V2_list), np.array(T1bench_V3_list)
+        print ("For TEST 1: ")
         # to express in arcsecs multiply by 3600.0
         T1LSdeltas_3, T1LSsigmas_3, T1LSlines2print_3 = lsi.ls_fit_iter(max_iterations, T1_V2_3*3600.0, T1_V3_3*3600.0, T1bench_V2*3600.0, T1bench_V3*3600.0)
         T1LSdeltas_5, T1LSsigmas_5, T1LSlines2print_5 = lsi.ls_fit_iter(max_iterations, T1_V2_5*3600.0, T1_V3_5*3600.0, T1bench_V2*3600.0, T1bench_V3*3600.0)
         T1LSdeltas_7, T1LSsigmas_7, T1LSlines2print_7 = lsi.ls_fit_iter(max_iterations, T1_V2_7*3600.0, T1_V3_7*3600.0, T1bench_V2*3600.0, T1bench_V3*3600.0)
         # Do N-sigma rejection
-        print ("For TEST 1: ")
         T1sigmaV2_3, T1meanV2_3, T1sigmaV3_3, T1meanV3_3, T1newV2_3, T1newV3_3, T1niter_3, T1lines2print_3 = tf.Nsigma_rejection(Nsigma, T1_diffV2_3, T1_diffV3_3, max_iterations)
         T1sigmaV2_5, T1meanV2_5, T1sigmaV3_5, T1meanV3_5, T1newV2_5, T1newV3_5, T1niter_5, T1lines2print_5 = tf.Nsigma_rejection(Nsigma, T1_diffV2_5, T1_diffV3_5, max_iterations)
         T1sigmaV2_7, T1meanV2_7, T1sigmaV3_7, T1meanV3_7, T1newV2_7, T1newV3_7, T1niter_7, T1lines2print_7 = tf.Nsigma_rejection(Nsigma, T1_diffV2_7, T1_diffV3_7, max_iterations)
@@ -366,11 +367,11 @@ for infile in input_files_list:
         T2stdev_V3_5, T2mean_V3_5 = tf.find_std(T2_diffV3_5)
         T2stdev_V3_7, T2mean_V3_7 = tf.find_std(T2_diffV3_7)
         T2bench_V2, T2bench_V3 = np.array(T2bench_V2_list), np.array(T2bench_V3_list)
+        print ("For TEST 2: ")
         T2LSdeltas_3, T2LSsigmas_3, T2LSlines2print_3 = lsi.ls_fit_iter(max_iterations, T2_V2_3*3600.0, T2_V3_3*3600.0, T2bench_V2*3600.0, T2bench_V3*3600.0)
         T2LSdeltas_5, T2LSsigmas_5, T2LSlines2print_5 = lsi.ls_fit_iter(max_iterations, T2_V2_5*3600.0, T2_V3_5*3600.0, T2bench_V2*3600.0, T2bench_V3*3600.0)
         T2LSdeltas_7, T2LSsigmas_7, T2LSlines2print_7 = lsi.ls_fit_iter(max_iterations, T2_V2_7*3600.0, T2_V3_7*3600.0, T2bench_V2*3600.0, T2bench_V3*3600.0)
         # Do N-sigma rejection
-        print ("For TEST 2: ")
         T2sigmaV2_3, T2meanV2_3, T2sigmaV3_3, T2meanV3_3, T2newV2_3, T2newV3_3, T2niter_3, T2lines2print_3 = tf.Nsigma_rejection(Nsigma, T2_diffV2_3, T2_diffV3_3, max_iterations)
         T2sigmaV2_5, T2meanV2_5, T2sigmaV3_5, T2meanV3_5, T2newV2_5, T2newV3_5, T2niter_5, T2lines2print_5 = tf.Nsigma_rejection(Nsigma, T2_diffV2_5, T2_diffV3_5, max_iterations)
         T2sigmaV2_7, T2meanV2_7, T2sigmaV3_7, T2meanV3_7, T2newV2_7, T2newV3_7, T2niter_7, T2lines2print_7 = tf.Nsigma_rejection(Nsigma, T2_diffV2_7, T2_diffV3_7, max_iterations)
@@ -417,6 +418,7 @@ for infile in input_files_list:
         T3stdev_V3_27, T3mean_V3_27 = tf.find_std(T3_diffV3_27)
         T3bench_V2P1, T3bench_V3P1 = np.array(T3bench_V2_listP1), np.array(T3bench_V3_listP1)
         T3bench_V2P2, T3bench_V3P2 = np.array(T3bench_V2_listP2), np.array(T3bench_V3_listP2)
+        print ("For TEST 3: ")
         T3LSdeltas_13, T3LSsigmas_13, T3LSlines2print_13 = lsi.ls_fit_iter(max_iterations, T3_V2_13*3600.0, T3_V3_13*3600.0, T3bench_V2P1*3600.0, T3bench_V3P1*3600.0)
         T3LSdeltas_15, T3LSsigmas_15, T3LSlines2print_15 = lsi.ls_fit_iter(max_iterations, T3_V2_15*3600.0, T3_V3_15*3600.0, T3bench_V2P1*3600.0, T3bench_V3P1*3600.0)
         T3LSdeltas_17, T3LSsigmas_17, T3LSlines2print_17 = lsi.ls_fit_iter(max_iterations, T3_V2_17*3600.0, T3_V3_17*3600.0, T3bench_V2P1*3600.0, T3bench_V3P1*3600.0)
@@ -424,31 +426,29 @@ for infile in input_files_list:
         T3LSdeltas_25, T3LSsigmas_25, T3LSlines2print_25 = lsi.ls_fit_iter(max_iterations, T3_V2_25*3600.0, T3_V3_25*3600.0, T3bench_V2P2*3600.0, T3bench_V3P2*3600.0)
         T3LSdeltas_27, T3LSsigmas_27, T3LSlines2print_27 = lsi.ls_fit_iter(max_iterations, T3_V2_27*3600.0, T3_V3_27*3600.0, T3bench_V2P2*3600.0, T3bench_V3P2*3600.0)
         # Do N-sigma rejection
-        print ("For TEST 3: ")
         T3sigmaV2_13, T3meanV2_13, T3sigmaV3_13, T3meanV3_13, T3newV2_13, T3newV3_13, T3niter_13, T3lines2print_13 = tf.Nsigma_rejection(Nsigma, T3_diffV2_13, T3_diffV3_13, max_iterations)
         T3sigmaV2_15, T3meanV2_15, T3sigmaV3_15, T3meanV3_15, T3newV2_15, T3newV3_15, T3niter_15, T3lines2print_15 = tf.Nsigma_rejection(Nsigma, T3_diffV2_15, T3_diffV3_15, max_iterations)
         T3sigmaV2_17, T3meanV2_17, T3sigmaV3_17, T3meanV3_17, T3newV2_17, T3newV3_17, T3niter_17, T3lines2print_17 = tf.Nsigma_rejection(Nsigma, T3_diffV2_17, T3_diffV3_17, max_iterations)
         T3sigmaV2_23, T3meanV2_23, T3sigmaV3_23, T3meanV3_23, T3newV2_23, T3newV3_23, T3niter_23, T3lines2print_23 = tf.Nsigma_rejection(Nsigma, T3_diffV2_23, T3_diffV3_23, max_iterations)
         T3sigmaV2_25, T3meanV2_25, T3sigmaV3_25, T3meanV3_25, T3newV2_25, T3newV3_25, T3niter_25, T3lines2print_25 = tf.Nsigma_rejection(Nsigma, T3_diffV2_25, T3_diffV3_25, max_iterations)
         T3sigmaV2_27, T3meanV2_27, T3sigmaV3_27, T3meanV3_27, T3newV2_27, T3newV3_27, T3niter_27, T3lines2print_27 = tf.Nsigma_rejection(Nsigma, T3_diffV2_27, T3_diffV3_27, max_iterations)
-        #raw_input()
     
     if debug or single_case:
         print ("TEST 1: ")
         print ("transformations: detector (avgx, avgy),  sky (V2, V3),  true (avgV2, avgV3)")
-        print ("            ChBx3: ", avgx3, avgy3, T1_V2_3, T1_V3_3, avg_benchV2, avg_benchV3)
-        print ("            ChBx5: ", avgx5, avgy5, T1_V2_5, T1_V3_5, avg_benchV2, avg_benchV3)
-        print ("            ChBx7: ", avgx7, avgy7, T1_V2_7, T1_V3_7, avg_benchV2, avg_benchV3)
+        print ("            ChBx3: ", avgx3[0], avgy3[0], T1_V2_3[0], T1_V3_3[0], avg_benchV2[0], avg_benchV3[0])
+        print ("            ChBx5: ", avgx5[0], avgy5[0], T1_V2_5[0], T1_V3_5[0], avg_benchV2[0], avg_benchV3[0])
+        print ("            ChBx7: ", avgx7[0], avgy7[0], T1_V2_7[0], T1_V3_7[0], avg_benchV2[0], avg_benchV3[0])
         print ("TEST 2: ")
         print ("transformations: detector P1 and P2 (x, y),  sky (avgV2, avgV3),  true (avgV2, avgV3)")
-        print ("            ChBx3: ", x13, y13, x23, y23, T2_V2_3, T2_V3_3, avg_benchV2, avg_benchV3)
-        print ("            ChBx5: ", x15, y15, x25, y25, T2_V2_5, T2_V3_5, avg_benchV2, avg_benchV3)
-        print ("            ChBx7: ", x17, y17, x27, y27, T2_V2_7, T2_V3_7, avg_benchV2, avg_benchV3)
+        print ("            ChBx3: ", x13[0], y13[0], x23[0], y23[0], T2_V2_3[0], T2_V3_3[0], avg_benchV2[0], avg_benchV3[0])
+        print ("            ChBx5: ", x15[0], y15[0], x25[0], y25[0], T2_V2_5[0], T2_V3_5[0], avg_benchV2[0], avg_benchV3[0])
+        print ("            ChBx7: ", x17[0], y17[0], x27[0], y27[0], T2_V2_7[0], T2_V3_7[0], avg_benchV2[0], avg_benchV3[0])
         print ("TEST 3: ")
         print ("transformations: detector P1 and P2 (x, y),  sky P1 and P2 (V2, V3),  true P1 and P2 (V2, V3)")
-        print ("            ChBx3: ", x13, y13, x23, y23, T3_V2_13, T3_V3_13, T3_V2_23, T3_V3_23, bench_V2P1, bench_V3P1, bench_V2P2, bench_V3P2)
-        print ("            ChBx5: ", x15, y15, x25, y25, T3_V2_13, T3_V3_13, T3_V2_23, T3_V3_23, bench_V2P1, bench_V3P1, bench_V2P2, bench_V3P2)
-        print ("            ChBx7: ", x17, y17, x27, y27, T3_V2_13, T3_V3_13, T3_V2_23, T3_V3_23, bench_V2P1, bench_V3P1, bench_V2P2, bench_V3P2)
+        print ("            ChBx3: ", x13[0], y13[0], x23[0], y23[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print ("            ChBx5: ", x15[0], y15[0], x25[0], y25[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print ("            ChBx7: ", x17[0], y17[0], x27[0], y27[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
         raw_input(" * press enter to continue... \n")
 
     # Print results to screen and save into a text file if told so
@@ -877,7 +877,7 @@ for infile in input_files_list:
     if single_case:
         exit()
     else:
-        raw_input(" * Press enter to continue... \n")
+        raw_input(" * Finished case. Press enter to continue... \n")
 
 
 print ("\n Script 'comparison2sky.py' finished! ")
