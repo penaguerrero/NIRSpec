@@ -1,0 +1,205 @@
+* studying case:  Scene1_rapid_nonoise_None
+Check that read BENCHMARK values correspond to expected for case:  Scene1_rapid_nonoise_None
+Star, xP1, yP1, V2P1, V3P1, xLP1, yLP1
+1.0 1158.5916748 397.657745361 0.137749686837 -0.0155116394162 1142.0 381.0
+Star, xP2, yP2, V2P2, V3P2, xLP2, yLP2
+1.0 1159.83850098 400.094940186 0.13767388463 -0.0155415395275 1143.0 384.0
+Check that read MEASURED values correspond to expected for the same case:  Scene1_rapid_nonoise_None
+   -> reading measured infro from:  ../PFforMaria/detector_492_comparison_txt_positions/Scene1_centroids_rapid_nonoise_None.txt
+Star, BG, x13, y13, x15, y15, x17, y17, LoLeftP1 (x, y), TrueP1 (x, y)
+1.0 0.0 16.4994561222 16.5300394541 16.4805125308 16.5913965353 16.4869616276 16.6033940283 1142.0 381.0 1158.5916748 397.657745361
+Star, BG, x23, y23, x25, y25, x27, y27, LoLeftP2 (x, y), TrueP2 (x, y)
+1.0 17.71601872 18.7718733912 17.7281659792 19.0120970064 17.730508946 19.0166867526 1143.0 384.0 1159.83850098 400.094940186
+
+T3_V2_13[0], T3_V3_13[0]:  0.13775088017 -0.0155106930051
+T3bench_V2_listP1[0], T3bench_V2_listP2[0]:  0.137749686837 0.13767388463
+T3bench_V3_listP1[0], T3bench_V3_listP2[0]:  -0.0155116394162 -0.0155415395275
+max_iterations, T3_V2_13*3600.0, T3_V3_13*3600.0, T3bench_V2P1*3600.0, T3bench_V3P1*3600.0
+10 495.903168612 -55.8384948185 495.898872614 -55.8419018984
+
+TEST 1: 
+transformations: detector (avgx, avgy),  sky (V2, V3),  true (avgV2, avgV3)
+            ChBx3:  1159.69373742 400.227956423 0.137674416235 -0.0155472693984 0.137711785734 -0.0155265894718
+            ChBx5:  1159.69033926 400.378746771 0.137671476304 -0.0155506507432 0.137711785734 -0.0155265894718
+            ChBx7:  1159.69473529 400.38704039 0.137671215038 -0.0155507495774 0.137711785734 -0.0155265894718
+TEST 2: 
+transformations: detector P1 and P2 (x, y),  sky (avgV2, avgV3),  true (avgV2, avgV3)
+            ChBx3:  1158.58545612 397.607039454 1160.80201872 402.848873391 0.137674419056 -0.0155472682538 0.137711785734 -0.0155265894718
+            ChBx5:  1158.56651253 397.668396535 1160.81416598 403.089097006 0.137671479297 -0.0155506495053 0.137711785734 -0.0155265894718
+            ChBx7:  1158.57296163 397.680394028 1160.81650895 403.093686753 0.137671218022 -0.0155507483425 0.137711785734 -0.0155265894718
+TEST 3: 
+transformations: detector P1 and P2 (x, y),  sky P1 and P2 (V2, V3),  true P1 and P2 (V2, V3)
+            ChBx3:  1158.58545612 397.607039454 1160.80201872 402.848873391 0.13775088017 -0.0155106930051 0.137597957942 -0.0155838435024 0.137749686837 -0.0155116394162 0.13767388463 -0.0155415395275
+            ChBx5:  1158.56651253 397.668396535 1160.81416598 403.089097006 0.13775088017 -0.0155106930051 0.137597957942 -0.0155838435024 0.137749686837 -0.0155116394162 0.13767388463 -0.0155415395275
+            ChBx7:  1158.57296163 397.680394028 1160.81650895 403.093686753 0.13775088017 -0.0155106930051 0.137597957942 -0.0155838435024 0.137749686837 -0.0155116394162 0.13767388463 -0.0155415395275
+
+For TEST 1:
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = 0.119880380112   delta_y = 0.063874714339   delta_theta = -661.848454779
+(least_squares_iterate):  sigma_x = 0.0217981074206   sigma_y = 0.0269298610963   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = 0.128042298967   delta_y = 0.0698972633217   delta_theta = -709.104036194
+(least_squares_iterate):  sigma_x = 0.0222173526895   sigma_y = 0.0271985696263   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = 0.129018245815   delta_y = 0.0701947156956   delta_theta = -714.938894412
+(least_squares_iterate):  sigma_x = 0.0222214030551   sigma_y = 0.0270462669441   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 2 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.287606891774  0.0636161613967
+                             - original sigma and mean in Y = 0.0287790427225  0.0480123293873
+                             - new sigma and mean in X = 0.0217700690478  0.118775128659
+                             - new sigma and mean in Y 0.022643861644  0.0492982624897
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 2 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.289935800779  0.0720734381172
+                             - original sigma and mean in Y = 0.0318948800425  0.0556645260966
+                             - new sigma and mean in X = 0.0221944099047  0.127032878582
+                             - new sigma and mean in Y 0.0237195765687  0.0565877224912
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 2 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.290339887259  0.0730505610441
+                             - original sigma and mean in Y = 0.0315012985024  0.056701486597
+                             - new sigma and mean in X = 0.0221997008527  0.128036392572
+                             - new sigma and mean in Y 0.0237467320201  0.0572489336034
+* Standard deviations and means 
+std_dev_V2_3 = 0.287606891774          std_dev_V3_3 = 0.0287790427225     
+std_dev_V2_5 = 0.289935800779          std_dev_V3_5 = 0.0318948800425     
+std_dev_V2_7 = 0.290339887259          std_dev_V3_7 = 0.0315012985024     
+   mean_V2_3 = 0.0636161613967            mean_V3_3 = 0.0480123293873       
+   mean_V2_5 = 0.0720734381172            mean_V3_5 = 0.0556645260966       
+   mean_V2_7 = 0.0730505610441            mean_V3_7 = 0.056701486597        
+Repetitions Diffs: Counter({3: 19, 7: 1})
+
+
+For TEST 2: 
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = 0.1198711389   delta_y = 0.0638686856624   delta_theta = -661.798572498
+(least_squares_iterate):  sigma_x = 0.0217967747042   sigma_y = 0.0269277547739   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = 0.128033120455   delta_y = 0.0698924136729   delta_theta = -709.053467256
+(least_squares_iterate):  sigma_x = 0.0222159305158   sigma_y = 0.0271970910233   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = 0.1290090653   delta_y = 0.0701898541797   delta_theta = -714.88831921
+(least_squares_iterate):  sigma_x = 0.0222200077799   sigma_y = 0.027044805495   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 2 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.287605445823  0.0636078082473
+                             - original sigma and mean in Y = 0.0287782872234  0.0480090914227
+                             - new sigma and mean in X = 0.0217687442796  0.118766077818
+                             - new sigma and mean in Y 0.0226429716184  0.0492947427007
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 2 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.289934318132  0.0720650192817
+                             - original sigma and mean in Y = 0.0318942158166  0.0556613304455
+                             - new sigma and mean in X = 0.0221929909184  0.127023802479
+                             - new sigma and mean in Y 0.0237186378552  0.0565842215182
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 2 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.290338402667  0.0730421357742
+                             - original sigma and mean in Y = 0.0315006714193  0.056698289629
+                             - new sigma and mean in X = 0.0221983087682  0.128027315041
+                             - new sigma and mean in Y 0.023745806877  0.0572454283515
+* Standard deviations and means 
+std_dev_V2_3 = 0.287605445823         std_dev_V3_3 = 0.0287782872234     
+std_dev_V2_5 = 0.289934318132         std_dev_V3_5 = 0.0318942158166     
+std_dev_V2_7 = 0.290338402667         std_dev_V3_7 = 0.0315006714193     
+   mean_V2_3 = 0.0636078082473           mean_V3_3 = 0.0480090914227       
+   mean_V2_5 = 0.0720650192817           mean_V3_5 = 0.0556613304455       
+   mean_V2_7 = 0.0730421357742           mean_V3_7 = 0.056698289629        
+Repetitions Diffs1: Counter({3: 19, 7: 1})
+
+For TEST 3
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = -0.0111880602924   delta_y = -0.00585087966828   delta_theta = 63.2398826042
+(least_squares_iterate):  sigma_x = 0.00691394186078   sigma_y = 0.0079900737808   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = -0.0025631512887   delta_y = 0.0147666423437   delta_theta = 25.9179158935
+(least_squares_iterate):  sigma_x = 0.002429129816   sigma_y = 0.0134897888283   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = -0.00165093594634   delta_y = 0.0142257877942   delta_theta = 19.8931916876
+(least_squares_iterate):  sigma_x = 0.00309651468846   sigma_y = 0.0124539143305   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = 0.250937799523   delta_y = 0.133581157594   delta_theta = -1391.97330406
+(least_squares_iterate):  sigma_x = 0.0418050002071   sigma_y = 0.0533600005029   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 2
+(least_squares_iterate):  delta_x = 0.258629474823   delta_y = 0.125018034212   delta_theta = -1449.0727038
+(least_squares_iterate):  sigma_x = 0.043133418347   sigma_y = 0.0485776891823   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=18 out of original_elements=20
+(least_squares_iterate):  iteration number: 1
+(least_squares_iterate):  delta_x = 0.270628859875   delta_y = 0.14570947892   delta_theta = -1531.35587469
+(least_squares_iterate):  sigma_x = 0.0559456897514   sigma_y = 0.0761573804773   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=19 out of original_elements=20
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 1 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.25616596713  -0.0556225666315
+                             - original sigma and mean in Y = 0.0724605913286  0.00969676395042
+                             - new sigma and mean in X = 0.00691381042917  -0.0112306913124
+                             - new sigma and mean in Y 0.00797011801575  -0.00641523579486
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 1 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.257289635188  -0.0487146921481
+                             - original sigma and mean in Y = 0.0705450721571  0.0168900092947
+                             - new sigma and mean in X = 0.00221662178102  -0.00355676063993
+                             - new sigma and mean in Y 0.00300749931343  0.00161638187051
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 1 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.257590469728  -0.0478555930383
+                             - original sigma and mean in Y = 0.0703199107352  0.0176304770547
+                             - new sigma and mean in X = 0.00295809568244  -0.00256639929864
+                             - new sigma and mean in Y 0.00288220795936  0.00210997748577
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 1 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.321161111764  0.182838183126
+                             - original sigma and mean in Y = 0.0722709661173  0.0863214188949
+                             - new sigma and mean in X = 0.0417483846827  0.248762846948
+                             - new sigma and mean in Y 0.0450630329257  0.105004721196
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 1 iterations
+                             - arrays have 19 elements left out of 20 initial
+                             - original sigma and mean in X = 0.324277276497  0.192844730711
+                             - original sigma and mean in Y = 0.0683658582181  0.0944326515963
+                             - new sigma and mean in X = 0.0555831567312  0.266193479169
+                             - new sigma and mean in Y 0.0634999734932  0.101094626442
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 1 iterations
+                             - arrays have 19 elements left out of 20 initial
+                             - original sigma and mean in X = 0.324714505062  0.193939864587
+                             - original sigma and mean in Y = 0.0670343400078  0.0957661022033
+                             - new sigma and mean in X = 0.055851287049  0.267380177568
+                             - new sigma and mean in Y 0.0624955367881  0.102186444987
+* Standard deviations and means 
+std_dev_V2_P1_3 = 0.25616596713           std_dev_V3_P1_3 = 0.0724605913286     
+std_dev_V2_P1_5 = 0.257289635188          std_dev_V3_P1_5 = 0.0705450721571     
+std_dev_V2_P1_7 = 0.257590469728          std_dev_V3_P1_7 = 0.0703199107352     
+   mean_V2_P1_3 = -0.0556225666315           mean_V3_P1_3 = 0.00969676395042      
+   mean_V2_P1_5 = -0.0487146921481           mean_V3_P1_5 = 0.0168900092947       
+   mean_V2_P1_7 = -0.0478555930383           mean_V3_P1_7 = 0.0176304770547       
+std_dev_V2_P2_3 = 0.321161111764          std_dev_V3_P2_3 = 0.0722709661173     
+std_dev_V2_P2_5 = 0.324277276497          std_dev_V3_P2_5 = 0.0683658582181     
+std_dev_V2_P2_5 = 0.324277276497          std_dev_V3_P2_5 = 0.0683658582181     
+   mean_V2_P2_3 = 0.182838183126             mean_V3_P2_3 = 0.0863214188949       
+   mean_V2_P2_5 = 0.192844730711             mean_V3_P2_5 = 0.0944326515963       
+   mean_V2_P2_7 = 0.193939864587             mean_V3_P2_7 = 0.0957661022033       
+Repetitions Diffs1: Counter({3: 18, 7: 2})
+Repetitions Diffs2: Counter({3: 19, 7: 1})
+
