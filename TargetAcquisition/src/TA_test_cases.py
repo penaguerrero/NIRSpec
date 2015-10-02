@@ -75,8 +75,8 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 # Set test parameters
 detector = 491                     # Which detector are we working with: 491 or 492
-path_number = 15                   # Select 0 through 4 from paths_list above 
-vlim = (1.0,30)                  # sensitivity limits of image, i.e. (0.001, 0.1) 
+path_number = 3                    # Select 0 through 4 from paths_list above 
+vlim = (1.0,30)                    # sensitivity limits of image, i.e. (0.001, 0.1) 
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
 ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
