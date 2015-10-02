@@ -1180,12 +1180,12 @@ if shutters != "all" and bkgd_method != "all":
         line5bisA = "Repetitions Diffs1: {}".format(T3_counter1)
         line5bisB = "Repetitions Diffs2: {}".format(T3_counter2)
         if "frac" in case:
-            line3bisC = "Repetitions Fractional BG values Positions 1 and 2 ChBx3: V2 {}  {}".format(T3counterV2_13, T3counterV2_23)
-            line3bisD = "                                                          V3 {}  {}".format(T3counterV3_13, T3counterV3_23)
-            line3bisE = "                                                   ChBx5: V2 {}  {}".format(T3counterV2_15, T3counterV2_25)
-            line3bisF = "                                                          V3 {}  {}".format(T3counterV3_15, T3counterV3_25)
-            line3bisG = "                                                   ChBx7: V2 {}  {}".format(T3counterV2_17, T3counterV2_27)
-            line3bisH = "                                                          V3 {}  {}".format(T3counterV3_17, T3counterV3_27)
+            line5bisC = "Repetitions Fractional BG values Positions 1 and 2 ChBx3: V2 {}  {}".format(T3counterV2_13, T3counterV2_23)
+            line5bisD = "                                                          V3 {}  {}".format(T3counterV3_13, T3counterV3_23)
+            line5bisE = "                                                   ChBx5: V2 {}  {}".format(T3counterV2_15, T3counterV2_25)
+            line5bisF = "                                                          V3 {}  {}".format(T3counterV3_15, T3counterV3_25)
+            line5bisG = "                                                   ChBx7: V2 {}  {}".format(T3counterV2_17, T3counterV2_27)
+            line5bisH = "                                                          V3 {}  {}".format(T3counterV3_17, T3counterV3_27)
         if show_positions:
             line6 = "{:<5} {:<15} {:<35} {:<39} {:<37} {:<38} {:<36} {:<38} {:<30} {:<40} {:<40} {:<40} {:<36} {:<38} {:<35} {:<25} {:<7}".format(
                         "Star", "BG_value", "Pos1_Checkbox_3", "Pos1_Checkbox_5", "Pos1_Checkbox_7",
@@ -1222,12 +1222,12 @@ if shutters != "all" and bkgd_method != "all":
         print (line5bisA)
         print (line5bisB)
         if "frac" in case:
-            print (line3bisC)
-            print (line3bisD)
-            print (line3bisE)
-            print (line3bisF)
-            print (line3bisG)
-            print (line3bisH)
+            print (line5bisC)
+            print (line5bisD)
+            print (line5bisE)
+            print (line5bisF)
+            print (line5bisG)
+            print (line5bisH)
         print (line6)
         print (line7)
         if save_txt_file:
@@ -1291,16 +1291,15 @@ if shutters != "all" and bkgd_method != "all":
             to.write("       Checkbox 7:  \n")
             for l2p in T3lines2print_27:
                 to.write(l2p+"\n")
-            to.write(line3bisA+"\n")
-            if "frac" in case:
-                to.write(line3bisB+"\n")
-                to.write(line3bisC+"\n")
-                to.write(line3bisD+"\n")
-                to.write(line3bisE+"\n")
-                to.write(line3bisF+"\n")
-                to.write(line3bisG+"\n")
             to.write(line5bisA+"\n")
             to.write(line5bisB+"\n")
+            if "frac" in case:
+                to.write(line5bisC+"\n")
+                to.write(line5bisD+"\n")
+                to.write(line5bisE+"\n")
+                to.write(line5bisF+"\n")
+                to.write(line5bisG+"\n")
+                to.write(line5bisH+"\n")
             to.write(line6+"\n")
             to.write(line7+"\n")
         for i, st in enumerate(stars_sample):
