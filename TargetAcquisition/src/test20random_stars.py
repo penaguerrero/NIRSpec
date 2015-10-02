@@ -12,8 +12,8 @@ import least_squares_iterate as lsi
 print("Modules correctly imported! \n")
 
 """
-This script tests can choose 20 random stars from either detector and runs the following
-transformations for the selected (or all) test(s) for the a given set of 20 stars:  
+This script tests can choose X random stars from either detector and runs the following
+transformations for the selected test for a given set of X stars for a specific case:  
 
  TEST1 - Average positions P1 and P2, transform to V2-V3 space, and compare to average 
          reference positions (V2-V3 space)
@@ -24,7 +24,11 @@ transformations for the selected (or all) test(s) for the a given set of 20 star
 
 Outputs:
     - display images with true and calculated centroid
-    - text file with 
+    - text file for the test ran with standard deviations and means for checkboxes 3, 5, and 7,
+      sigma-clipped standard deviations and means, iterative least squares standard deviations 
+      and means, and the list of stars, background value used, the differences (in arcsecs or
+      degrees) with respect to true or benchmark sky positions, and the checkbox size that has
+      the minimum difference with respect to the true value.  
 """
 
 
