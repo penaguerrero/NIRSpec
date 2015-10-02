@@ -1,0 +1,172 @@
+INDEX of Python scripts with respective output text files.
+(in order of text file construction)
+
+
+1. test01.py
+This is Tommy’s notebook translated into a script in order to compare
+with his results.
+
+2. tautils.py
+This is a script that Tommy started that contains some required 
+functions by other scripts. It contains a centroid algorithm that is 
+not used in any other script. It also contains the function to read
+the 3-ramped fits files, and the display function for the resulting
+image.
+
+3. jwst_targloc.py
+This script was started by Tommy. It contains all the revised functions
+for the target location algorithm that are actually used in other
+scripts.
+
+4. testing_functions.py
+This script contains functions used by various scripts in order to
+avoid coding repetitions. These functions include calls to Pierre’s 
+fits files with benchmark position of fake reference stars, 
+transformation from 32x32 pixel to full detector coordinates,
+deal with the fractional background cases, standard deviation and 
+mean function, and display centroids with true and measured positions, 
+n-sigma rejection function.
+
+5. TA_zeroth_test_cases.py
+As the name suggests, this is the zeroth test case for the target 
+locate algorithm. It determines centroids for 4 test cases, 2 per
+detector: 
+- Scene or scenario 1 (all 100 stars per detector with Mag of 23)
+- Scene or scenario 2 (all 100 stars per detector with Mags from 18 
+to 23)
+The script finds:
+- the centroids for widths 3, 5, and 7 with 3 background options (None=image as is, Fixed=subtract fixed value from 
+each ramped image, or Fractional=find the value that has the given
+percentage of background and subtract that value -increments of 0.1 
+from 0.0 to 1.0)
+- moments (though they are not recorded in any text file for now)
+Outputs:
+All output files are in the electron_rate_maps folder in the 
+corresponding detector folder. There are 3 subfolders in each detector:
+- centroid_figs (figures with true and measured centroids)
+- plots (offsets plots and magnitude vs y-offsets plots)
+- TAposition_text_files (text files containing the full detector 
+coordinate measured centroids, the true, centroids, the lo left 
+coordinate of the checkbox, the factor (for conversion to magnitude 
+with -2.5log(factor)+23.0), and differences with respect to true 
+values (true-measured). These text files are for 2 cases, flight and 
+perfect MSA. The perfect has no noise and no hot pixels, the flight 
+case has hot pixels and noise. All these files exist
+for unshifted and shifted positions.
+
+6. TA_test_cases.py
+This scrip is similar to the zeroth cases but it has more study cases:
+slow or rapid shutters, real (noise and hot pixels) or no noise case 
+(only hot pixels), background subtraction with None, Fixed, or 
+Fractional options, and these cases for both scenarios 1 and 2.
+Outputs:
+* Note-for detector 491 there are folders with the same name and _redo
+because there was a problem with the postage stamps and we re-did all
+cases. So the correct results to use are all in the folders with 
+the extension _redo.
+The results of this script are saved into 3 folders per detector:
+- detector_centroid_figs (figures with true and measured centroids)
+- detector_plots (offsets plots and magnitude vs y-offsets plots)
+- detector_resulting_centroid_txt_files (ext files containing the 
+full detector coordinate measured centroids, the true, centroids, 
+the lo left coordinate of the checkbox, the factor (for conversion
+to magnitude with -2.5log(factor)+23.0), and differences with respect
+to true values (true-measured). These text files are for 2 cases, real
+and no noise. The no noise only has hot pixels, while the real has
+hot pixels, cosmic rays, and noise in general. All these files exist
+for unshifted and shifted positions.
+
+7. avgcentroid_comparison2true.py
+This script calculates the average centroids determined for the modeled
+reference stars for positions 1 and 2 (unshifted and shifted positions).
+It creates plots of the histogram of the true-avg position versus the 
+number of stars. However it currently uses position 1 as the true
+position instead of the average of true1 and true2, this still needs 
+to be implemented.
+Inputs:
+- Script uses files from detector_resulting_centroid_txt_files folder
+- True positions taken from Pierre’s fits position files
+Outputs:
+- Text files are in the detector_comparison_txt_positions folders for
+each detector. These text files contain the measured centroids for
+both positions for checkbox sizes 3, 5, and 7, as well as the average
+measured positions, the difference between measured position1-position2,
+and the difference to the true positions.
+- The histograms are saved in the detector_plots_comparison folder for
+each detector. The main purpose of these plots is to graphically show 
+which checkbox size is better (so far it seems that it is 7).
+
+8. coords_transform.py
+This script is the python translation of the IDL version sent by Tony
+Keyes. The script contains the functions to transform from 
+detector to sky coordinates and viceversa.
+Inputs:
+- The script uses 6 text files in the 
+Coords_transforms/files_from_Tony folder (491_GWA.txt, 492_GWA.txt, 
+CLEAR_GWA_OTE.txt, F110W_GWA_OTE.txt, F140X_GWA_OTE.txt, 
+tilt_correction.txt).
+
+9. least_squares.py and least_squares_iterate.py
+These scripts are the python translation from the IDL version provided
+by Tony Keyes. They simply contain the function to be called and used.
+
+10. testing_coordtransf.py
+This script tests the transformation script for both directions.
+Input:
+- It uses the 491_F140X_notilt_test_answers_output_check_new_crud.txt 
+file provided by the ESA team to test coordinates back and forth. This
+file is in the Coords_transforms/files_from_Tony folder.
+Output:
+- A file with the name testing_coordstransf_491_F140X_notilt.txt in the
+Coords_transforms folder shows the results of the test. It contains the 
+test number, the detector x and y coordinates, and the sky x and y
+coordinates.
+
+11. comparison2sky.py
+This script tests which of the following options obtains the smaller
+difference to the true sky positions (V2-V3 space):
+Test 1 - Average positions P1 and P2, transform to V2-V3 space, and 
+         compare to average reference positions (V2-V3 space)
+Test 2 - Transform individual positions P1 and P2 to V2-V3 space, 
+         average V2-V3 space positions, and compare to average 
+         reference positions.
+Test 3 - Transform P1 and P2 individually to V2-V3 space and compare 
+         star by star and position by position.
+Input:
+- The script reads the measured positions from files in the 
+folder detector_comparison_txt_positions.
+- True or benchmark positions are read from Pierre’s fits files.
+Output:
+- Script outputs 3 text file with results of test per case into directory Coords_transforms/results/
+* NOTE - case depends on scene, noise, background value, and shutter 
+velocity; results in 36 files per scene.
+
+11. test20random_stars.py
+This script tests can choose X random stars from either detector and
+runs the transformations for the selected test for a given 
+set of X stars for a specific case:  
+TEST1 - Average positions P1 and P2, transform to V2-V3 space, and 
+        compare to average reference positions (V2-V3 space)
+TEST2 - Transform individual positions P1 and P2 to V2-V3 space, 
+        average V2-V3 space positions, and compare to average 
+        reference positions.
+TEST3 - Transform P1 and P2 individually to V2-V3 space and compare 
+        star by star and position by position.
+Input:
+- The script reads the measured positions from files in the 
+folder detector_comparison_txt_positions.
+- True or benchmark positions are read from Pierre’s fits files.
+Outputs:
+- Display images with true and calculated centroid
+- On screen, the script displays the measured centroids in 32x32 pixel
+coordinates for checkbox sizes 3, 5, and 7, as well as the magnitudes.
+- Text file for the test ran with standard deviations and means for 
+checkboxes 3, 5, and 7, sigma-clipped standard deviations and means, 
+iterative least squares standard deviations and means, and the list 
+of stars, background value used, the differences (in arcsecs or
+degrees) with respect to true or benchmark sky positions, and the 
+checkbox size that has the minimum difference with respect to the 
+true value. The text files are saved into the results20randomstars 
+folder.
+
+
