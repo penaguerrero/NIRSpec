@@ -1,0 +1,72 @@
+Differences = True_Positions - Measured_Positions
+*** diffs are in units of arcsecs
+Test2: P1 P2, average positions in V2-V3, calculate differences
+std_dev_V2_3 = 0.362431044641         std_dev_V3_3 = 0.123072965661      
+std_dev_V2_5 = 0.362839952245         std_dev_V3_5 = 0.12052339214       
+std_dev_V2_7 = 0.361715555543         std_dev_V3_7 = 0.122155465002      
+   mean_V2_3 = -0.0622699377839          mean_V3_3 = 0.0188995723013       
+   mean_V2_5 = -0.0603128215654          mean_V3_5 = 0.0177009751583       
+   mean_V2_7 = -0.0545308777767          mean_V3_7 = 0.0152376475081       
+  * From least squares routine:  
+       Checkbox 3:  
+(least_squares_iterate):  iteration number: 1
+(least_squares_iterate):  delta_x = -0.00187266420985   delta_y = -0.126867401308   delta_theta = -118.517148285
+(least_squares_iterate):  sigma_x = 0.0788300117624   sigma_y = 0.182136008948   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=19 out of original_elements=20
+       Checkbox 5:  
+(least_squares_iterate):  iteration number: 1
+(least_squares_iterate):  delta_x = -0.00249523765393   delta_y = -0.149839811791   delta_theta = -133.248966663
+(least_squares_iterate):  sigma_x = 0.0794394381427   sigma_y = 0.201068174704   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=19 out of original_elements=20
+       Checkbox 7:  
+(least_squares_iterate):  iteration number: 1
+(least_squares_iterate):  delta_x = 0.00142603133571   delta_y = -0.166848491317   delta_theta = -148.353231009
+(least_squares_iterate):  sigma_x = 0.0738890120365   sigma_y = 0.21498685688   sigma_theta = -999.0
+(least_squares_iterate):  elements_left=19 out of original_elements=20
+ Checkbox 3:  
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 1 iterations
+                             - arrays have 19 elements left out of 20 initial
+                             - original sigma and mean in X = 0.362431044641  -0.0622699377839
+                             - original sigma and mean in Y = 0.123072965661  0.0188995723013
+                             - new sigma and mean in X = 0.0759825661045  0.0191230592268
+                             - new sigma and mean in Y 0.0656789019415  0.0430143446076
+ Checkbox 5:  
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 1 iterations
+                             - arrays have 19 elements left out of 20 initial
+                             - original sigma and mean in X = 0.362839952245  -0.0603128215654
+                             - original sigma and mean in Y = 0.12052339214  0.0177009751583
+                             - new sigma and mean in X = 0.0758284695603  0.021183181562
+                             - new sigma and mean in Y 0.0609978223142  0.0417526634044
+ Checkbox 7:  
+N-sigma rejection function:  values calculated from differences
+                             - stopped at 2 iterations
+                             - arrays have 18 elements left out of 20 initial
+                             - original sigma and mean in X = 0.361715555543  -0.0545308777767
+                             - original sigma and mean in Y = 0.122155465002  0.0152376475081
+                             - new sigma and mean in X = 0.0558286693549  0.0371383019664
+                             - new sigma and mean in Y 0.039998953467  0.0297187396828
+Repetitions Diffs1: Counter({3: 9, 7: 9, 5: 2})
+Star  BG_value             Checkbox=3                               Checkbox=5                               Checkbox=7              MinDiff  
+                        x                 y                      x                 y                      x                 y
+1     0.0         0.134520040187  0.0744436149667          0.145103171665  0.0866161204078          0.146043762098  0.0869719345033      3      
+15    0.0        0.0942547615168  0.0459680376902          0.104968530291  0.050065412988           0.105417260121  0.0510996141778      3      
+60    0.0         0.131301841127  0.0811467146011          0.139946664703  0.0840051477637          0.141183687134  0.0847139226467      3      
+65    0.0        0.0512471725214  0.109842007961          0.0700339324759  0.117269976216          0.0684822325955  0.109035852999       3      
+67    0.0          0.10450354446  0.0396771986182          0.106993794999  0.0451224834185          0.108197308647  0.0449210817254      3      
+72    0.0        -0.157498180204  0.191488411987          -0.118858656785  0.135999441782         -0.0222226892558  0.106514900125       3      
+81    0.0          0.10390175975  0.041179663326           0.105844066808  0.0457114332135          0.106794408331  0.0454984551146      3      
+124   0.0        -0.151352371182  0.22524894036            -0.15627879886  0.224412224455          -0.155648527951  0.225417945599       5      
+132   0.0       0.00247720761199  -0.00217302234284      0.00107138359264  0.00033271415725      0.000956291926546  -0.000200474418266   7      
+133   0.0       0.00798585564836  0.00729537345941       0.00104311974368  0.0011677859871       0.000496460679766  0.000525199992671    7      
+139   0.0       0.00857194192677  0.00442413202755     -0.000717431732172  -0.00141829599825    -0.000358388178534  -0.00222458961974    5      
+156   0.0         -1.60873688099  -0.439281101518          -1.60873688099  -0.439281101518          -1.60345846298  -0.455602309727      3      
+166   0.0        0.0111919158037  0.0034346226683       0.000640479395569  0.00153424949644      0.000121454805313  0.00196581268668     7      
+167   0.0       0.00104796916455  0.001897341327          0.0015388132764  -3.54453396884e-05      0.0158579900411  -1.43721788595e-05   3      
+182   0.0       0.00376622472424  -0.00295988839088    -0.000136245248533  -2.65728157353e-05    -0.00106640851594  0.000817746663184    7      
+183   0.0       0.00716449599907  0.00335845707748       0.00103194723097  0.000493671742579     0.000640296485432  0.000741763687311    7      
+187   0.0       0.00237733379223  -0.00307051856021     0.000519119740344  -0.00105421182506    -0.000496817697732  -3.16708482283e-05   7      
+189   0.0      0.000955978172573  -0.00178845796669     -0.00147201217225  0.00285907631795      -0.00181197382923  0.00286112650309     7      
+198   0.0       0.00315315362515  0.000841388939309      0.00130830113683  -0.000462802809276     0.00113191296136  -0.000157595628272   7      
+200   0.0       0.00376748066449  -0.00298147020512    -9.97305822925e-05  0.000708195525448    -0.000877352954487  0.00189860615946     7      
