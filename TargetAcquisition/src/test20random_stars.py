@@ -36,7 +36,7 @@ Outputs:
 
 
 # general settings
-random_sample = True     # choose a random sample of 20 stars from either detector: True or False
+random_sample = False     # choose a random sample of 20 stars from either detector: True or False
 stars_in_sample = 20     # number of stars in sample
 # if wanting a specific sample of stars, input integer numbers into following list
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
@@ -57,7 +57,7 @@ save_txt_file = False    # Save text file with resulting transformations: True o
 Pier_corr = True         # Include Pier's corrections to measured positions
 show_positions = False   # Print positions on file and screen: True or False
 tilt = False             # tilt angle: True or False
-debug = False            # See screen print statements for intermediate answers: True or False 
+debug = True            # See screen print statements for intermediate answers: True or False 
 diffs_in_arcsecs = True  # Print the differences in arcsecs? True or False (=degrees) 
 
 
@@ -877,6 +877,9 @@ if shutters != "all" and bkgd_method != "all":
         T3bench_Vs_listP1, T3bench_Vs_listP2 = T3_benchVs_list
         T3bench_V2_listP1, T3bench_V3_listP1 = T3bench_Vs_listP1
         T3bench_V2_listP2, T3bench_V3_listP2 = T3bench_Vs_listP2
+        print ("T3bench_V2_listP1[0], T3bench_V3_listP1[0]: ", T3bench_V2_listP1[7], T3bench_V3_listP1[7])
+        print ("T3bench_V2_listP2[0], T3bench_V3_listP2[0]: ", T3bench_V2_listP2[7], T3bench_V3_listP2[7])
+        raw_input()
         # get the fractional value that has the smaller difference
         if "frac" in case:
             T3list_best_frbg_value_V2_13, T3list_best_frbg_value_V3_13, T3counterV2_13, T3counterV3_13 = find_best_fracbgvalue(T3_diffV2_13, T3_diffV3_13)
