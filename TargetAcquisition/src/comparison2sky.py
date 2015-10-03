@@ -23,7 +23,7 @@ It outputs 3 text file with results of test per case into directory TargetAcquis
 #######################################################################################################################
 
 # general settings
-detector = 492           # detector, integer: 491 or 492
+detector = 491           # detector, integer: 491 or 492
 Nsigma = 3               # N-sigma rejection of bad stars, integer or float
 max_iterations = 10      # Max number of iterations for N-sigma function, integer
 bkgd_method = "None"     # background to test, string: all, None, fixed, frac  
@@ -31,10 +31,10 @@ filter_input = "F140X"   # Filter, string: for now only test case is F140X
 Pier_corr = True         # Include Pier's corrections to measured positions
 show_positions = False   # Print positions on file and screen: True or False
 tilt = False             # tilt angle: True or False
-debug = False            # See screen print statements for intermediate answers: True or False 
+debug = True            # See screen print statements for intermediate answers: True or False 
 save_txt_file = False    # Save text file with resulting transformations: True or False
 diffs_in_arcsecs = True  # Print the differences in arcsecs? True or False (=degrees) 
-single_case = None       # test only a particular case: integer number of star, else set to None 
+single_case = 124       # test only a particular case: integer number of star, else set to None 
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
 
 #######################################################################################################################
