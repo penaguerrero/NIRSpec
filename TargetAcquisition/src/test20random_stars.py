@@ -57,7 +57,7 @@ save_txt_file = False    # Save text file with resulting transformations: True o
 Pier_corr = True         # Include Pier's corrections to measured positions
 show_positions = False   # Print positions on file and screen: True or False
 tilt = False             # tilt angle: True or False
-debug = True            # See screen print statements for intermediate answers: True or False 
+debug = False            # See screen print statements for intermediate answers: True or False 
 diffs_in_arcsecs = True  # Print the differences in arcsecs? True or False (=degrees) 
 
 
@@ -388,7 +388,7 @@ def runTest_and_append_results(test2run, data4test1, Vs, diffs, benchVs):
         for bv2, bv3 in zip(bench_V2_listP2, bench_V3_listP2):
             Tbench_V2_listP2.append(bv2)
             Tbench_V3_listP2.append(bv3)
-        Tbench_V2_list, Tbench_V3_list = [Tbench_V2_listP1, Tbench_V3_listP1], [Tbench_V2_listP2, Tbench_V3_listP2]
+        Tbench_V2_list, Tbench_V3_list = [Tbench_V2_listP1, Tbench_V2_listP2], [Tbench_V3_listP1, Tbench_V3_listP2]
     Vs = [T_V2_3, T_V3_3, T_V2_5, T_V3_5, T_V2_7, T_V3_7]
     diffs = [T_diffV2_3, T_diffV3_3, T_diffV2_5, T_diffV3_5, T_diffV2_7, T_diffV3_7]
     benchVs = [Tbench_V2_list, Tbench_V3_list]
@@ -874,12 +874,9 @@ if shutters != "all" and bkgd_method != "all":
         T3_diffV3_15, T3_diffV3_25 = T_diffV3_5
         T3_diffV2_17, T3_diffV2_27 = T_diffV2_7
         T3_diffV3_17, T3_diffV3_27 = T_diffV3_7
-        T3bench_Vs_listP1, T3bench_Vs_listP2 = T3_benchVs_list
-        T3bench_V2_listP1, T3bench_V3_listP1 = T3bench_Vs_listP1
-        T3bench_V2_listP2, T3bench_V3_listP2 = T3bench_Vs_listP2
-        print ("T3bench_V2_listP1[0], T3bench_V3_listP1[0]: ", T3bench_V2_listP1[7], T3bench_V3_listP1[7])
-        print ("T3bench_V2_listP2[0], T3bench_V3_listP2[0]: ", T3bench_V2_listP2[7], T3bench_V3_listP2[7])
-        raw_input()
+        T3bench_V2_list, T3bench_V3_list = T3_benchVs_list
+        T3bench_V2_listP1, T3bench_V2_listP2 = T3bench_V2_list
+        T3bench_V3_listP1, T3bench_V3_listP2 = T3bench_V3_list
         # get the fractional value that has the smaller difference
         if "frac" in case:
             T3list_best_frbg_value_V2_13, T3list_best_frbg_value_V3_13, T3counterV2_13, T3counterV3_13 = find_best_fracbgvalue(T3_diffV2_13, T3_diffV3_13)
