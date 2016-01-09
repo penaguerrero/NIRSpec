@@ -29,7 +29,7 @@ Output(s):
 
 Example usage:
     import least_squares_iterate as lsi
-    deltas, sigmas, lines2print = lsi.ls_fit_iter(niter, x_input, y_input, xtrue, ytrue)
+    deltas, sigmas, lines2print, rejected_elements_idx = lsi.ls_fit_iter(niter, x_input, y_input, xtrue, ytrue)
 
 
 *** Testing suite of the script at the bottom
@@ -47,6 +47,9 @@ def ls_fit_iter(niter, xt, yt, x, y):
     # do up to niter iterations of sigma-clipping (first time through is 
     # initial calculation, then up to niter iterations)
     original_elements = len(x)
+    original_elements_idx = []
+    for i, _ in enumerate(x):
+        original_elements_idx.append(i)
     for nit in range(niter):
         n = len(x)
         # Initialize the sums
@@ -148,7 +151,12 @@ def ls_fit_iter(niter, xt, yt, x, y):
     print (line3)
     print (line4)
     lines2print = [line1, line2, line3, line4]
-    return deltas, sigmas, lines2print
+    # find what elements got rejected
+    rejected_elements_idx = []
+    for st in original_elements_idx:
+        if st not in xcentroids_new:
+            rejected_elements_idx.append(st)
+    return deltas, sigmas, lines2print, rejected_elements_idx
     
     # Still do not know how to do delta_theta sigma  -- is this calculation needed?
 
