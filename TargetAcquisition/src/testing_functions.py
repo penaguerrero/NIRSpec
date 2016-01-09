@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import os
+from glob import glob
+import collections
 
 # Tommy's code
 import tautils as tu
@@ -13,6 +15,51 @@ import jwst_targloc as jtl
 __author__ = "Maria A. Pena-Guerrero"
 __version__ = "1.0"
 
+
+# FUNCTIONS
+
+def get_raw_star_directory(path4starfiles, scene, shutters, noise, redo=True):
+    """
+    This function returns a list of the directories (positions 1 and 2) to be studied.
+    # Paths to Scenes 1 and 2 local directories: /Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/PFforMaria
+    path_scene1_slow = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS/postage"
+    path_scene1_slow_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage"
+    path_scene1_rapid = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRSRAPID/postage"
+    path_scene1_rapid_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 first NRS no_noise/postage"
+    path_scene1_slow_shifted = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS/postage"
+    path_scene1_slow_shifted_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage"
+    path_scene1_rapid_shifted = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRSRAPID/postage"
+    path_scene1_rapid_shifted_nonoise = "Scene_1_AB23/NIRSpec_TA_Sim_AB23 shifted NRS no_noise/postage"
+    path_scene2_slow = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS/postage"
+    path_scene2_slow_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRS no_noise/postage"
+    path_scene2_rapid = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID/postage"
+    path_scene2_rapid_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 first NRSRAPID no_noise/postage"
+    path_scene2_slow_shifted = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS/postage"
+    path_scene2_slow_shifted_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRS no_noise/postage"
+    path_scene2_rapid_shifted = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID/postage"
+    path_scene2_rapid_shifted_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID no_noise/postage"
+    """
+    # define shutter velocity to be used
+    shutter_vel = "NRS"   # for slow case
+    if shutters == "rapid":
+        shutter_vel = "NRSRAPID"
+    # define noise level
+    noise_level = " no_noise"
+    if noise == "real":
+        noise_level = ""
+    # define directory path for scenario 1
+    position1 = path4starfiles+"Scene_"+repr(scene)+"_AB23/NIRSpec_TA_Sim_AB23 first "+shutter_vel+noise_level+"/postage"
+    position2 = path4starfiles+"Scene_"+repr(scene)+"_AB23/NIRSpec_TA_Sim_AB23 shifted "+shutter_vel+noise_level+"/postage"
+    if scene == 2:        
+        position1 = path4starfiles+"Scene_"+repr(scene)+"_AB1823/NIRSpec_TA_Sim_AB1823 first "+shutter_vel+noise_level+"/postage"
+        position2 = path4starfiles+"Scene_"+repr(scene)+"_AB1823/NIRSpec_TA_Sim_AB1823 shifted "+shutter_vel+noise_level+"/postage"
+    if redo:
+        position1 = position1+"_redo"
+        position2 = position2+"_redo"
+    dir2test_list = [position1, position2]
+    return dir2test_list    
+    
+    
 def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_size, max_iter, 
                             threshold, determine_moments, debug, display_master_img, vlim=()):   
     """
@@ -49,6 +96,103 @@ def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_
         print('---------------------------------------------------------------')
         print()
     return cb_centroid_list
+
+
+def do_Piers_correction(detector, true_center):
+    """
+    KEYWORD ARGUMENTS:
+        Pier_corr                  -- Perform average correction suggested by Pier: True or False
+        
+    OUTPUT:
+    cb_centroid_list               -- Values corrected for Pier's values 
+    corr_true_center               -- True center corrected for Pier's values
+    """
+    # Corrections for offsets in positions (see section 2.5 of Technical Notes in Documentation directory)
+    offset_491 = (-0.086, -0.077)
+    offset_492 = (0.086, 0.077)
+    corrected_x = true_center[0]
+    corrected_y = true_center[1]
+    if detector == 491:
+        corrected_x = true_center[0] + offset_491[0]
+        corrected_y = true_center[1] + offset_491[1]
+    elif detector == 492:
+        corrected_x = true_center[0] + offset_492[0]
+        corrected_y = true_center[1] + offset_492[1]
+    corr_true_center = [corrected_x, corrected_y]
+    return corr_true_center
+
+
+def centroid2fulldetector(cb_centroid_list, true_center):
+    """
+    Transform centroid coordinates into full detector coordinates.
+    
+    KEYWORD ARGUMENTS:
+    cb_centroid_list           -- Checkbox based centroid determined by target acquisition (TA) algorithm in 
+                                  terms of 32 by 32 pixels for checkbox sizes 3, 5, and 7
+    true_center                -- Actual (true) position of star in terms of full detector  
+    
+    OUTPUT:
+    cb_centroid_list_fulldetector  -- List of centroid locations determined with the TA algorithm in 
+                                      terms of full detector. List is for positions determined with
+                                      3, 5, and 7 checkbox sizes. 
+    loleftcoords                   -- Coordinates of the lower left corner of the 32x32 pixel box
+    true_center32x32               -- True center given in coordinates of 32x32 pix
+    differences_true_TA            -- Difference of true-observed positions       
+    """
+        
+    # Get the lower left corner coordinates in terms of full detector. We subtract 16.0 because indexing
+    # from centroid function starts with 1
+    corrected_x = true_center[0]
+    corrected_y = true_center[1]
+    loleft_x = np.floor(corrected_x) - 16.0
+    loleft_y = np.floor(corrected_y) - 16.0
+    loleftcoords = [loleft_x, loleft_y]
+    #print(loleft_x, loleft_y)
+    
+    # get center in term of 32x32 checkbox
+    true_center32x32 = [corrected_x-loleft_x, corrected_y-loleft_y]
+    
+    # Add lower left corner to centroid location to get it in terms of full detector
+    cb_centroid_list_fulldetector = []
+    for centroid_location in cb_centroid_list:
+        centroid_fulldetector_x = centroid_location[0] + loleft_x
+        centroid_fulldetector_y = centroid_location[1] + loleft_y
+        centroid_fulldetector = [centroid_fulldetector_x, centroid_fulldetector_y]
+        cb_centroid_list_fulldetector.append(centroid_fulldetector)
+    corr_cb_centroid_list = cb_centroid_list_fulldetector
+    
+    # Determine difference between center locations
+    differences_true_TA = []
+    d3_x = true_center[0] - corr_cb_centroid_list[0][0]
+    d5_x = true_center[0] - corr_cb_centroid_list[1][0]
+    d7_x = true_center[0] - corr_cb_centroid_list[2][0]
+    d3_y = true_center[1] - corr_cb_centroid_list[0][1]
+    d5_y = true_center[1] - corr_cb_centroid_list[1][1]
+    d7_y = true_center[1] - corr_cb_centroid_list[2][1]
+    d3 = [d3_x, d3_y]
+    d5 = [d5_x, d5_y]
+    d7 = [d7_x, d7_y]
+    diffs = [d3, d5, d7]
+    differences_true_TA.append(diffs)
+    return corr_cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA
+
+
+def get_mindiff(d1, d2, d3):
+    """ This function determines the minimum difference from checkboxes 3, 5, and 7,
+    and counts the number of repetitions.  """
+    min_diff = []
+    for i, _ in enumerate(d1):
+        diffs_list = [d1[i], d2[i], d3[i]]
+        md = min(diffs_list)
+        if md == d1[i]:
+            m_diff = 3
+        elif md == d2[i]:
+            m_diff = 5
+        elif md == d3[i]:
+            m_diff = 7
+        min_diff.append(m_diff)
+    counter=collections.Counter(min_diff)
+    return min_diff, counter
 
 
 def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list, ESA_center, true_center, perform_avgcorr=False):
@@ -91,7 +235,7 @@ def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list
     loleft_x = np.floor(corrected_x) - 16.0
     loleft_y = np.floor(corrected_y) - 16.0
     loleftcoords = [loleft_x, loleft_y]
-    print(loleft_x, loleft_y)
+    #print(loleft_x, loleft_y)
 
     if centroid_in_full_detector:    
         # Add lower left corner to centroid location to get it in terms of full detector
@@ -651,7 +795,7 @@ def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=
     return diffV2, diffV3, bench_V2_list, bench_V3_list
 
 
-def convert2fulldetector(detector, stars, P1P2data, bench_stars, benchmark_xLyL_P1, benchmark_xLyL_P2, Pier_corr=True):
+def convert2fulldetector(detector, stars, P1P2data, bench_stars, benchmark_xLyL_P1, benchmark_xLyL_P2, Pier_corr=False):
     """ This function simply converts from 32x32 pixel to full detector coordinates according to 
     background method - lengths are different for the fractional case. """
     x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27 = P1P2data
