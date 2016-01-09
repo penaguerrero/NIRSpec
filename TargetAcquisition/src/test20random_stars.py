@@ -40,8 +40,8 @@ random_sample = False     # choose a random sample of 20 stars from either detec
 stars_in_sample = 20     # number of stars in sample
 # if wanting a specific sample of stars, input integer numbers into following list
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
-#stars_sample = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]   # test sample
-stars_sample = [1, 15, 60, 65, 67, 72, 81, 124, 132, 133, 139, 156, 166, 167, 182, 183, 187, 189, 198, 200]
+stars_sample = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]   # test sample
+#stars_sample = [1, 15, 60, 65, 67, 72, 81, 124, 132, 133, 139, 156, 166, 167, 182, 183, 187, 189, 198, 200]
 test2perform = "T3"      # string, type "T1", "T2", "T3" for test 1, 2, and 3, respectively
 Nsigma = 3               # N-sigma rejection of bad stars, integer or float
 max_iterations = 10      # Max number of iterations for N-sigma function, integer
@@ -50,7 +50,7 @@ scene = 1                # integer or string, scene=1 is constant Mag 23, scene=
 # to study both rapid and slow shutters
 shutters = "rapid"       # string, shutter velocity: "rapid", "slow", "all"
 bkgd_method = "None"     # background to test, string: "all", "None", "fixed", "frac"  
-noise = "nonoise"        # string, noise level: "nonoise" or "real"
+noise = "real"        # string, noise level: "nonoise" or "real"
 filter_input = "F140X"   # Filter, string: for now only test case is "F140X"
 show_display = False     # Show display of resulting positions: True or False
 save_txt_file = False    # Save text file with resulting transformations: True or False
@@ -62,8 +62,11 @@ diffs_in_arcsecs = True  # Print the differences in arcsecs? True or False (=deg
 
 
 #######################################################################################################################
+# for the moment, full detector does not work
+full_detector = False     # Give resulting coordinates in terms of full detector: True or False
 
-#  --> FUNCTIONS        
+
+#  --> FUNCTIONS       
     
 def get_mindiff(d1, d2, d3):
     """ This function determines the minimum difference from checkboxes 3, 5, and 7,
@@ -496,9 +499,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
         Tlist_best_frbg_value_V2_5, Tlist_best_frbg_value_V3_5, TcounterV2_5, TcounterV3_5 = find_best_fracbgvalue(T_diffV2_5, T_diffV3_5)
         Tlist_best_frbg_value_V2_7, Tlist_best_frbg_value_V3_7, TcounterV2_7, TcounterV3_7 = find_best_fracbgvalue(T_diffV2_7, T_diffV3_7)
     # to express in arcsecs multiply by 3600.0
-    TLSdeltas_3, TLSsigmas_3, TLSlines2print_3 = lsi.ls_fit_iter(max_iterations, T_V2_3*3600.0, T_V3_3*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
-    TLSdeltas_5, TLSsigmas_5, TLSlines2print_5 = lsi.ls_fit_iter(max_iterations, T_V2_5*3600.0, T_V3_5*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
-    TLSdeltas_7, TLSsigmas_7, TLSlines2print_7 = lsi.ls_fit_iter(max_iterations, T_V2_7*3600.0, T_V3_7*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
+    TLSdeltas_3, TLSsigmas_3, TLSlines2print_3, rejected_elements_idx3 = lsi.ls_fit_iter(max_iterations, T_V2_3*3600.0, T_V3_3*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
+    TLSdeltas_5, TLSsigmas_5, TLSlines2print_5, rejected_elements_idx5 = lsi.ls_fit_iter(max_iterations, T_V2_5*3600.0, T_V3_5*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
+    TLSdeltas_7, TLSsigmas_7, TLSlines2print_7, rejected_elements_idx7 = lsi.ls_fit_iter(max_iterations, T_V2_7*3600.0, T_V3_7*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
     # Do N-sigma rejection
     TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3 = tf.Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
     TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5 = tf.Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
@@ -514,6 +517,7 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     sigma_reject = [TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3,
                     TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5,
                     TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7]
+    rejected_elements_idx = [rejected_elements_idx3, rejected_elements_idx5, rejected_elements_idx7]
     results_stats = [st_devsAndMeans, diff_counter, bench_values, sigmas_deltas, sigma_reject]
     if "frac" in case:
         best_frac_values = [Tlist_best_frbg_value_V2_3, Tlist_best_frbg_value_V3_3, TcounterV2_3, TcounterV3_3,
@@ -666,6 +670,14 @@ def show_star_displays(star_idx_list, case, centroid_figs491, centroid_figs492):
     figs1, figs2 = get_figs(star_idx_list, case, centroid_figs491, centroid_figs492)
     display_figs(figs1, figs2)
     
+def use_full_detector(arrX=None, arrY=None, lo_left_cornerX=None, lo_left_cornerY=None):
+    """ This function converts 32x32 into full detector coordinates. """
+    if arrX != None:
+        arr = arrX + lo_left_cornerX
+    if arrY != None:
+        arr = arrY + lo_left_cornerY
+    return arr
+    
 
 #######################################################################################################################
 
@@ -760,6 +772,24 @@ if shutters != "all" and bkgd_method != "all":
     sample_pos1, sample_pos2 = get_sample_data4case(star_idx_list, case2study, measured_centroids491, measured_centroids492)
     stars1, bg1, x13, y13, x15, y15, x17, y17 = sample_pos1
     stars2, bg2, x23, y23, x25, y25, x27, y27 = sample_pos2
+    if full_detector:
+        bench_xP1 = use_full_detector(arrX=bench_xP1, lo_left_cornerX=bench_xLP1)
+        bench_yP1 = use_full_detector(arrY=bench_yP1, lo_left_cornerY=bench_yLP1)
+        x13 = use_full_detector(arrX=x13, lo_left_cornerX=bench_xLP1)
+        y13 = use_full_detector(arrY=y13, lo_left_cornerY=bench_yLP1)
+        x15 = use_full_detector(arrX=x15, lo_left_cornerX=bench_xLP1)
+        y15 = use_full_detector(arrY=y15, lo_left_cornerY=bench_yLP1)
+        x17 = use_full_detector(arrX=x17, lo_left_cornerX=bench_xLP1)
+        y17 = use_full_detector(arrY=y17, lo_left_cornerY=bench_yLP1)
+        bench_xP2 = use_full_detector(arrX=bench_xP2, lo_left_cornerX=bench_xLP2)
+        bench_yP2 = use_full_detector(arrY=bench_yP2, lo_left_cornerY=bench_yLP2)
+        x23 = use_full_detector(arrX=x23, lo_left_cornerX=bench_xLP2)
+        y23 = use_full_detector(arrY=y23, lo_left_cornerY=bench_yLP2)
+        x25 = use_full_detector(arrX=x25, lo_left_cornerX=bench_xLP2)
+        y25 = use_full_detector(arrY=y25, lo_left_cornerY=bench_yLP2)
+        x27 = use_full_detector(arrX=x27, lo_left_cornerX=bench_xLP2)
+        y27 = use_full_detector(arrY=y27, lo_left_cornerY=bench_yLP2)
+        
     if debug:
         print ("Check that read BENCHMARK values correspond to expected for case: ", case)
         print ("Star, xP1, yP1, V2P1, V3P1, xLP1, yLP1")
@@ -1339,4 +1369,4 @@ if shutters != "all" and bkgd_method != "all":
         
         print ("\n * Case finished.  \n")
 
-print ("\n Script 'comparison2sky.py' finished! ")
+print ("\n Script 'test20random_stars.py' finished! ")
