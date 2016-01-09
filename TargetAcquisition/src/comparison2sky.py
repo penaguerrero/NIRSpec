@@ -28,6 +28,7 @@ Nsigma = 3               # N-sigma rejection of bad stars, integer or float
 max_iterations = 10      # Max number of iterations for N-sigma function, integer
 bkgd_method = "None"     # background to test, string: all, None, fixed, frac  
 filter_input = "F140X"   # Filter, string: for now only test case is F140X
+full_detector = False    # Give resulting coordinates in terms of full detector: True or False
 Pier_corr = True         # Include Pier's corrections to measured positions
 show_positions = False   # Print positions on file and screen: True or False
 tilt = False             # tilt angle: True or False
