@@ -503,9 +503,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     TLSdeltas_5, TLSsigmas_5, TLSlines2print_5, rejected_elements_idx5 = lsi.ls_fit_iter(max_iterations, T_V2_5*3600.0, T_V3_5*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
     TLSdeltas_7, TLSsigmas_7, TLSlines2print_7, rejected_elements_idx7 = lsi.ls_fit_iter(max_iterations, T_V2_7*3600.0, T_V3_7*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
     # Do N-sigma rejection
-    TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3 = tf.Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
-    TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5 = tf.Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
-    TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7 = tf.Nsigma_rejection(Nsigma, T_diffV2_7, T_diffV3_7, max_iterations)
+    TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3, rejected_elementsNsig3 = tf.Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
+    TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5, rejected_elementsNsig5 = tf.Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
+    TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7, rejected_elementsNsig7 = tf.Nsigma_rejection(Nsigma, T_diffV2_7, T_diffV3_7, max_iterations)
     # organize the results
     st_devsAndMeans = [Tstdev_V2_3, Tmean_V2_3, Tstdev_V2_5, Tmean_V2_5, Tstdev_V2_7, Tmean_V2_7,
                        Tstdev_V3_3, Tmean_V3_3, Tstdev_V3_5, Tmean_V3_5, Tstdev_V3_7, Tmean_V3_7]
@@ -518,6 +518,7 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
                     TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5,
                     TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7]
     rejected_elements_idx = [rejected_elements_idx3, rejected_elements_idx5, rejected_elements_idx7]
+    Nsigrej_elements_idx = [rejected_elementsNsig3, rejected_elementsNsig5, rejected_elementsNsig7]
     results_stats = [st_devsAndMeans, diff_counter, bench_values, sigmas_deltas, sigma_reject]
     if "frac" in case:
         best_frac_values = [Tlist_best_frbg_value_V2_3, Tlist_best_frbg_value_V3_3, TcounterV2_3, TcounterV3_3,
