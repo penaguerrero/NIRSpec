@@ -1,0 +1,57 @@
+# Known bad stars of Scene 2 = mag 18 though 23
+#Star  Reason
+1      # bad shutter
+4      #
+8      #
+10     #
+14     # no data in PF image
+22     # bad shutter x
+26     #
+49     #
+50     #
+54     #
+57     #
+58     #
+60     # no apparent reason
+71     #
+74     #
+75     #
+83     #
+84     #
+#87    # no apparent reason
+89     # nearby bad shutter
+99     # row split, bad shutter only in y
+#103   #
+105    # corner binary x
+#106    #
+107    #
+108    #
+109    #
+110    #
+#112    #
+118    # no apparent reason
+119    #
+#124   # binary
+130    #
+133    #
+#134   #
+139    #close binary
+140    #
+146    # bad shutters x
+148    #
+150    # binary, bad column
+#152    #
+155    #
+#156    #
+158    # binary, bad shutter
+165    #
+168    # binary x
+169    # binary x
+#170    #
+171    #
+180    #
+#188   #
+#190   # no apparent reason
+191    #
+197    #
+199    #
