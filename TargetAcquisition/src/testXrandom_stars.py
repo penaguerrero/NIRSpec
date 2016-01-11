@@ -70,6 +70,7 @@ OUTPUT:
 output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
 save_text_file = True             # Want to save the text file of comparison? True or False
 save_centroid_disp = False         # Save the display with measured and true positions?
+keep_bad_stars = False             # Keep the bad stars in the sample? True or False
 stars_in_sample = 20               # Number of stars in sample
 scene = 2                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
 background_method = 'frac'         # Select either 'fractional', 'fixed', or None   
@@ -474,9 +475,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     TLSdeltas_5, TLSsigmas_5, TLSlines2print_5, rejected_elements_5 = lsi.ls_fit_iter(max_iterations, T_V2_5*3600.0, T_V3_5*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
     TLSdeltas_7, TLSsigmas_7, TLSlines2print_7, rejected_elements_7 = lsi.ls_fit_iter(max_iterations, T_V2_7*3600.0, T_V3_7*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
     # Do N-sigma rejection
-    TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3 = tf.Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
-    TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5 = tf.Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
-    TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7 = tf.Nsigma_rejection(Nsigma, T_diffV2_7, T_diffV3_7, max_iterations)
+    TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3, rej_elements_3 = tf.Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
+    TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5, rej_elements_5 = tf.Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
+    TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7, rej_elements_7 = tf.Nsigma_rejection(Nsigma, T_diffV2_7, T_diffV3_7, max_iterations)
     # organize the results
     st_devsAndMeans = [Tstdev_V2_3, Tmean_V2_3, Tstdev_V2_5, Tmean_V2_5, Tstdev_V2_7, Tmean_V2_7,
                        Tstdev_V3_3, Tmean_V3_3, Tstdev_V3_5, Tmean_V3_5, Tstdev_V3_7, Tmean_V3_7]
@@ -488,8 +489,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     sigma_reject = [TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3,
                     TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5,
                     TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7]
-    rejected_elements = [rejected_elements_3, rejected_elements_5, rejected_elements_7]
-    results_stats = [st_devsAndMeans, diff_counter, bench_values, sigmas_deltas, sigma_reject, rejected_elements]
+    rejected_elementsLS = [rejected_elements_3, rejected_elements_5, rejected_elements_7]
+    rejected_elementsNsig = [rej_elements_3, rej_elements_5, rej_elements_7]
+    results_stats = [st_devsAndMeans, diff_counter, bench_values, sigmas_deltas, sigma_reject, rejected_elementsLS, rejected_elementsNsig]
     return results_stats
 
 
@@ -500,8 +502,20 @@ def combine2arrays(arr1, arr2, combined_arr):
         combined_arr = np.append(combined_arr, item)
     return combined_arr
 
+def get_rejected_stars(star_idx_listx2, rejected_elements_idx):
+    rejected_elements = []
+    nostarsrej = "No stars were rejected."
+    if len(rejected_elements_idx) != len(star_idx_listx2):
+        for i in rejected_elements_idx:
+            rejected_elements.append(star_idx_listx2[i])
+    else:
+        rejected_elements.append(nostarsrej)
+    return rejected_elements
 
-def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs, Tmean_Vs, T_diff_counter, save_text_file, TLSlines2print, Tlines2print, Tbench_Vs_list, T_Vs, T_diffVs, rejected_elements):
+
+def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs, Tmean_Vs, 
+                  T_diff_counter, save_text_file, TLSlines2print, Tlines2print, Tbench_Vs_list, 
+                  T_Vs, T_diffVs, rejected_elementsLS, rejected_eleNsig):
     """ This function writes to text the results from the Test performed. """
     # unfold variables
     Tstdev_V2_3, Tstdev_V3_3, Tstdev_V2_5, Tstdev_V3_5, Tstdev_V2_7, Tstdev_V3_7 = Tstdev_Vs
@@ -512,7 +526,8 @@ def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs,
     Tbench_V2_list, Tbench_V3_list = Tbench_Vs_list
     T_V2_3, T_V3_3, T_V2_5, T_V3_5, T_V2_7, T_V3_7 = T_Vs
     #T_diffV2_3, T_diffV3_3, T_diffV2_5, T_diffV3_5, T_diffV2_7, T_diffV3_7 = T_diffVs 
-    rejected_elements_idx3, rejected_elements_idx5, rejected_elements_idx7 = rejected_elements 
+    rejected_elements_idx3, rejected_elements_idx5, rejected_elements_idx7 = rejected_elementsLS 
+    Nsigrej_elements_idx3, Nsigrej_elements_idx5, Nsigrej_elements_idx7 = rejected_elementsLS 
     # define lines to print
     line0 = "{}".format("Differences = diffs = True_Positions - Measured_Positions")
     if diffs_in_arcsecs:
@@ -533,24 +548,24 @@ def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs,
     line3a = "   mean_V2_3 = {:<22}     mean_V3_3 = {:<22}".format(Tmean_V2_3, Tmean_V3_3)
     line3b = "   mean_V2_5 = {:<22}     mean_V3_5 = {:<22}".format(Tmean_V2_5, Tmean_V3_5)
     line3c = "   mean_V2_7 = {:<22}     mean_V3_7 = {:<22}".format(Tmean_V2_7, Tmean_V3_7)
-    # Print rejected stars
-    rejected_elements_3, rejected_elements_5, rejected_elements_7 = [], [], []
-    if len(rejected_elements_idx3) != len(T_V2_3):
-        for i in rejected_elements_idx3:
-            rejected_elements_3.append(stars_sample[i])
-    if len(rejected_elements_idx5) != len(T_V2_5):
-        for i in rejected_elements_idx5:
-            rejected_elements_5.append(stars_sample[i])
-    if len(rejected_elements_idx7) != len(T_V2_7):
-        for i in rejected_elements_idx7:
-            rejected_elements_7.append(stars_sample[i])
-    line3bisAa = " Rejected stars:"
+    # Print rejected stars for least squares and N-sigma rejection
+    star_idx_listx2 = []
+    for _ in range(2):
+        for st_i in star_idx_list:
+            star_idx_listx2.append(st_i) 
+    rejected_elements_3 = get_rejected_stars(star_idx_listx2, rejected_elements_idx3)
+    rejected_elements_5 = get_rejected_stars(star_idx_listx2, rejected_elements_idx5)
+    rejected_elements_7 = get_rejected_stars(star_idx_listx2, rejected_elements_idx7)
+    Nsig_rej_elements_3 = get_rejected_stars(star_idx_listx2, Nsigrej_elements_idx3)
+    Nsig_rej_elements_5 = get_rejected_stars(star_idx_listx2, Nsigrej_elements_idx5)
+    Nsig_rej_elements_7 = get_rejected_stars(star_idx_listx2, Nsigrej_elements_idx7)
+    line3bisAa = "- Rejected stars -"
     line3bisAb = "   checkbox3: {} ".format(rejected_elements_3)
     line3bisAc = "   checkbox5: {} ".format(rejected_elements_5)
     line3bisAd = "   checkbox7: {} ".format(rejected_elements_7)
-    line3bisA = [line3bisAa, line3bisAb, line3bisAc, line3bisAd]
-    if len(rejected_elements_idx3) != len(T_V2_3):
-        line3bisA = "No stars were rejected."
+    line3bisAe = "   checkbox3: {} ".format(Nsig_rej_elements_3)
+    line3bisAf = "   checkbox5: {} ".format(Nsig_rej_elements_5)
+    line3bisAg = "   checkbox7: {} ".format(Nsig_rej_elements_7)
     # Print number of repetitions to find best checkbox
     line3bisB = "\n *** Repetitions Diffs: {}".format(T_counter)
     line4 = "{:<5} {:<20} {:<40} {:<40} {:<38} {:<28} {:<7}".format(
@@ -567,7 +582,15 @@ def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs,
     print (line3a)
     print (line3b)
     print (line3c)
-    print (line3bisA)
+    print (line3bisAa)
+    print (" From least square routine: ")
+    print (line3bisAb)
+    print (line3bisAc)
+    print (line3bisAd)
+    print (" From N-sigma rejection routine: ")
+    print (line3bisAe)
+    print (line3bisAf)
+    print (line3bisAg)
     print (line3bisB)
     print (line4)
     print (line5)
@@ -583,10 +606,12 @@ def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs,
         to.write(line3a+"\n")
         to.write(line3b+"\n")
         to.write(line3c+"\n")
-        to.write(line3bisA+"\n")
         # print standard deviations from least squares routine
-        to.write("  * From least squares routine:  \n")
-        
+        to.write("\n * From least squares routine:  \n")
+        to.write(line3bisAa+"\n")
+        to.write(line3bisAb+"\n")
+        to.write(line3bisAc+"\n")
+        to.write(line3bisAd+"\n")        
         to.write("       Checkbox 3:  \n")
         for line2print in TLSlines2print_3:
             to.write(line2print+"\n")
@@ -597,6 +622,11 @@ def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs,
         for line2print in TLSlines2print_7:
             to.write(line2print+"\n")
         # print standard deviations and means after n-sigma rejection
+        to.write("\n * From N-sigma rejection routine:  \n")
+        to.write(line3bisAa+"\n")
+        to.write(line3bisAe+"\n")
+        to.write(line3bisAf+"\n")
+        to.write(line3bisAg+"\n")        
         to.write(" Checkbox 3:  \n")
         for line2print in Tlines2print_3:
             to.write(line2print+"\n")
@@ -626,12 +656,60 @@ def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs,
     if save_text_file:
         to.close()
         print (" * Results saved in file: ", txt_out)
+
+
+def remove_bad_stars(stars_sample):
+        """ This function reads the text files of bad stars, compares the sample data, removes 
+        the bad stars, and returns the sample without bad stars. """
+        # paths to files
+        scene1_bad_stars_file = os.path.abspath("../bad_stars/scene1_bad_stars.txt")
+        scene2_bad_stars_file = os.path.abspath("../bad_stars/scene2_bad_stars.txt")
+        # read files ad get lists
+        scene1_bad_stars = np.loadtxt(scene1_bad_stars_file, comments="#", skiprows=2, unpack=True)
+        scene2_bad_stars = np.loadtxt(scene2_bad_stars_file, comments="#", skiprows=2, unpack=True)
+        print ("There are %i bad stars in Scenario 1 and %i bad stars in Scenario 2." % (len(scene1_bad_stars), 
+                                                                                         len(scene2_bad_stars)))
+        # compare to stars_sample
+        for st_sam in stars_sample:
+            if st_sam in scene1_bad_stars or st_sam in scene2_bad_stars:
+                stars_sample.pop()
+        return stars_sample
         
 
 #######################################################################################################################
 
-
 #  --> CODE
+
+detectors = [491, 492]
+
+# Stars of detector 491 and 492
+stars_detectors = range(1, 201)
+    
+if random_sample:
+    # select stars_in_sample stars from 1 to 200
+    stars_sample = []
+    for i in range(stars_in_sample):
+        random_star = random.choice(stars_detectors)
+        stars_sample.append(random_star)
+    # make sure that there are no repetitions
+    stars_sample = list(set(stars_sample))
+    while len(stars_sample) != stars_in_sample:
+        random_star = random.choice(stars_detectors)
+        stars_sample.append(random_star)  
+        stars_sample = list(set(stars_sample)) 
+        # remove the bad stars
+        if keep_bad_stars == False:
+            remove_bad_stars(stars_sample)
+else:
+    # remove the bad stars
+    if keep_bad_stars == False:
+        remove_bad_stars(stars_sample)
+        print (" * Sample has %i stars left." % len(stars_sample))
+
+# order the star list 
+stars_sample.sort(key=lambda xx: xx)
+print ("stars_sample =", stars_sample)
+raw_input("\nPress enter to continue...")
 
 # start the timer to compute the whole running time
 start_time = time.time()
@@ -652,29 +730,6 @@ else:
 # Paths to Scenes 1 and 2 local directories: /Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/
 path4starfiles = "../PFforMaria/"
 
-detectors = [491, 492]
-
-# Stars of detector 491 and 492
-stars_detectors = range(1, 201)
-    
-if random_sample:
-    # select stars_in_sample stars from 1 to 200
-    stars_sample = []
-    for i in range(stars_in_sample):
-        random_star = random.choice(stars_detectors)
-        stars_sample.append(random_star)
-    # make sure that there are no repetitions
-    stars_sample = list(set(stars_sample))
-    while len(stars_sample) != stars_in_sample:
-        random_star = random.choice(stars_detectors)
-        stars_sample.append(random_star)  
-        stars_sample = list(set(stars_sample)) 
-else:
-    stars_sample = stars_sample
-
-# order the star list 
-stars_sample.sort(key=lambda xx: xx)
-
 # Define the paths for results 
 path4results = "../resultsXrandomstars/"
 
@@ -691,7 +746,6 @@ allbench_stars = allbench_starP1.tolist()
 
 # get the index for the sample stars
 star_idx_list = []
-print ("stars_sample: ", stars_sample)
 for st in stars_sample:
     st_idx = allbench_stars.index(st)
     star_idx_list.append(st_idx)
@@ -762,7 +816,7 @@ for pos, dir2test in zip(positions, dir2test_list):
         # Test stars of detector of choice
         for st in stars_sample:
             if st == dir_star_number: #if str(st)+" quad_       " in star:
-                print ("Will test star in directory: \n     ", dir2test)
+                print ("Will test stars in directory: \n     ", dir2test)
                 print ("Star: ", os.path.basename(star))
                 # Make sure the file actually exists
                 star_exists = os.path.isfile(star)
@@ -891,7 +945,7 @@ if test2perform == "T1":
     # Get the statistics
     results_stats = get_stats(case, T1_transformations, T1_diffs, T1_benchVs_list, Nsigma, max_iters_Nsig)
     # unfold results
-    T1_st_devsAndMeans, T1_diff_counter, T1_bench_values, T1_sigmas_deltas, T1_sigma_reject, rejected_elements = results_stats
+    T1_st_devsAndMeans, T1_diff_counter, T1_bench_values, T1_sigmas_deltas, T1_sigma_reject, rejected_elementsLS, rejected_eleNsig = results_stats
     T1stdev_V2_3, T1mean_V2_3, T1stdev_V2_5, T1mean_V2_5, T1stdev_V2_7, T1mean_V2_7, T1stdev_V3_3, T1mean_V3_3, T1stdev_V3_5, T1mean_V3_5, T1stdev_V3_7, T1mean_V3_7 = T1_st_devsAndMeans
     T1_min_diff, T1_counter = T1_diff_counter
     T1bench_V2, T1bench_V3 = T1_bench_values
@@ -908,7 +962,7 @@ if test2perform == "T2":
     # Get the statistics
     results_stats = get_stats(case, T2_transformations, T2_diffs, T2_benchVs_list, Nsigma, max_iters_Nsig)
     # unfold results
-    T2_st_devsAndMeans, T2_diff_counter, T2_bench_values, T2_sigmas_deltas, T2_sigma_reject, rejected_elements = results_stats
+    T2_st_devsAndMeans, T2_diff_counter, T2_bench_values, T2_sigmas_deltas, T2_sigma_reject, rejected_elementsLS, rejected_eleNsig = results_stats
     T2stdev_V2_3, T2mean_V2_3, T2stdev_V2_5, T2mean_V2_5, T2stdev_V2_7, T2mean_V2_7, T2stdev_V3_3, T2mean_V3_3, T2stdev_V3_5, T2mean_V3_5, T2stdev_V3_7, T2mean_V3_7 = T2_st_devsAndMeans
     T2_min_diff, T2_counter = T2_diff_counter
     T2bench_V2, T2bench_V3 = T2_bench_values
@@ -965,7 +1019,7 @@ if test2perform == "T3":
     T3_benchVs_list = [T3bench_V2_list, T3bench_V3_list] 
     results_stats = get_stats(case, T3_transformations, T3_diffs, T3_benchVs_list, Nsigma, max_iters_Nsig)
     # unfold results
-    T3_st_devsAndMeans, T3_diff_counter, T3_bench_values, T3_sigmas_deltas, T3_sigma_reject, rejected_elements = results_stats
+    T3_st_devsAndMeans, T3_diff_counter, T3_bench_values, T3_sigmas_deltas, T3_sigma_reject, rejected_elementsLS, rejected_eleNsig = results_stats
     T3stdev_V2_3, T3mean_V2_3, T3stdev_V2_5, T3mean_V2_5, T3stdev_V2_7, T3mean_V2_7, T3stdev_V3_3, T3mean_V3_3, T3stdev_V3_5, T3mean_V3_5, T3stdev_V3_7, T3mean_V3_7 = T3_st_devsAndMeans
     T3_min_diff, T3_counter = T3_diff_counter
     T3bench_V2, T3bench_V3 = T3_bench_values
@@ -1004,7 +1058,8 @@ if test2perform == "T3":
     T_diffVs = [T3_diffV2_3, T3_diffV3_3, T3_diffV2_5, T3_diffV3_5, T3_diffV2_7, T3_diffV3_7] 
 
 print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs, Tmean_Vs, T_diff_counter, 
-              save_text_file, TLSlines2print, Tlines2print, Tbench_Vs_list, T_Vs, T_diffVs, rejected_elements)
+              save_text_file, TLSlines2print, Tlines2print, Tbench_Vs_list, T_Vs, T_diffVs, 
+              rejected_elementsLS, rejected_eleNsig)
 
     
 print ("\n Script 'testXrandom_stars.py' finished! Took  %s  seconds to finish. \n" % ((time.time() - start_time)) )
