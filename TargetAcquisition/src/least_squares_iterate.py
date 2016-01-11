@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 import numpy as np
+import copy 
 
 # Header
 __author__ = "Maria A. Pena-Guerrero"
@@ -47,9 +48,8 @@ def ls_fit_iter(niter, xt, yt, x, y):
     # do up to niter iterations of sigma-clipping (first time through is 
     # initial calculation, then up to niter iterations)
     original_elements = len(x)
-    original_elements_idx = []
-    for i, _ in enumerate(x):
-        original_elements_idx.append(i)
+    original_true_centroids = copy.deepcopy(x)
+        
     for nit in range(niter):
         n = len(x)
         # Initialize the sums
@@ -139,6 +139,7 @@ def ls_fit_iter(niter, xt, yt, x, y):
         """
         elements_left = len(xcentroids_new)
         line4 = '(least_squares_iterate):  elements_left={} out of original_elements={}'.format(elements_left, original_elements)
+                
         if len(xcentroids_new) == len(xt):
             break   # exit the loop since no additional rejections on this iteration
         else:
@@ -151,11 +152,13 @@ def ls_fit_iter(niter, xt, yt, x, y):
     print (line3)
     print (line4)
     lines2print = [line1, line2, line3, line4]
-    # find what elements got rejected
+
+    # find what elements got rejected            
     rejected_elements_idx = []
-    for st in original_elements_idx:
-        if st not in xcentroids_new:
-            rejected_elements_idx.append(st)
+    for i, centroid in enumerate(original_true_centroids):
+        if centroid not in x:
+            rejected_elements_idx.append(i)
+    
     return deltas, sigmas, lines2print, rejected_elements_idx
     
     # Still do not know how to do delta_theta sigma  -- is this calculation needed?
