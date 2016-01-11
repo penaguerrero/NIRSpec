@@ -74,8 +74,8 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 
 # Set test parameters
-detector = 491                     # Which detector are we working with: 491 or 492
-path_number = 3                    # Select 0 through 4 from paths_list above 
+detector = 492                     # Which detector are we working with: 491 or 492
+path_number = 8                    # Select 0 through 4 from paths_list above 
 vlim = (1.0,30)                    # sensitivity limits of image, i.e. (0.001, 0.1) 
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
@@ -99,7 +99,7 @@ perform_avgcorr = False            # Correct for average values given by Pierre?
 single_star = False                # If only want to test one star set to True and type the path for a single star
 # NOTE: for the names of stars, single numbers before the .fits require 8 spaces after quad_star, 
 #       while 2 numbers require 7 spaces.  
-star_file_name = '/postageout_star_     134 quad_       3 quad_star       34.fits'
+star_file_name = '/postageout_star_      77 quad_       2 quad_star       27.fits'
 
 
 ###########################################################################################################
@@ -271,6 +271,7 @@ if just_read_text_file != True:
     for star in dir_stars:
         if single_star:
             star = single_star_path
+            print("Studying now star: ", star)
         dir_star_number = int(os.path.basename(star).split()[1])
         # Test stars of detector of choice
         for st in stars_detector:
@@ -363,10 +364,8 @@ if just_read_text_file != True:
 ### Obtain standard deviation from true star positions
 # Read the text file just written to get the offsets from the "real" positions of the fake stars
 print ("reading from: ", output_file)
-print (os.path.isfile(output_file))
+#print (os.path.isfile(output_file))
 offsets = np.loadtxt(output_file, skiprows=3, usecols=(13,14,15,16,17,18), unpack=True)
-print (offsets)
-raw_input()
 sig3, mean3 = tf.find_std(offsets[1])
 sig5, mean5 = tf.find_std(offsets[3])
 sig7, mean7 = tf.find_std(offsets[5])
