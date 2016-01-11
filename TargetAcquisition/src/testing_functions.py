@@ -630,6 +630,8 @@ def Nsigma_rejection(N, x, y, max_iterations=10):
     or_sigma_y, or_mean_y = find_std(y)
     x_new = copy.deepcopy(x)
     y_new = copy.deepcopy(y)
+    original_diffs = copy.deepcopy(x)
+
     for nit in range(max_iterations):
         # Determine the standard deviation for each array
         sigma_x, mean_x = find_std(x_new)
@@ -661,7 +663,12 @@ def Nsigma_rejection(N, x, y, max_iterations=10):
     print (line4)
     print (line5)
     print (line6)
-    return sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter, lines2print
+    # find what elements got rejected            
+    rejected_elements_idx = []
+    for i, centroid in enumerate(original_diffs):
+        if centroid not in x:
+            rejected_elements_idx.append(i)
+    return sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter, lines2print, rejected_elements_idx
 
 
 def read_star_param_files(test_case, detector=None, path4starfiles=None, paths_list=None):
