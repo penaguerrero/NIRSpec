@@ -68,9 +68,9 @@ OUTPUT:
 # INITIAL CONDITIONS
 
 output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
-save_text_file = True             # Want to save the text file of comparison? True or False
+save_text_file = False             # Want to save the text file of comparison? True or False
 save_centroid_disp = False         # Save the display with measured and true positions?
-keep_bad_stars = False             # Keep the bad stars in the sample? True or False
+keep_bad_stars = True             # Keep the bad stars in the sample? True or False
 stars_in_sample = 20               # Number of stars in sample
 scene = 2                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
 background_method = 'frac'         # Select either 'fractional', 'fixed', or None   
@@ -92,7 +92,6 @@ vlim = (1.0,30)                    # Sensitivity limits of image, i.e. (0.001, 0
 threshold = 1e-5                   # Convergence threshold of accepted difference between checkbox centroid and coarse location
 max_iter = 50                      # Maximum number of iterations for finding coarse location
 debug = False                      # See all debug messages (i.e. values of all calculations)
-#skip_make_text_file = False        # skip the for loop to the plotting part
 diffs_in_arcsecs = True            # Print the differences in arcsecs? True or False (=degrees) 
 determine_moments = False          # Want to determine 2nd and 3rd moments?
 display_master_img = False         # Want to see the combined ramped images for every star?
@@ -107,7 +106,7 @@ random_sample = False               # choose a random sample of stars from eithe
 #stars_sample = [1, 15, 60, 65, 67, 72, 81, 124, 132, 133, 139, 156, 166, 167, 182, 183, 187, 189, 198, 200]
 stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
-
+#6, 23, 50, 55, 65, 67, 70, 71, 73, 90, 105, 108, 119, 124, 126, 127, 137, 153, 186, 187
 
 #######################################################################################################################
 
@@ -502,14 +501,11 @@ def combine2arrays(arr1, arr2, combined_arr):
         combined_arr = np.append(combined_arr, item)
     return combined_arr
 
-def get_rejected_stars(star_idx_listx2, rejected_elements_idx):
+def get_rejected_stars(stars_samplex2, rejected_elements_idx):
     rejected_elements = []
-    nostarsrej = "No stars were rejected."
-    if len(rejected_elements_idx) != len(star_idx_listx2):
+    if len(rejected_elements_idx) != len(stars_samplex2):
         for i in rejected_elements_idx:
-            rejected_elements.append(star_idx_listx2[i])
-    else:
-        rejected_elements.append(nostarsrej)
+            rejected_elements.append(stars_samplex2[i])
     return rejected_elements
 
 
@@ -549,16 +545,16 @@ def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs,
     line3b = "   mean_V2_5 = {:<22}     mean_V3_5 = {:<22}".format(Tmean_V2_5, Tmean_V3_5)
     line3c = "   mean_V2_7 = {:<22}     mean_V3_7 = {:<22}".format(Tmean_V2_7, Tmean_V3_7)
     # Print rejected stars for least squares and N-sigma rejection
-    star_idx_listx2 = []
+    stars_samplex2 = []
     for _ in range(2):
-        for st_i in star_idx_list:
-            star_idx_listx2.append(st_i) 
-    rejected_elements_3 = get_rejected_stars(star_idx_listx2, rejected_elements_idx3)
-    rejected_elements_5 = get_rejected_stars(star_idx_listx2, rejected_elements_idx5)
-    rejected_elements_7 = get_rejected_stars(star_idx_listx2, rejected_elements_idx7)
-    Nsig_rej_elements_3 = get_rejected_stars(star_idx_listx2, Nsigrej_elements_idx3)
-    Nsig_rej_elements_5 = get_rejected_stars(star_idx_listx2, Nsigrej_elements_idx5)
-    Nsig_rej_elements_7 = get_rejected_stars(star_idx_listx2, Nsigrej_elements_idx7)
+        for st_i in stars_sample:
+            stars_samplex2.append(st_i) 
+    rejected_elements_3 = get_rejected_stars(stars_samplex2, rejected_elements_idx3)
+    rejected_elements_5 = get_rejected_stars(stars_samplex2, rejected_elements_idx5)
+    rejected_elements_7 = get_rejected_stars(stars_samplex2, rejected_elements_idx7)
+    Nsig_rej_elements_3 = get_rejected_stars(stars_samplex2, Nsigrej_elements_idx3)
+    Nsig_rej_elements_5 = get_rejected_stars(stars_samplex2, Nsigrej_elements_idx5)
+    Nsig_rej_elements_7 = get_rejected_stars(stars_samplex2, Nsigrej_elements_idx7)
     line3bisAa = "- Rejected stars -"
     line3bisAb = "   checkbox3: {} ".format(rejected_elements_3)
     line3bisAc = "   checkbox5: {} ".format(rejected_elements_5)
@@ -571,8 +567,8 @@ def print_results(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs,
     line4 = "{:<5} {:<20} {:<40} {:<40} {:<38} {:<28} {:<7}".format(
                     "Star", "BG_value", "Pos_Checkbox_3", "Pos_Checkbox_5", "PosCheckbox_7",
                     "True_Pos", "MinDiff")
-    line5 = "{:>25} {:>17} {:>22} {:>17} {:>22} {:>22} {:>17} {:>17}".format(
-                    "x", "y", "x", "y", "x", "y", "x", "y")
+    line5 = "{:>10} {:>15} {:>17} {:>22} {:>17} {:>22} {:>22} {:>17} {:>17}".format(background_method,
+                    "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3")
     print (line0)
     print (line0bis)
     print (line1)
@@ -700,11 +696,10 @@ if random_sample:
         # remove the bad stars
         if keep_bad_stars == False:
             remove_bad_stars(stars_sample)
-else:
-    # remove the bad stars
-    if keep_bad_stars == False:
-        remove_bad_stars(stars_sample)
-        print (" * Sample has %i stars left." % len(stars_sample))
+# remove the bad stars
+if keep_bad_stars == False:
+    remove_bad_stars(stars_sample)
+    print (" * Sample has %i stars left." % len(stars_sample))
 
 # order the star list 
 stars_sample.sort(key=lambda xx: xx)
@@ -850,17 +845,19 @@ for pos, dir2test in zip(positions, dir2test_list):
                 cb_centroid_list = tf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
                                                            checkbox_size, max_iter, threshold, 
                                                            determine_moments, debug, display_master_img, vlim=vlim)
+                cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = tf.centroid2fulldetector(cb_centroid_list, 
+                                                                                                    true_center)
+                if output_full_detector == False:
+                    true_center = true_center32x32
                 # Correct true centers for average value given by Pier 
                 if Pier_corr:
-                    corr_true_center = tf.do_Piers_correction(detector, true_center)
+                    corr_cb_centroid_list = tf.do_Piers_correction(detector, cb_centroid_list)
                 else:
-                    corr_true_center = true_center 
-                corr_cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = tf.centroid2fulldetector(cb_centroid_list, 
-                                                                                                    corr_true_center)
+                    corr_cb_centroid_list = cb_centroid_list 
                 if show_centroids:
                     print ('***** Measured centroids for checkbox sizes 3, 5, and 7, respectively:')
                     print ('      cb_centroid_list = ', corr_cb_centroid_list)
-                    print ('           True center = ', corr_true_center)
+                    print ('           True center = ', true_center)
                 # Show the display with the measured and true positions
                 fig_name = os.path.join("../resultsXrandomstars", "centroid_displays/Star"+repr(st)+"_Scene"+repr(scene)+bg_choice+pos+".jpg")
                 tf.display_centroids(detector, st, case, psf, true_center32x32, cb_centroid_list, 
@@ -873,7 +870,7 @@ for pos, dir2test in zip(positions, dir2test_list):
                     if pos == "_Position2":
                         position = "_Position2"
                     output_file = os.path.join(output_file_path, "centroids_Scene"+repr(scene)+bg_choice+position+".txt")
-                    data2write = [save_text_file, output_file, st, background2use, corr_cb_centroid_list, corr_true_center, loleftcoords, mag_i, min_diff]
+                    data2write = [save_text_file, output_file, st, background2use, corr_cb_centroid_list, true_center, loleftcoords, mag_i, min_diff]
                     writedatafile(show_centroids, data2write, lines4screenandfile) 
                 if pos == "_Position1":
                     x13 = np.append(x13, corr_cb_centroid_list[0][0])
