@@ -74,8 +74,8 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 
 # Set test parameters
-detector = 492                     # Which detector are we working with: 491 or 492
-path_number = 8                    # Select 0 through 4 from paths_list above 
+detector = 491                     # Which detector are we working with: 491 or 492
+path_number = 9                    # Select 0 through 4 from paths_list above 
 vlim = (1.0,30)                    # sensitivity limits of image, i.e. (0.001, 0.1) 
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
@@ -95,7 +95,7 @@ show_plot = True                   # Show plot(s) of x_offset vs y_offset and y_
 plot_type = '.jpg'                 # Type of image to be saved: pdf, jpg, eps (it is better to convert from jpg to eps) 
 save_plot = False                  # legend can be moved in line xxx
 save_text_file = False             # Want to save the text file of comparison? True or False
-perform_avgcorr = False            # Correct for average values given by Pierre? True or False
+perform_avgcorr = True            # Correct for average values given by Pierre? True or False
 single_star = False                # If only want to test one star set to True and type the path for a single star
 # NOTE: for the names of stars, single numbers before the .fits require 8 spaces after quad_star, 
 #       while 2 numbers require 7 spaces.  
@@ -328,7 +328,8 @@ if just_read_text_file != True:
                                                                                                       true_center, perform_avgcorr=perform_avgcorr)
                         # Write output into text file
                         bg = bg_frac
-                        data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
+                        data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, 
+                                      corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
                         tf.write2file(data2write, lines4screenandfile)
                         #raw_input()
                 else:
@@ -339,7 +340,8 @@ if just_read_text_file != True:
                     psf = tu.readimage(master_img_bgcorr, debug=debug)                
                     cb_centroid_list = tf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
                                                                checkbox_size, max_iter, threshold, 
-                                                               determine_moments, debug, display_master_img, vlim=vlim)
+                                                               determine_moments, debug, display_master_img, 
+                                                               vlim=vlim)
                     # Transform to full detector coordinates in order to compare with real centers
                     ESA_center = [0,0]
                     corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
