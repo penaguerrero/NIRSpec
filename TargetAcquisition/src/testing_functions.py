@@ -98,28 +98,36 @@ def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_
     return cb_centroid_list
 
 
-def do_Piers_correction(detector, true_center):
+def do_Piers_correction(detector, cb_centroid_list):
+    xy3, xy5, xy7 = cb_centroid_list
+    xy3corr = Pier_correction(detector, xy3)
+    xy5corr = Pier_correction(detector, xy5)
+    xy7corr = Pier_correction(detector, xy7)
+    corr_cb_centroid_list = [xy3corr, xy5corr, xy7corr]
+    return corr_cb_centroid_list 
+    
+    
+def Pier_correction(detector, XandYarr):
     """
     KEYWORD ARGUMENTS:
         Pier_corr                  -- Perform average correction suggested by Pier: True or False
         
     OUTPUT:
     cb_centroid_list               -- Values corrected for Pier's values 
-    corr_true_center               -- True center corrected for Pier's values
     """
     # Corrections for offsets in positions (see section 2.5 of Technical Notes in Documentation directory)
     offset_491 = (-0.086, -0.077)
     offset_492 = (0.086, 0.077)
-    corrected_x = true_center[0]
-    corrected_y = true_center[1]
+    corrected_x = XandYarr[0]
+    corrected_y = XandYarr[1]
     if detector == 491:
-        corrected_x = true_center[0] + offset_491[0]
-        corrected_y = true_center[1] + offset_491[1]
+        corrected_x = XandYarr[0] + offset_491[0]
+        corrected_y = XandYarr[1] + offset_491[1]
     elif detector == 492:
-        corrected_x = true_center[0] + offset_492[0]
-        corrected_y = true_center[1] + offset_492[1]
-    corr_true_center = [corrected_x, corrected_y]
-    return corr_true_center
+        corrected_x = XandYarr[0] + offset_492[0]
+        corrected_y = XandYarr[1] + offset_492[1]
+    corr_XandYarr = [corrected_x, corrected_y]
+    return corr_XandYarr
 
 
 def centroid2fulldetector(cb_centroid_list, true_center):
@@ -195,7 +203,8 @@ def get_mindiff(d1, d2, d3):
     return min_diff, counter
 
 
-def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list, ESA_center, true_center, perform_avgcorr=False):
+def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list, 
+                           ESA_center, true_center, perform_avgcorr=True):
     """
     Transform centroid coordinates into full detector coordinates.
     
@@ -217,23 +226,27 @@ def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list
     differences_true_TA            -- Difference of true-observed positions
     
     """
-    # Corrections for offsets in positions (see section 2.5 of Technical Notes in Documentation directory)
-    corrected_x = true_center[0]
-    corrected_y = true_center[1]
+    # Corrections for offsets in positions (see section 2.5 of Technical Notes in Documentation directory)    
+    corr_cb_centroid_list = []
+
     if perform_avgcorr:
         offset_491 = (-0.086, -0.077)
         offset_492 = (0.086, 0.077)
-        if detector == 491:
-            corrected_x = true_center[0] + offset_491[0]
-            corrected_y = true_center[1] + offset_491[1]
-        elif detector == 492:
-            corrected_x = true_center[0] + offset_492[0]
-            corrected_y = true_center[1] + offset_492[1]
         
+        correction = offset_491
+        if detector == 492:
+            correction = offset_492
+        for centroid_location in cb_centroid_list:
+            print (centroid_location[0], correction[0])
+            corrected_cb_centroid_x = centroid_location[0] + correction[0]
+            corrected_cb_centroid_y = centroid_location[1] + correction[1]
+            corrected_cb_centroid = [corrected_cb_centroid_x, corrected_cb_centroid_y]
+            corr_cb_centroid_list.append(corrected_cb_centroid)
+
     # Get the lower left corner coordinates in terms of full detector. We subtract 16.0 because indexing
     # from centroid function starts with 1
-    loleft_x = np.floor(corrected_x) - 16.0
-    loleft_y = np.floor(corrected_y) - 16.0
+    loleft_x = np.floor(true_center[0]) - 16.0
+    loleft_y = np.floor(true_center[1]) - 16.0
     loleftcoords = [loleft_x, loleft_y]
     #print(loleft_x, loleft_y)
 
@@ -248,10 +261,10 @@ def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list
         corr_cb_centroid_list = cb_centroid_list_fulldetector
         corr_true_center_centroid = true_center
     else:
-        corr_cb_centroid_list = cb_centroid_list
-        # Add lower left corner to centroid location to get it in terms of full detector
-        corr_true_center_x = corrected_x - loleft_x
-        corr_true_center_y = corrected_y - loleft_y
+        
+        # Subtract lower left corner to from true center to get it in terms of 32x32 pixels
+        corr_true_center_x = true_center[0] - loleft_x
+        corr_true_center_y = true_center[1] - loleft_y
         true_center_centroid_32x32 = [corr_true_center_x, corr_true_center_y]
         corr_true_center_centroid = true_center_centroid_32x32
 
