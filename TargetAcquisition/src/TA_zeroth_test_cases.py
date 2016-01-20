@@ -74,6 +74,7 @@ show_plot = False                  # Show plot(s) of x_offset vs y_offset and y_
 plot_type = '.jpg'                 # Type of image to be saved: pdf, jpg, eps (it is better to convert from jpg to eps) 
 save_plot = False                  # legend can be moved in line xxx
 save_text_file = False             # Want to save the text file of comparison? True or False
+perform_avgcorr = True
 single_star = False                # If only want to test one star set to True and type the path for a single star
 # NOTE: for the names of stars, single numbers before the .fits require 8 spaces after quad_star, 
 #       while 2 numbers require 7 spaces.  
@@ -242,9 +243,8 @@ if just_read_text_file != True:
                                                                determine_moments, debug, display_master_img, vlim=vlim)
                         # Transform to full detector coordinates in order to compare with real centers
                         corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
-                                                                                                      centroid_in_full_detector,
-                                                                                                      cb_centroid_list, ESA_center, 
-                                                                                                      true_center, perform_avgcorr=False)
+                                                            centroid_in_full_detector, cb_centroid_list, ESA_center, 
+                                                            true_center, perform_avgcorr)
                         # Write output into text file
                         bg = bg_frac
                         data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
@@ -263,7 +263,7 @@ if just_read_text_file != True:
                     corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
                                                                                                   centroid_in_full_detector,
                                                                                                   cb_centroid_list, ESA_center, 
-                                                                                                  true_center, perform_avgcorr=False)
+                                                                                                  true_center, perform_avgcorr)
                     # Write output into text file
                     bg = background
                     data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
