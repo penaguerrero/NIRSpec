@@ -1,82 +1,24 @@
 # Known bad stars of Scene 1 = mag 23
-#Star  Reason
-4      #-
-6      #-    
-8      #-
-10     #-
-12     #bad shutters
-15     #-
-16     #-
-17     #no PF data     
-18     #-
-19     #-
-20     #-
-24     #-
-25     #-
-27     #-
-28     #-
-34     #-
-36     #-
-38     #-
-39     #-
-40     #binary upper left edge
-41     #-
-42     #-
-50     #-
-52     #-
-55     #binary lower right
-57     #-
-61     #-
-62     #-
-63     #-
-64     #-
-67     #-
-69     #-
-70     #-
-71     #-
-72     #-
-73     #-
-75     #-
-77     #-
-78     # binary right edge x
-80     #-
-84     #-
-85     #-
-#87    # no apparent reason
-91     #-
-92     #-
-93     #-
-94     #-
-96     #-
-99     # no apparent reason, shot slightly off 0.02
-100    #-
-103    #-
-105    #-
-106    #-
-112    #-
-115    #-
-119    #-
-120    #-
-123    #-
-124    #-
-126    #-
-132    #-
-133    #-
-#134    # binary x
-142    #-
-143    #-
-144    #-
-149    #-
-151    #-
-152    #-
-156    #-
-160    #-
-165    #-
-167    #-
-#170   # no apparent reason
-176    #-
-178    #-
-179    #-
-188    #binary x
-193    #-
-196    #-
+#Star  Reason 
+12     # hot pixel, Tony=bad shutters
+17     # hot pixel, Tony=no PF data     
+#28    # slightly off for no apparent reason)
+34     # hot pixel
+40     # binary upper left edge
+#55    # Tony=binary lower right
+71     # hot pixel? bad column?
+#72    # slightly off, nearby hot pix
+#75    # star moved? 
+79     # binary right edge x
+#87    # Tony=no apparent reason
+#94    # MSA bar
+103    # binary
+105    # bad columns?
+106    # hot pixel
+120    # binary 
+124    # hot pixel
+#134   # Tony=binary x
+152    # hot pixel
+156    # hot pixel
+170    # hot pixel, Tony=no apparent reason
+188    # Tony=binary x
