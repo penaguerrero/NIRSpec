@@ -158,6 +158,8 @@ def ls_fit_iter(niter, xt, yt, x, y):
     for i, centroid in enumerate(original_true_centroids):
         if centroid not in x:
             rejected_elements_idx.append(i)
+            #print("len(original_true_centroids): ", len(original_true_centroids), "   appending index: ", i)
+            #raw_input()
     
     return deltas, sigmas, lines2print, rejected_elements_idx
     
