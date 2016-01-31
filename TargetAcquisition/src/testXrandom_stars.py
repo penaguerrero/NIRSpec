@@ -4,12 +4,12 @@ from astropy.io import fits
 import numpy as np
 import os
 import time
-import collections
+#import collections
 import random
-import PIL.Image as Image
+#import PIL.Image as Image
 # other code
 import coords_transform as ct
-import testing_functions as tf 
+import TA_functions as tf 
 import least_squares_iterate as lsi
 # Tommy's code
 import tautils as tu
@@ -70,7 +70,7 @@ OUTPUT:
 output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
 save_text_file = False             # Want to save the text file of comparison? True or False
 save_centroid_disp = False         # Save the display with measured and true positions?
-keep_bad_stars = True             # Keep the bad stars in the sample? True or False
+keep_bad_stars = True              # Keep the bad stars in the sample? True or False
 stars_in_sample = 20               # Number of stars in sample
 scene = 2                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
 background_method = 'frac'         # Select either 'fractional', 'fixed', or None   
