@@ -172,15 +172,18 @@ def centroid2fulldetector(cb_centroid_list, true_center):
     # Determine difference between center locations
     differences_true_TA = []
     d3_x = true_center[0] - corr_cb_centroid_list[0][0]
-    d5_x = true_center[0] - corr_cb_centroid_list[1][0]
-    d7_x = true_center[0] - corr_cb_centroid_list[2][0]
     d3_y = true_center[1] - corr_cb_centroid_list[0][1]
-    d5_y = true_center[1] - corr_cb_centroid_list[1][1]
-    d7_y = true_center[1] - corr_cb_centroid_list[2][1]
     d3 = [d3_x, d3_y]
-    d5 = [d5_x, d5_y]
-    d7 = [d7_x, d7_y]
-    diffs = [d3, d5, d7]
+    if len(corr_cb_centroid_list) != 1:   # make sure this function works even for one checkbox
+        d5_x = true_center[0] - corr_cb_centroid_list[1][0]
+        d5_y = true_center[1] - corr_cb_centroid_list[1][1]
+        d7_x = true_center[0] - corr_cb_centroid_list[2][0]
+        d7_y = true_center[1] - corr_cb_centroid_list[2][1]
+        d5 = [d5_x, d5_y]
+        d7 = [d7_x, d7_y]
+        diffs = [d3, d5, d7]
+    else:
+        diffs = d3
     differences_true_TA.append(diffs)
     return corr_cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA
 
@@ -529,8 +532,13 @@ def get_frac_stdevs(frac_data):
     return sig3, mean3, sig5, mean5, sig7, mean7
 
 
-def display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, vlims=None, savefile=False, fig_name=None, redos=False):    
-    fig_title = "star_"+str(st)+"_"+case
+def display_centroids(detector, st, case, psf, corr_true_center_centroid, 
+                      corr_cb_centroid_list, show_disp, vlims=None, savefile=False, 
+                      fig_name=None, redos=False):  
+    if isinstance(st, int): 
+        fig_title = "star_"+str(st)+"_"+case
+    else:
+        fig_title = st
     # Display both centroids for comparison.
     _, ax = plt.subplots(figsize=(8, 8))
     ax.set_title(fig_title)
@@ -539,9 +547,10 @@ def display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_c
     ax.set_ylim(1.0, np.shape(psf)[0])
     ax.set_xlim(1.0, np.shape(psf)[1])
     ax.plot(corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1], marker='*', ms=20, mec='black', mfc='blue', ls='', label='Checkbox=3')
-    ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='Checkbox=5')
-    ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='Checkbox=7')
-    ax.plot(corr_true_center_centroid[0], corr_true_center_centroid[1], marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
+    if len(corr_cb_centroid_list) != 1:
+        ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='Checkbox=5')
+        ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='Checkbox=7')
+        ax.plot(corr_true_center_centroid[0], corr_true_center_centroid[1], marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
     # Shrink current axis by 10%
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
@@ -556,9 +565,10 @@ def display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_c
     ax.set_ylim(1.0, np.shape(psf)[0])
     ax.set_xlim(1.0, np.shape(psf)[1])
     ax.plot(corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1], marker='*', ms=20, mec='black', mfc='blue', ls='', label='Checkbox=3')
-    ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='Checkbox=5')
-    ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='Checkbox=7')
-    ax.plot(corr_true_center_centroid[0], corr_true_center_centroid[1], marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
+    if len(corr_cb_centroid_list) != 1:
+        ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='Checkbox=5')
+        ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='Checkbox=7')
+        ax.plot(corr_true_center_centroid[0], corr_true_center_centroid[1], marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
     # Shrink current axis by 10%
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
