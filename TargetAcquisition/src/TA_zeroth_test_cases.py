@@ -46,6 +46,7 @@ flight_s1 = "Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23_0
 flight_s1_shift = "Scene_1_AB23/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB23-shifted_003/postage_redo"
 flight_s2 = "Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23_003/postage_redo"
 flight_s2_shift = "Scene_2_AB1823/SKY-F140X-MIRROR_MOS_simuTA20150528-F140X-S50-K-AB18to23-shifted_003/postage_redo"
+
 #                   0            1            2            3            
 paths_list = [perfect_s1, perfect_s1_shift, perfect_s2, perfect_s2_shift, 
               flight_s1, flight_s1_shift, flight_s2, flight_s2_shift]
@@ -54,7 +55,7 @@ paths_list = [perfect_s1, perfect_s1_shift, perfect_s2, perfect_s2_shift,
 ###########################################################################################################
 
 # Set test parameters
-path_number = 7                    # Select 0 through 4 from paths_list above 
+path_number = 7                    # Select 0 through 7 from paths_list above 
 detector = 492                     # Which detector are we working with: 491 or 492
 vlim = (0.001,10)                  # sensitivity limits of image, i.e. (0.001, 0.1) 
 checkbox_size = 3                  # Real checkbox size
