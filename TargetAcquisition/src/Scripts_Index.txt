@@ -5,20 +5,24 @@ INDEX of Python scripts with respective output text files.
 Scripts
 
 1. test01.py
-2. tautils.py
-3. jwst_targloc.py
+2. tautils.py*
+3. jwst_targloc.py*
 4. testing_functions.py
 5. TA_zeroth_test_cases.py
 6. TA_test_cases.py
 7. avgcentroid_comparison2true.py
-8. coords_transform.py
-9. least_squares.py and least_squares_iterate.py
+8. coords_transform.py*
+9. least_squares.py and least_squares_iterate.py*
 10. testing_coordtransf.py
 11. comparison2sky.py
 12. test20random_stars.py
-13. TA_functions.py
-14. testXrandom_stars.py
-15. sic_cv3.py
+13. TA_functions.py*
+14. testXrandom_stars.py**
+15. sic_cv3.py**
+
+* These are the scripts that contain the core functions to use
+  in the TA process.
+** These are the scripts to follow for TA examples.
 
 
 Descriptions
@@ -27,14 +31,14 @@ Descriptions
 This is Tommy’s notebook translated into a script in order to compare
 with his results.
 
-2. tautils.py
+2. tautils.py*
 This is a script that Tommy started that contains some required 
 functions by other scripts. It contains a centroid algorithm that is 
 not used in any other script. It also contains the function to read
 the 3-ramped fits files, and the display function for the resulting
 image.
 
-3. jwst_targloc.py
+3. jwst_targloc.py*
 This script was started by Tommy. It contains all the revised functions
 for the target location algorithm that are actually used in other
 scripts.
@@ -117,7 +121,7 @@ and the difference to the true positions.
 each detector. The main purpose of these plots is to graphically show 
 which checkbox size is better (so far it seems that it is 7).
 
-8. coords_transform.py
+8. coords_transform.py*
 This script is the python translation of the IDL version sent by Tony
 Keyes. The script contains the functions to transform from 
 detector to sky coordinates and viceversa.
@@ -127,7 +131,7 @@ Coords_transforms/files_from_Tony folder (491_GWA.txt, 492_GWA.txt,
 CLEAR_GWA_OTE.txt, F110W_GWA_OTE.txt, F140X_GWA_OTE.txt, 
 tilt_correction.txt).
 
-9. least_squares.py and least_squares_iterate.py
+9. least_squares.py and least_squares_iterate.py*
 These scripts are the python translation from the IDL version provided
 by Tony Keyes. They simply contain the function to be called and used.
 
@@ -190,12 +194,12 @@ checkbox size that has the minimum difference with respect to the
 true value. The text files are saved into the results20randomstars 
 folder.
 
-13. TA_functions.py
+13. TA_functions.py*
 This script contains the corrected functions used for running the full
 TA algorithm, and minor functions like fin minimum values and get
 directory names, etc. 
 
-14. testXrandom_stars.py
+14. testXrandom_stars.py**
 This script tests can choose X random stars from either detector and
 runs the transformations for the selected test for a given 
 set of X stars for a specific case. The script runs the entire TA
@@ -226,7 +230,7 @@ checkbox size that has the minimum difference with respect to the
 true value. The text files are saved into the results20randomstars 
 folder.
 
-15. sic_cv3.py
+15. sic_cv3.py**
 This script only runs the centroid algorithm for the SIC test CV3 
 resulting fits files that Tony sent me. It displays the results and
 the results can be saved into a text file. 
