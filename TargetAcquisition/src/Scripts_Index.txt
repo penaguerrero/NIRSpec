@@ -1,6 +1,27 @@
 INDEX of Python scripts with respective output text files.
-(in order of text file construction)
+(in order of oldest to newest files)
 
+
+Scripts
+
+1. test01.py
+2. tautils.py
+3. jwst_targloc.py
+4. testing_functions.py
+5. TA_zeroth_test_cases.py
+6. TA_test_cases.py
+7. avgcentroid_comparison2true.py
+8. coords_transform.py
+9. least_squares.py and least_squares_iterate.py
+10. testing_coordtransf.py
+11. comparison2sky.py
+12. test20random_stars.py
+13. TA_functions.py
+14. testXrandom_stars.py
+15. sic_cv3.py
+
+
+Descriptions
 
 1. test01.py
 This is Tommy’s notebook translated into a script in order to compare
@@ -141,10 +162,10 @@ Output:
 * NOTE - case depends on scene, noise, background value, and shutter 
 velocity; results in 36 files per scene.
 
-11. test20random_stars.py
-This script tests can choose X random stars from either detector and
+12. test20random_stars.py
+This script tests can choose 20 random stars from either detector and
 runs the transformations for the selected test for a given 
-set of X stars for a specific case:  
+set of 20 stars for a specific case:  
 TEST1 - Average positions P1 and P2, transform to V2-V3 space, and 
         compare to average reference positions (V2-V3 space)
 TEST2 - Transform individual positions P1 and P2 to V2-V3 space, 
@@ -169,4 +190,47 @@ checkbox size that has the minimum difference with respect to the
 true value. The text files are saved into the results20randomstars 
 folder.
 
+13. TA_functions.py
+This script contains the corrected functions used for running the full
+TA algorithm, and minor functions like fin minimum values and get
+directory names, etc. 
+
+14. testXrandom_stars.py
+This script tests can choose X random stars from either detector and
+runs the transformations for the selected test for a given 
+set of X stars for a specific case. The script runs the entire TA
+algorithm (centroid measurement, Pier's correction, conversion to
+sky, and comparison to true values) for a specific background subtraction
+of either fixed or fractional background; the None option is by default
+zero. One of the three test is to be run:  
+TEST1 - Average positions P1 and P2, transform to V2-V3 space, and 
+        compare to average reference positions (V2-V3 space)
+TEST2 - Transform individual positions P1 and P2 to V2-V3 space, 
+        average V2-V3 space positions, and compare to average 
+        reference positions.
+TEST3 - Transform P1 and P2 individually to V2-V3 space and compare 
+        star by star and position by position.
+Input:
+- Initial conditions must be set (e.g. filter, save text files, results 
+	in 32x32 pixels or full detector, test to be ran, etc.)
+Outputs:
+- Display images with true and calculated centroid
+- On screen, the script displays the measured centroids in 32x32 pixel
+coordinates for checkbox sizes 3, 5, and 7, as well as the magnitudes.
+- Text file for the test ran with standard deviations and means for 
+checkboxes 3, 5, and 7, sigma-clipped standard deviations and means, 
+iterative least squares standard deviations and means, and the list 
+of stars, background value used, the differences (in arcsecs or
+degrees) with respect to true or benchmark sky positions, and the 
+checkbox size that has the minimum difference with respect to the 
+true value. The text files are saved into the results20randomstars 
+folder.
+
+15. sic_cv3.py
+This script only runs the centroid algorithm for the SIC test CV3 
+resulting fits files that Tony sent me. It displays the results and
+the results can be saved into a text file. 
+The option of studying all fractional values can be selected, but a
+single background value can also be used for either fixed or fractional
+backgrounds. The None option is also viable. 
 
