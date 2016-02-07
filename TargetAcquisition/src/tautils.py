@@ -293,6 +293,8 @@ def readimage(master_img, debug=False):
     #beta = master_img[2, :, :] - master_img[1, :, :]
     alpha = master_img[1] - master_img[0]
     beta = master_img[2] - master_img[1]
+    #fits.writeto("/Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/alpha.fits", alpha)
+    #fits.writeto("/Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/beta.fits", beta)
     
     # Generate a final image by doing a pixel to pixel check 
     # between alpha and beta images, storing lower value
