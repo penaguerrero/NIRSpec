@@ -5,7 +5,7 @@ INDEX of Python scripts with respective output text files.
 Scripts
 
 1. test01.py
-2. tautils.py*
+2. tautils.py
 3. jwst_targloc.py*
 4. testing_functions.py
 5. TA_zeroth_test_cases.py
@@ -31,7 +31,7 @@ Descriptions
 This is Tommy’s notebook translated into a script in order to compare
 with his results.
 
-2. tautils.py*
+2. tautils.py
 This is a script that Tommy started that contains some required 
 functions by other scripts. It contains a centroid algorithm that is 
 not used in any other script. It also contains the function to read
@@ -40,8 +40,8 @@ image.
 
 3. jwst_targloc.py*
 This script was started by Tommy. It contains all the revised functions
-for the target location algorithm that are actually used in other
-scripts.
+for the target location algorithm in the Technical Report 
+JWST-STScI-001117, SM-12.
 
 4. testing_functions.py
 This script contains functions used by various scripts in order to
