@@ -27,10 +27,10 @@ star_BOTA_3 = [18.816, 12.196]
 """ Running Tommy's code """
 #star = '../Tommys_testData/WEBB_Test_00_7.fits'
 # Read input image: 3-ram integration master image
-#star = '../PierreFerruitData/TA_cutouts/postageout_star_     101 quad_       3 quad_star        1.fits'
+star = '../PierreFerruitData/TA_cutouts/postageout_star_     101 quad_       3 quad_star        1.fits'
 #star = '../PierreFerruitData/TA_cutouts/postageout_star_     111 quad_       3 quad_star       11.fits'
 #star = '../BOTA_testData/c491_nid8543_TA_2_BOTA.fits'
-star = '../BOTA_testData/c491_nid8543_TA_3_BOTA.fits'
+#star = '../BOTA_testData/c491_nid8543_TA_3_BOTA.fits'
 
 # Set parameters
 checkbox_size = 3
