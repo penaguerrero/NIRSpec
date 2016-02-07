@@ -7,12 +7,8 @@ import time
 import os
 import string
 
-# Tommy's code
-import tautils as tu
-import jwst_targloc as jtl
-
 # extra coding used
-import TA_functions as tf
+import TA_functions as taf
 
 print()
 
@@ -43,6 +39,10 @@ save_centroid_disp = False         # Save the display with measured and true pos
 background_method = "frac"         # Select either 'fractional', 'fixed', or None   
 analyze_all_frac_values = False    # Do you want to analyze fractional values from 0.0 through 1.0? 
 background2use = 0.3               # Background to use for analysis: None or float
+backgnd_subtraction_method = 1     # 1    = Do background subtraction on final image (after subtracting 3-2 and 2-1), 
+#                                           before converting negative values into zeros
+#                                    2    = Do background subtraction on 3-2 and 2-1 individually
+#                                    None = Do not subtract background
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
 ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
@@ -88,21 +88,17 @@ def find_centroid(fits_file, bg_corr_info, recursive_centroids_info, display_cen
     #print("** HEADER:", hdr)
     master_img = fits.getdata(fits_file, 0)
     print ('Master image shape: ', np.shape(master_img))
-    # Do background correction on each of 3 ramp images
-    master_img_bgcorr = jtl.bg_correction(master_img, bg_method=background_method, 
-                                          bg_value=bg_value, bg_frac=bg_frac)
-    
     # Obtain the combined FITS image that combines all frames into one image AND
     # check if all image is zeros, take the image that still has a max value
-    psf = tu.readimage(master_img_bgcorr, debug=debug)                
-    cb_centroid_list = tf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
+    psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
+                        bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
+    cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
                                                checkbox_size, max_iter, threshold, 
-                                               determine_moments, debug, display_master_img, 
-                                               vlim=vlim)
-    if output_full_detector:
-        cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = tf.centroid2fulldetector(
-                                                                            cb_centroid_list, 
-                                                                            true_center)
+                                               determine_moments, debug)
+    cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = taf.centroid2fulldetector(cb_centroid_list_in32x32pix, 
+                                                                                        true_center)
+    if output_full_detector==False:
+        cb_centroid_list = cb_centroid_list_in32x32pix
     if show_centroids:
         print ('***** Measured centroids:')
         print ('      cb_centroid_list = ', cb_centroid_list)
@@ -122,8 +118,13 @@ def find_centroid(fits_file, bg_corr_info, recursive_centroids_info, display_cen
     ff = string.replace(ff, ".fits", "")
     fits_names.append(ff)
     fig_name = os.path.join(output_file_path, ff+".jpg")
-    tf.display_centroids(detector, ff, case, psf, true_center, cb_centroid_list, 
-                         show_disp, vlim, savefile=save_centroid_disp, fig_name=fig_name) 
+    # Display the combined FITS image that combines all frames into one image
+    m_img = display_master_img
+    if display_master_img: 
+        m_img = taf.readimage(master_img, backgnd_subtraction_method=None, bg_method=None, 
+                          bg_value=None, bg_frac=None, debug=False)
+    taf.display_centroids(detector, ff, case, psf, true_center32x32, cb_centroid_list_in32x32pix, 
+                         show_disp, vlim, savefile=save_centroid_disp, fig_name=fig_name, display_master_img=m_img)  
     
     return x_centroids, y_centroids
         
