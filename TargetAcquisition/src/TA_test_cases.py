@@ -7,11 +7,12 @@ import time
 import os
 
 # Tommy's code
-import tautils as tu
-import jwst_targloc as jtl
+#import tautils as tu
+#import jwst_targloc as jtl
 
 # other code
 import testing_functions as tf
+import TA_functions as taf
 
 # Header
 __author__ = "Maria A. Pena-Guerrero"
@@ -75,21 +76,25 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 # Set test parameters
 detector = 491                     # Which detector are we working with: 491 or 492
-path_number = 9                    # Select 0 through 4 from paths_list above 
+path_number = 12                   # Select 0 through 4 from paths_list above 
 vlim = (1.0,30)                    # sensitivity limits of image, i.e. (0.001, 0.1) 
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
 ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
 max_iter = 50
 threshold = 1e-5
-background_method = None           # Select either 'fractional', 'fixed', or None   
+backgnd_subtraction_method = 1     # 1    = Do background subtraction on final image (after subtracting 3-2 and 2-1), 
+#                                           before converting negative values into zeros
+#                                    2    = Do background subtraction on 3-2 and 2-1 individually
+#                                    None = Do not subtract background
+background_method = "frac"           # Select either 'fractional', 'fixed', or None   
 redos = True                       # Use the re-do postage stamps?
 debug = False                      # see all debug messages (i.e. values of all calculations)
 determine_moments = False          # Want to determine 2nd and 3rd moments?
 display_master_img = False         # Want to see the combined ramped images for every star?
 just_read_text_file = False        # skip the for loop to the plotting part
 centroid_in_full_detector = False  # Give resulting coordinates in terms of full detector: True or False
-show_disp = True                   # Show display of resulting positions: True or False
+show_disp = False                   # Show display of resulting positions: True or False
 save_centroid_disp = False         # To modify go to lines 306 and 307
 show_plot = True                   # Show plot(s) of x_offset vs y_offset and y_offset vs magnitude: True or False 
 plot_type = '.jpg'                 # Type of image to be saved: pdf, jpg, eps (it is better to convert from jpg to eps) 
@@ -167,6 +172,7 @@ elif path_number == 13:
 elif path_number == 14:
     case = "scene2_rapid_real_shifted"
 elif path_number == 15:
+    
     case = "scene2_rapid_nonoise_shifted"
 
 output_file_path = "../PFforMaria/detector_"+str(detector)+"_resulting_centroid_txt_files/"
@@ -256,8 +262,8 @@ lf = os.path.join(path2listfile,list_file)
 pf = os.path.join(path2listfile,positions_file)
 print (case)
 print (pf)
-star_number, xpos_arcsec, ypos_arcsec, factor, mag, bg_method = tf.read_listfile(lf, detector, background_method)
-_, true_x, true_y, trueV2, trueV3 = tf.read_positionsfile(pf, detector)
+star_number, xpos_arcsec, ypos_arcsec, factor, mag, bg_method = taf.read_listfile(lf, detector, background_method)
+_, true_x, true_y, trueV2, trueV3 = taf.read_positionsfile(pf, detector)
 
 # Select appropriate set of stars to test according to chosen detector
 if detector == 491:
@@ -299,11 +305,10 @@ if just_read_text_file != True:
                     # If fractional method is selected, loop over backgrounds from 0.0 to 1.0 in increments of 0.1
                     for bg_frac in fractional_background_list:
                         print ("* Using fractional background value of: ", bg_frac)
-                        master_img_bgcorr = jtl.bg_correction(master_img, bg_method=background_method, 
-                                                              bg_value=bg_value, bg_frac=bg_frac, debug=debug)
-                        # Obtain the combined FITS image that combines all frames into one image AND
-                        # check if all image is zeros, take the image that still has a max value
-                        psf = tu.readimage(master_img_bgcorr, debug=debug)
+                        # Obtain the combined FITS image that combines all frames into one image 
+                        # background subtraction is done here
+                        psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
+                                            bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
                         master_img_bgcorr_max = psf.max()
                         while master_img_bgcorr_max == 0.0:
                             print('  IMPORTANT WARNING!!! Combined ramped images have a max of 0.0 with bg_frac=', bg_frac)
@@ -313,18 +318,18 @@ if just_read_text_file != True:
                                 bg_frac = 0.0
                                 break
                             print('       *** Setting  NEW  bg_frac = ', bg_frac)
-                            master_img_bgcorr = jtl.bg_correction(master_img, bg_method=background_method, 
-                                                                  bg_value=bg_value, bg_frac=bg_frac, debug=debug)
-                            psf = tu.readimage(master_img_bgcorr, debug=debug)
+                            psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
+                                                bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
                             master_img_bgcorr_max = psf.max()
-                        cb_centroid_list = tf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
-                                                               checkbox_size, max_iter, threshold, 
-                                                               determine_moments, debug, display_master_img, vlim=vlim)
+                        cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list, 
+                                                                                  ywidth_list, checkbox_size, 
+                                                                                  max_iter, threshold, 
+                                                                                  determine_moments, debug)
                         # Transform to full detector coordinates in order to compare with real centers
                         ESA_center = [0,0]
                         corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
                                                                                                       centroid_in_full_detector,
-                                                                                                      cb_centroid_list, ESA_center, 
+                                                                                                      cb_centroid_list_in32x32pix, ESA_center, 
                                                                                                       true_center, perform_avgcorr=perform_avgcorr)
                         # Write output into text file
                         bg = bg_frac
@@ -333,29 +338,28 @@ if just_read_text_file != True:
                         tf.write2file(data2write, lines4screenandfile)
                         #raw_input()
                 else:
-                    master_img_bgcorr = jtl.bg_correction(master_img, bg_method=background_method, 
-                                                          bg_value=bg_value, bg_frac=bg_frac)
                     # Obtain the combined FITS image that combines all frames into one image AND
                     # check if all image is zeros, take the image that still has a max value
-                    psf = tu.readimage(master_img_bgcorr, debug=debug)                
-                    cb_centroid_list = tf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
-                                                               checkbox_size, max_iter, threshold, 
-                                                               determine_moments, debug, display_master_img, 
-                                                               vlim=vlim)
+                    psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
+                                                bg_value=bg_value, bg_frac=bg_frac, debug=debug)                   
+                    cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list, 
+                                                                              ywidth_list, checkbox_size, 
+                                                                              max_iter, threshold, 
+                                                                              determine_moments, debug)
                     # Transform to full detector coordinates in order to compare with real centers
                     ESA_center = [0,0]
                     corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
                                                                                                   centroid_in_full_detector,
-                                                                                                  cb_centroid_list, ESA_center, 
+                                                                                                  cb_centroid_list_in32x32pix, ESA_center, 
                                                                                                   true_center, perform_avgcorr=perform_avgcorr)
-                    print ('***** cb_centroid_list = ', cb_centroid_list)
+                    print ('***** cb_centroid_list = ', cb_centroid_list_in32x32pix)
                     #raw_input()
                     # Write output into text file
                     bg = background
                     data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
                     tf.write2file(data2write, lines4screenandfile) 
                 
-                tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
+                tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, cb_centroid_list_in32x32pix, show_disp, 
                                      vlim, savefile=save_centroid_disp, redos=redos)  
                 if single_star:
                     tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
