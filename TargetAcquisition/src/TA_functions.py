@@ -4,11 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import os
-from glob import glob
 import collections
 
 # Tommy's code
-import tautils as tu
 import jwst_targloc as jtl
 
 # Header
@@ -20,6 +18,76 @@ This script has Target Acquisition functions frequently used. They are ordered a
 """
 
 # FUNCTIONS
+
+def bg_correction(img, bg_method=None, bg_value=None, bg_frac=None, debug=False):
+    """
+    Subtract a background value from every pixel in the image, based on
+    the background method (None, Fixed, or Fraction):
+        - If None, the image is used as-is.
+        - If Fixed, the given background level (bg_value) is the value
+        to be subtracted from each pixel in the image.
+        - If Fraction, the given background level is the fraction (e.g. if
+        bg_fraction = 0.5, the background is set to the median pixel value
+        in the image; if bg_fraction = 0.4, 40% of the pixels have data
+        values less than background, while 60% have data values larger than 
+        background, and implicitly, the top 20% of the data values are 
+        assumed to contain significant counts from astronomical sources, 
+        cosmic rays, or hot pixels. See code).
+
+    Keyword arguments:
+    img        -- Image 
+    bg_method  -- Either None value or string: "fixed" or "frac"
+    bg_value   -- Fixed value to subtract from each pixel (this has to 
+                  be set if bg_method = "fixed")
+    bg_frac    -- Fractional value to subtract from image (this has to 
+                  be set if bg_method = "frac")
+    
+    Output(s):
+    img_bgcorr -- The group of 3 background subtracted images 
+
+    Example usage:
+    
+        >> img_bgcorr = bg_correction(master_img, bg_method='frac', bg_value=0.4)
+
+        Correct each ramped image from background.
+    """
+    if bg_method is None:
+        return img
+    
+    elif "fix" in bg_method:
+        # Check that bg_value is defined
+        if bg_value is None:
+            print ("ERROR - Background_method set to 'fixed': bg_value needs to be a float number, got None.")
+            exit()
+        master_img_bgcorr = img - bg_value
+        return master_img_bgcorr
+    
+    elif "frac" in bg_method:
+        # Check that bg_value is defined
+        if bg_frac is None:
+            print ("ERROR - Background_method set to 'fractional': bg_frac needs to be a float number, got None.")
+            exit()
+        #if bg_frac == 0.0:   #?
+        #    return master_img
+        # Find the pixel value (bg) that represents that fraction of the population
+        img_original = copy.deepcopy(img)
+        sorted_img = np.sort(np.ravel(img))   # flatten the image and sort it
+        xsize = np.shape(img)[1]
+        ysize = np.shape(img)[0]
+        idx_bg = np.floor(bg_frac * xsize * ysize)
+        # If at the edge, correct
+        if idx_bg == np.shape(sorted_img)[0]:
+            idx_bg = idx_bg - 1
+        bg = sorted_img[idx_bg]
+        img_bgcorr = img_original - bg
+        # Debugging messages
+        if debug:
+            print("(bg_correction): xsize = {},  ysize= {}".format(xsize, ysize))
+            print("(bg_correction): sorted_img = {}".format(sorted_img))
+            print("(bg_correction): idx_bg = {}".format(idx_bg))
+            print("(bg_correction): bg = {}".format(bg))
+        return img_bgcorr
+
 
 def centroid2fulldetector(cb_centroid_list, true_center):
     """
@@ -110,30 +178,23 @@ def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=
 
 def display_centroids(detector, st, case, psf, corr_true_center_centroid, 
                       corr_cb_centroid_list, show_disp, vlims=None, savefile=False, 
-                      fig_name=None, redos=False):  
+                      fig_name=None, redos=False, display_master_img=False):  
     if isinstance(st, int): 
         fig_title = "star_"+str(st)+"_"+case
     else:
         fig_title = st
-    # Display both centroids for comparison.
-    _, ax = plt.subplots(figsize=(8, 8))
-    ax.set_title(fig_title)
-    ax.autoscale(enable=False, axis='both')
-    ax.imshow(psf, cmap='gray', interpolation='nearest')
-    ax.set_ylim(1.0, np.shape(psf)[0])
-    ax.set_xlim(1.0, np.shape(psf)[1])
-    ax.plot(corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1], marker='*', ms=20, mec='black', mfc='blue', ls='', label='Checkbox=3')
-    if len(corr_cb_centroid_list) != 1:
-        ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='Checkbox=5')
-        ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='Checkbox=7')
-        ax.plot(corr_true_center_centroid[0], corr_true_center_centroid[1], marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
-    # Shrink current axis by 10%
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
-    ax.legend(loc='upper right', bbox_to_anchor=(1.26, 1.0), prop={"size":"small"})   # put legend out of the plot box   
-    # Add plot with different sensitivity limits
     if vlims is None:
-        vlims = (1, 10)
+        vlims = (10, 50)
+    if display_master_img is not False:
+        # Display original image.
+        _, ax = plt.subplots(figsize=(8, 8))
+        ax.set_title(fig_title+"_original")
+        ax.autoscale(enable=False, axis='both')
+        ax.imshow(display_master_img, cmap='gray', interpolation='nearest')
+        ax.set_ylim(1.0, np.shape(display_master_img)[0])
+        ax.set_xlim(1.0, np.shape(display_master_img)[1])
+        ax.imshow(display_master_img, cmap='gray', interpolation='nearest', vmin=vlims[0], vmax=vlims[1])
+    # Add plot of measured centroids
     fig, ax = plt.subplots(figsize=(8, 8))
     ax.set_title(fig_title)
     ax.autoscale(enable=False, axis='both')
@@ -186,6 +247,52 @@ def display_centroids(detector, st, case, psf, corr_true_center_centroid,
         print ("Figure ", fig_name, " was saved!")
     
     
+def display_ns_psf(image, vlim=(), fsize=(8, 8), interp='nearest', \
+    title='', cmap='gray', extent=None, savefile=None, cb=False):
+    """
+    Custom display a PSF generated with WEBBPSF or similar tool.
+    A quick tool for displaying NIRSpec images in native size 
+    (2048x2048) with additional options for display.
+    Keyword arguments:
+    image    --  A 2D image to display
+    vlim     --  The image range (in terms of image counts) to display.
+                 Defaults to empty (), displaying full spectrum.
+    fsize    --  Figure image size (in cm?)
+    interp   --  Interpolation type. Defaults to 'nearest'.
+    title    --  Title for plot. Defaults to ''.
+    cmap     --  Color map for plot. Defaults to 'gray'.
+    cb       --  Color bar toggle. Defaults to 'False'.
+    savefile --  Figure save toggle. Defaults to 'None'. A filename
+                 (with directory structure) can be entered to save to
+                 given filename.
+    """
+
+    # Display PSF (oversampled and detector levels)
+    fig, ax = plt.subplots(figsize=fsize)
+    ax.set_title(title)
+    ax.set_aspect('equal')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_ylim(0.0, np.shape(image)[0])
+
+    if vlim == ():
+        vlim = (image.min(), image.max())
+    
+    if extent is not None:     
+        cax = ax.imshow(image, cmap=cmap, interpolation=interp, vmin=vlim[0], \
+              extent=extent-.5, vmax=vlim[1])
+    else:
+        cax = ax.imshow(image, cmap=cmap, interpolation=interp, vmin=vlim[0], vmax=vlim[1])       
+    
+    if cb: fig.colorbar(cax, ax=ax, shrink=0.8)
+    
+    # Added by Maria to see plots when not in Notebook environment
+    plt.show()
+    
+    if savefile is not None:
+        fig.savefig(savefile)
+
+
 def do_Piers_correction(detector, cb_centroid_list):
     xy3, xy5, xy7 = cb_centroid_list
     xy3corr = Pier_correction(detector, xy3)
@@ -417,14 +524,12 @@ def read_positionsfile(positions_file_name, detector=None):
 
 
 def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_size, max_iter, 
-                            threshold, determine_moments, debug, display_master_img, vlim=()):   
+                            threshold, determine_moments, debug):   
     """
     Determine the centroid location given the that the background is already subtracted. 
     """ 
-    # Display the combined FITS image that combines all frames into one image
-    if display_master_img: 
-        tu.display_ns_psf(psf, vlim=vlim)
     # Test checkbox piece
+    print ("Centroid measurement for background of: ", background)
     cb_centroid_list = []
     for xwidth, ywidth in zip(xwidth_list, ywidth_list):
         print ("Testing centroid width: ", checkbox_size)
@@ -547,14 +652,74 @@ def read_TruePosFromFits(path2listfile, list_file1, positions_file1, list_file2,
     yLP1 = np.floor(true_yP1) - 16.0
     xLP2 = np.floor(true_xP2) - 16.0
     yLP2 = np.floor(true_yP2) - 16.0
-    #for i, _ in enumerate(trueV2P1):
-    #    print(bench_starP1[i], true_xP1[i], true_yP1[i], trueV2P1[i], trueV3P1[i], xLP1[i], yLP1[i])
-    #    print(bench_starP2[i], true_xP2[i], true_yP2[i], trueV2P2[i], trueV3P2[i], xLP2[i], yLP2[i])
-        #raw_input()
     # Organize elements of positions 1 and 2
     bench_P1 = [bench_starP1, true_xP1, true_yP1, trueV2P1, trueV3P1, xLP1, yLP1]
     bench_P2 = [bench_starP2, true_xP2, true_yP2, trueV2P2, trueV3P2, xLP2, yLP2]
     benchmark_data = [bench_P1, bench_P2]
     return benchmark_data, magP1
 
+
+# Extract an image from a multi-ramp integration FITS file
+def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_value=None, bg_frac=None, debug=False):
+    """
+    Extract am image from a multi-ramp integration FITS file.
+    Currently, JWST NIRSpec FITS images consists of a 3-ramp integration, 
+    with each succesive image containing more photon counts than the next. 
+    Uses a cube-differencing calculation to eliminate random measurements
+    such as cosmic rays.
+    Keyword arguments:
+    master_img                 -- 3-frame image (as per NIRSpec output images)
+    backgnd_subtraction_method -- 1 = Do background subtraction on final image (after subtracting 3-2 and 2-1), 
+                                      before converting negative values into zeros
+                                  2 = Do background subtraction on 3-2 and 2-1 individually
+    Output(s):
+    omega -- A combined FITS image that combines all frames into one image.
+    """
+    
+    # Read in input file, and generate the alpha and beta images
+    # (for subtraction)
+    #alpha = master_img[1, :, :] - master_img[0, :, :]
+    #beta = master_img[2, :, :] - master_img[1, :, :]
+    alpha = master_img[1] - master_img[0]
+    beta = master_img[2] - master_img[1]
+    #fits.writeto("/Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/alpha.fits", alpha)
+    #fits.writeto("/Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/beta.fits", beta)
+    
+    # Perform background subtraction if backgnd_subtraction_method=1
+    if backgnd_subtraction_method == 2:
+        print ("*  Background subtraction being done on 3-2 and 2-1 individually...")
+        alpha = bg_correction(alpha, bg_method=bg_method, bg_value=bg_value, bg_frac=bg_frac, debug=debug)
+        beta = bg_correction(beta, bg_method=bg_method, bg_value=bg_value, bg_frac=bg_frac, debug=debug)
+    
+    # Generate a final image by doing a pixel to pixel check 
+    # between alpha and beta images, storing lower value
+    omega = np.where(alpha < beta, alpha, beta)
+    
+    # Perform background subtraction if backgnd_subtraction_method=1
+    if backgnd_subtraction_method == 1:
+        print ("*  Background subtraction being done on image of min between 3-2 and 2-1...")
+        omega = bg_correction(omega, bg_method=bg_method, bg_value=bg_value, bg_frac=bg_frac, debug=debug)
+
+    # Convert negative pixel values to zero
+    negative_idx = np.where(omega < 0.0)
+    omega[negative_idx] = 0.0
+
+    # show on screen the values of rows and column for debugging other functions of the code
+    if debug:
+        image = omega   # Type image to be displayed
+        if image is omega:
+            print ('Combined ramped images:  ')
+            print ('   AFTER zeroing negative pixels')
+        else:
+            print ('   BEFORE zeroing negative pixels')
+        print ('max_image = ', image.max())
+        print ('min_image = ', image.min())
+        for j in range(np.shape(image)[0]):
+            print (j, image[j, :])#, alpha[j, :], beta[j, :])
+    
+
+    print('(readimage): Image processed!')
+        
+    # Return the extracted image
+    return omega
 
