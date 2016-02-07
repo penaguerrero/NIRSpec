@@ -4,16 +4,13 @@ from astropy.io import fits
 import numpy as np
 import os
 import time
-#import collections
 import random
-#import PIL.Image as Image
+import collections
 # other code
+import TA_functions as TAf 
 import coords_transform as ct
-import TA_functions as tf 
 import least_squares_iterate as lsi
-# Tommy's code
-import tautils as tu
-import jwst_targloc as jtl
+from test20random_stars import stars_sample
 
 print("Modules correctly imported! \n")
 
@@ -73,7 +70,7 @@ save_centroid_disp = False         # Save the display with measured and true pos
 keep_bad_stars = True              # Keep the bad stars in the sample? True or False
 stars_in_sample = 20               # Number of stars in sample
 scene = 2                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
-background_method = 'frac'         # Select either 'fractional', 'fixed', or None   
+background_method = "frac"         # Select either 'fractional', 'fixed', or None   
 background2use = 0.3               # Background to use for analysis: None or float
 shutters = "rapid"                 # Shutter velocity, string: "rapid" or "slow"
 noise = "real"                     # Noise level, string: "nonoise" or "real"
@@ -88,23 +85,33 @@ max_iters_Nsig = 10                # Max number of iterations for N-sigma functi
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
 ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
-vlim = (1.0,30)                    # Sensitivity limits of image, i.e. (0.001, 0.1) 
-threshold = 1e-5                   # Convergence threshold of accepted difference between checkbox centroid and coarse location
-max_iter = 50                      # Maximum number of iterations for finding coarse location
+vlim = (1, 100)                    # Sensitivity limits of image, i.e. (0.001, 0.1) 
+threshold = 0.3                    # Convergence threshold of accepted difference between checkbox centroid and coarse location
+max_iter = 10                      # Maximum number of iterations for finding coarse location
 debug = False                      # See all debug messages (i.e. values of all calculations)
 diffs_in_arcsecs = True            # Print the differences in arcsecs? True or False (=degrees) 
 determine_moments = False          # Want to determine 2nd and 3rd moments?
-display_master_img = False         # Want to see the combined ramped images for every star?
-show_centroids = False             # Print measured centroid on screen: True or False
-show_disp = False                  # Show display of resulting positions? (will show 2 figs, same but different contrast)
+display_master_img = False          # Want to see the combined ramped images for every star?
+show_centroids = True             # Print measured centroid on screen: True or False
+show_disp = False                   # Show display of resulting positions? (will show 2 figs, same but different contrast)
 Pier_corr = True                   # Include Pier's corrections to measured positions
 tilt = False                       # Tilt angle: True or False
+backgnd_subtraction_method = 1     # 1    = Do background subtraction on final image (after subtracting 3-2 and 2-1), 
+#                                           before converting negative values into zeros
+#                                    2    = Do background subtraction on 3-2 and 2-1 individually
+#                                    None = Do not subtract background
 
 random_sample = False               # choose a random sample of stars from either detector: True or False
 # control samples to be used when random is set to False
-#stars_sample = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-#stars_sample = [1, 15, 60, 65, 67, 72, 81, 124, 132, 133, 139, 156, 166, 167, 182, 183, 187, 189, 198, 200]
-stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
+#stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
+# OLNY detector 491
+#stars_sample = [101, 105, 108, 109, 111, 113, 114, 133, 136, 147, 150, 157, 158, 161, 181, 184, 185, 186, 194, 199]
+#stars_sample = [101, 104, 105, 112, 117, 118, 133, 135, 136, 140, 145, 151, 152, 157, 159, 161, 174, 178, 184, 200]   
+# ONLY detector 492
+#stars_sample = [8, 11, 19, 24, 30, 37, 39, 41, 48, 51, 55, 65, 73, 85, 87, 88, 90, 91, 93, 98]
+stars_sample = [2, 4, 8, 10, 11, 22, 25, 28, 33, 37, 54, 64, 68, 76, 80, 89, 96, 97, 99, 100]
+# all stars of one detector or both
+#stars_sample = [s+101 for s in range(100)] 
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
 #6, 23, 50, 55, 65, 67, 70, 71, 73, 90, 105, 108, 119, 124, 126, 127, 137, 153, 186, 187
 
@@ -112,28 +119,44 @@ stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 
 
 
 #  --> FUNCTIONS       
-    
-def writedatafile(show_centroids, data2write, lines4screenandfile):
-    line0, line0a, line0b = lines4screenandfile
-    save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor, mindiffs = data2write
-    line1 = "{:<5} {:<10} {:<14} {:<16} {:<14} {:<16} {:<14} {:<18} {:<16} {:<16} {:<10} {:<10} {:<10.2f} {:<10}\n".format(
-                                                    st, bg, 
-                                                    corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1],
-                                                    corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1],
-                                                    corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1],
-                                                    corr_true_center_centroid[0], corr_true_center_centroid[1],
-                                                    loleftcoords[0], loleftcoords[1],
-                                                    factor,
-                                                    mindiffs)
+
+def writedatafile(save_text_file, show_centroids, output_file, lines4screenandfile, stars_sample, background2use, data2write):
+    line0, line2a, line2b = lines4screenandfile
+    x_pixpos, y_pixpos, corr_true_center_centroid, loleftcoords, mag, min_diff_pixposX, min_diff_pixposY = data2write
+    x3, x5, x7 = x_pixpos
+    y3, y5, y7 = y_pixpos
+    counterX = collections.Counter(min_diff_pixposX)
+    counterY = collections.Counter(min_diff_pixposY)
+    line1a = "Counter for X positions: {}".format(counterX)
+    line1b = "Counter for Y positions: {}".format(counterY)
+    if show_centroids:
+        print()
+        print(line0)
+        print(line1a)
+        print(line1b)
+        print(line2a)
+        print(line2b)
     if save_text_file:
         f = open(output_file, "a")
-        f.write(line1)
+        f.write(line1a+"\n")
+        f.write(line1b+"\n")
+        f.write(line2a+"\n")
+        f.write(line2b+"\n")
         f.close()
-    if show_centroids:
-        print(line0)
-        print(line0a)
-        print(line0b)
-        print(line1) 
+    for i, st in enumerate(stars_sample):
+        line3 = "{:<5} {:<10} {:<14} {:<16} {:<14} {:<16} {:<14} {:<18} {:<16} {:<16} {:<10} {:<10} {:<11.2f} {:<2} {:<10}".format(
+                                                    st, background2use, 
+                                                    x3[i], y3[i], x5[i], y5[i], x7[i], y7[i],
+                                                    corr_true_center_centroid[i][0], corr_true_center_centroid[i][1],
+                                                    loleftcoords[i][0], loleftcoords[i][1],
+                                                    mag[i],
+                                                    min_diff_pixposX[i], min_diff_pixposY[i])
+        if save_text_file:
+            f = open(output_file, "a")
+            f.write(line3+"\n")
+            f.close()
+        if show_centroids:
+            print(line3) 
     
 
 def runTEST(test2run, detectors, transf_direction, case, stars, P1P2data, bench_starP1, trueVsP1, trueVsP2):
@@ -336,9 +359,9 @@ def TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, debug)
     # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)
     # Step (c) - comparison
-    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_5, T1_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_7, T1_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = TAf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_5, T1_diffV3_5, _, _ = TAf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_7, T1_diffV3_7, _, _ = TAf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
     if debug:
         print ("TEST 1: ")
         print ("transformations: detector (avgx, avgy),  sky (V2, V3),  true (avgV2, avgV3)")
@@ -371,9 +394,9 @@ def TEST2(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     T2_V2_7 = (T2_V2_17 + T2_V2_27)/2.0
     T2_V3_7 = (T2_V3_17 + T2_V3_27)/2.0
     # Step (c) - comparison
-    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_5, T2_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_7, T2_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = TAf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_5, T2_diffV3_5, _, _ = TAf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_7, T2_diffV3_7, _, _ = TAf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
     if debug:
         print ("TEST 2: ")
         print ("transformations: detector P1 and P2 (x, y),  sky (avgV2, avgV3),  true (avgV2, avgV3)")
@@ -400,12 +423,12 @@ def TEST3(detector, transf_direction, stars, case, bench_starP1, bench_Vs, P1P2d
     T3_V2_25, T3_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, debug)
     T3_V2_27, T3_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, debug)
     # Step (b) - comparison
-    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_15, T3_diffV3_15, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_25, T3_diffV3_25, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_17, T3_diffV3_17, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_27, T3_diffV3_27, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = TAf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = TAf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_15, T3_diffV3_15, _, _ = TAf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_25, T3_diffV3_25, _, _ = TAf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_17, T3_diffV3_17, _, _ = TAf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_27, T3_diffV3_27, _, _ = TAf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27, arcsecs=diffs_in_arcsecs)
     if debug:
         print ("TEST 3: ")
         print ("transformations: detector P1 and P2 (x, y),  sky P1 and P2 (V2, V3),  true P1 and P2 (V2, V3)")
@@ -456,15 +479,15 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     T_diffV2_7, T_diffV3_7 = np.array(T_diffV2_7), np.array(T_diffV3_7)
     Tbench_V2_list, Tbench_V3_list = T_benchVs_list
     # calculate standard deviations and means
-    Tstdev_V2_3, Tmean_V2_3 = tf.find_std(T_diffV2_3)
-    Tstdev_V2_5, Tmean_V2_5 = tf.find_std(T_diffV2_5)
-    Tstdev_V2_7, Tmean_V2_7 = tf.find_std(T_diffV2_7)
-    Tstdev_V3_3, Tmean_V3_3 = tf.find_std(T_diffV3_3)
-    Tstdev_V3_5, Tmean_V3_5 = tf.find_std(T_diffV3_5)
-    Tstdev_V3_7, Tmean_V3_7 = tf.find_std(T_diffV3_7)
+    Tstdev_V2_3, Tmean_V2_3 = TAf.find_std(T_diffV2_3)
+    Tstdev_V2_5, Tmean_V2_5 = TAf.find_std(T_diffV2_5)
+    Tstdev_V2_7, Tmean_V2_7 = TAf.find_std(T_diffV2_7)
+    Tstdev_V3_3, Tmean_V3_3 = TAf.find_std(T_diffV3_3)
+    Tstdev_V3_5, Tmean_V3_5 = TAf.find_std(T_diffV3_5)
+    Tstdev_V3_7, Tmean_V3_7 = TAf.find_std(T_diffV3_7)
     Tbench_V2, Tbench_V3 = np.array(Tbench_V2_list), np.array(Tbench_V3_list)
     # get the minimum of the differences
-    T_min_diff, T_counter = tf.get_mindiff(T_diffV2_3, T_diffV2_5, T_diffV2_7)
+    T_min_diff, T_counter = TAf.get_mindiff(T_diffV2_3, T_diffV2_5, T_diffV2_7)
     # calculate least squares but first convert to MSA center
     T_V2_3, T_V3_3, Tbench_V2, Tbench_V3 = convert2MSAcenter(T_V2_3, T_V3_3, Tbench_V2, Tbench_V3)
     T_V2_5, T_V3_5, _, _ = convert2MSAcenter(T_V2_5, T_V3_5, Tbench_V2, Tbench_V3)
@@ -474,9 +497,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     TLSdeltas_5, TLSsigmas_5, TLSlines2print_5, rejected_elements_5 = lsi.ls_fit_iter(max_iterations, T_V2_5*3600.0, T_V3_5*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
     TLSdeltas_7, TLSsigmas_7, TLSlines2print_7, rejected_elements_7 = lsi.ls_fit_iter(max_iterations, T_V2_7*3600.0, T_V3_7*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
     # Do N-sigma rejection
-    TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3, rej_elements_3 = tf.Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
-    TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5, rej_elements_5 = tf.Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
-    TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7, rej_elements_7 = tf.Nsigma_rejection(Nsigma, T_diffV2_7, T_diffV3_7, max_iterations)
+    TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3, rej_elements_3 = TAf.Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
+    TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5, rej_elements_5 = TAf.Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
+    TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7, rej_elements_7 = TAf.Nsigma_rejection(Nsigma, T_diffV2_7, T_diffV3_7, max_iterations)
     # organize the results
     st_devsAndMeans = [Tstdev_V2_3, Tmean_V2_3, Tstdev_V2_5, Tmean_V2_5, Tstdev_V2_7, Tmean_V2_7,
                        Tstdev_V3_3, Tmean_V3_3, Tstdev_V3_5, Tmean_V3_5, Tstdev_V3_7, Tmean_V3_7]
@@ -704,7 +727,7 @@ if keep_bad_stars == False:
 # order the star list 
 stars_sample.sort(key=lambda xx: xx)
 print ("stars_sample =", stars_sample)
-raw_input("\nPress enter to continue...")
+#raw_input("\nPress enter to continue...")
 
 # start the timer to compute the whole running time
 start_time = time.time()
@@ -733,7 +756,7 @@ scene2study = "Scene"+str(scene)+"_"
 case = "Scene"+str(scene)+"_"+str(shutters)+"_"+noise
 
 # get the benchmark data according to Scene selected
-benchmark_data, magnitudes = tf.read_star_param_files(scene2study)
+benchmark_data, magnitudes = TAf.read_star_param_files(scene2study)
 bench_P1, bench_P2 = benchmark_data
 allbench_starP1, allbench_xP1, allbench_yP1, allbench_V2P1, allbench_V3P1, allbench_xLP1, allbench_yLP1 = bench_P1
 allbench_starP2, allbench_xP2, allbench_yP2, allbench_V2P2, allbench_V3P2, allbench_xLP2, allbench_yLP2 = bench_P2
@@ -791,18 +814,18 @@ if save_text_file:
         output_file = os.path.join(output_file_path, "centroids_Scene"+repr(scene)+bg_choice+pos+".txt")
         f = open(output_file, "w+")
         f.write(line0+"\n")
-        f.write(line0a+"\n")
-        f.write(line0b+"\n")
         f.close()
 
 # get the star files to run the TA algorithm on
-dir2test_list = tf.get_raw_star_directory(path4starfiles, scene, shutters, noise)
+dir2test_list = TAf.get_raw_star_directory(path4starfiles, scene, shutters, noise)
 
 # run centroid algorithm on each position and save them into a text file
 x13, x15, x17 = np.array([]), np.array([]), np.array([])
 y13, y15, y17 = np.array([]), np.array([]), np.array([])
 x23, x25, x27 = np.array([]), np.array([]), np.array([])
 y23, y25, y27 = np.array([]), np.array([]), np.array([])
+min_diff_pixposX, min_diff_pixposY, loleftcoords_list, mag_list = [], [], [], []
+true_centers=[]
 for pos, dir2test in zip(positions, dir2test_list):
     dir_stars = glob(os.path.join(dir2test,"postageout_star_*.fits"))   # get all star fits files in that directory
     #print("does dir2test exist?", os.path.isdir(dir2test))
@@ -836,42 +859,47 @@ for pos, dir2test in zip(positions, dir2test_list):
                 #print("** HEADER:", hdr)
                 master_img = fits.getdata(star, 0)
                 print ('Master image shape: ', np.shape(master_img))
-                # Do background correction on each of 3 ramp images
-                master_img_bgcorr = jtl.bg_correction(master_img, bg_method=background_method, 
-                                                      bg_value=bg_value, bg_frac=bg_frac)
-                # Obtain the combined FITS image that combines all frames into one image AND
-                # check if all image is zeros, take the image that still has a max value
-                psf = tu.readimage(master_img_bgcorr, debug=debug)                
-                cb_centroid_list = tf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
+                # Obtain the combined FITS image that combines all frames into one image 
+                # background subtraction is done here
+                psf = TAf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
+                                    bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
+                cb_centroid_list_in32x32pix = TAf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
                                                            checkbox_size, max_iter, threshold, 
-                                                           determine_moments, debug, display_master_img, vlim=vlim)
-                cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = tf.centroid2fulldetector(cb_centroid_list, 
+                                                           determine_moments, debug)
+                cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = TAf.centroid2fulldetector(cb_centroid_list_in32x32pix, 
                                                                                                     true_center)
                 if output_full_detector == False:
+                    cb_centroid_list = cb_centroid_list_in32x32pix
                     true_center = true_center32x32
                 # Correct true centers for average value given by Pier 
                 if Pier_corr:
-                    corr_cb_centroid_list = tf.do_Piers_correction(detector, cb_centroid_list)
+                    corr_cb_centroid_list = TAf.do_Piers_correction(detector, cb_centroid_list)
                 else:
                     corr_cb_centroid_list = cb_centroid_list 
                 if show_centroids:
                     print ('***** Measured centroids for checkbox sizes 3, 5, and 7, respectively:')
-                    print ('      cb_centroid_list = ', corr_cb_centroid_list)
+                    if output_full_detector:
+                        print ('      cb_centroid_list = ', corr_cb_centroid_list)
+                    else:
+                        print ('      cb_centroid_list = ', cb_centroid_list_in32x32pix)
                     print ('           True center = ', true_center)
                 # Show the display with the measured and true positions
                 fig_name = os.path.join("../resultsXrandomstars", "centroid_displays/Star"+repr(st)+"_Scene"+repr(scene)+bg_choice+pos+".jpg")
-                tf.display_centroids(detector, st, case, psf, true_center32x32, cb_centroid_list, 
-                                     show_disp, vlim, savefile=save_centroid_disp, fig_name=fig_name)  
+                # Display the combined FITS image that combines all frames into one image
+                m_img = display_master_img
+                if display_master_img: 
+                    m_img = TAf.readimage(master_img, backgnd_subtraction_method=None, bg_method=None, 
+                                      bg_value=None, bg_frac=None, debug=False)
+                TAf.display_centroids(detector, st, case, psf, true_center32x32, cb_centroid_list_in32x32pix, 
+                                     show_disp, vlim, savefile=save_centroid_disp, fig_name=fig_name, display_master_img=m_img)  
                 # Find the best checkbox size = minimum difference with true values
-                min_diff, _ = tf.get_mindiff(differences_true_TA[0][0], differences_true_TA[0][1], differences_true_TA[0][2])
-                # Write output into text file
-                if save_text_file:
-                    position = "_Position1"
-                    if pos == "_Position2":
-                        position = "_Position2"
-                    output_file = os.path.join(output_file_path, "centroids_Scene"+repr(scene)+bg_choice+position+".txt")
-                    data2write = [save_text_file, output_file, st, background2use, corr_cb_centroid_list, true_center, loleftcoords, mag_i, min_diff]
-                    writedatafile(show_centroids, data2write, lines4screenandfile) 
+                min_diff, _ = TAf.get_mindiff(differences_true_TA[0][0], differences_true_TA[0][1], differences_true_TA[0][2])
+                # Save output
+                true_centers.append(true_center)
+                loleftcoords_list.append(loleftcoords)
+                mag_list.append(mag_i)
+                min_diff_pixposX.append(min_diff[0])
+                min_diff_pixposY.append(min_diff[1])
                 if pos == "_Position1":
                     x13 = np.append(x13, corr_cb_centroid_list[0][0])
                     x15 = np.append(x15, corr_cb_centroid_list[1][0])
@@ -886,7 +914,19 @@ for pos, dir2test in zip(positions, dir2test_list):
                     y23 = np.append(y23, corr_cb_centroid_list[0][1])
                     y25 = np.append(y25, corr_cb_centroid_list[1][1])
                     y27 = np.append(y27, corr_cb_centroid_list[2][1])
-                
+    # Write output into text file
+    position = "_Position1"
+    x_pixpos = [x13, x15, x17]
+    y_pixpos = [y13, y15, y17]
+    if pos == "_Position2":
+        x2_pixpos = [x23, x25, x27]
+        y2_pixpos = [y23, y25, y27]
+        position = "_Position2"
+    output_file = os.path.join(output_file_path, "centroids_Scene"+repr(scene)+bg_choice+position+".txt")
+    data2write = [x_pixpos, y_pixpos, true_centers, loleftcoords_list, mag_list, min_diff_pixposX, min_diff_pixposY] 
+    writedatafile(save_text_file, show_centroids, output_file, lines4screenandfile, stars_sample, background2use, data2write) 
+exit()
+
 # transform into sky coordinates
 case2study = [scene, shutters, noise, bg_choice]
 case = "Scene"+str(scene)+"_"+shutters+"_"+noise+bg_choice
@@ -919,7 +959,7 @@ print (line0)
 print (line0a)
 print (line0b)
 for i, st in enumerate(stars_sample): 
-    line1 = "{:<5} {:<10} {:<14} {:<16} {:<14} {:<16} {:<14} {:<16} {:<14} {:<16} {:<8} {:<12} {:<10.2}".format(
+    line1 = "{:<5} {:<10} {:<14} {:<16} {:<14} {:<16} {:<14} {:<16} {:<14} {:<16} {:<8} {:<12} {:<10.2f}".format(
                                                                 int(st), background2use, 
                                                                 x13[i], y13[i], x15[i], y15[i], x17[i], y17[i],
                                                                 bench_xP1[i]-bench_xLP1[i], bench_yP1[i]-bench_yLP1[i],
