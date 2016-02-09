@@ -126,7 +126,7 @@ def centroid(grid, gw, initial=None, debug=False, verbose=False):
     """
         
     # Set the initial guess coordinates
-    if initial == None: 
+    if initial is None:
         if verbose: print("Initial Guess (x,y)...")
         init_guess = ((grid.shape[1]/2) - 1, (grid.shape[0]/2) - 1)
     else:
@@ -365,7 +365,7 @@ def get_filenames(search_str, path):
     
     for ii in xrange(len(filenames)):
         step = re.search(search_str, filenames[ii])
-        if step != None:
+        if step is not None:
             file_list.append(path+step.group(0))
 
     return file_list
@@ -450,23 +450,23 @@ def e_dist(xa, xb):
 
 # *********************** gen_superdark ***********************
 def gen_superdark(inlist, fname='./Superdark.fits'):
-    '''
+    """
     Generate a median image from a list of input image files.
-    
+
     The purpose of this script is to generate a "superdark";
     a median dark multi-frame image to mimic the noise present
     in NIRSpec-read images.
-    
+
     The median (average) calculation is done across the 3-frame
     images expected from NIRSpec, and is more accurate as more
     images are used.
-    
+
     Keyword arguments:
     inlist -- The list of image files to be used for generating
               the median image.
     fname  -- The name of the generated meadian image. Defaults
               to 'Superdark'.
-    '''
+    """
     
     stacked_darks = 0
     

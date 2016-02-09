@@ -47,7 +47,7 @@ def ls_fit(n, x, y, xt, yt):
     sum_xty = 0.0
     
     for i in range(n):
-        sum_tot = sum_tot + 1.0
+        sum_tot += 1.0
         sum_x = sum_x + x[i]
         sum_y = sum_y + y[i]
         sum_xt = sum_xt + xt[i]
@@ -61,15 +61,15 @@ def ls_fit(n, x, y, xt, yt):
     
     delta_x = (sum_tot*(sum_xt2 + sum_yt2) - sum_xt*sum_xt) * (sum_x - sum_xt)
     delta_x = delta_x - (sum_y-sum_yt)*sum_xt*sum_yt - sum_tot*sum_yt*(sum_xyt-sum_xty)
-    delta_x = delta_x/det    # offset in x-coordinate
-    
+    delta_x /= det  # offset in x-coordinate
+
     delta_y = (sum_tot*(sum_xt2+sum_yt2) - sum_yt*sum_yt) * (sum_y-sum_yt)
     delta_y = delta_y - (sum_x-sum_xt)*sum_xt*sum_yt - sum_tot*sum_xt*(sum_xty-sum_xyt)
-    delta_y = delta_y/det    # offset in y-coordinate
-    
+    delta_y /= det  # offset in y-coordinate
+
     delta_theta = sum_tot*((sum_xt*sum_y-sum_x*sum_yt) + sum_tot*(sum_xyt-sum_xty))
-    delta_theta = delta_theta/det    # roll angle correction  (what units??)
-    
+    delta_theta /= det  # roll angle correction  (what units??)
+
     # outputs:  delta_x, delta_y, delta_theta, sigma_x, sigma_y, sigma_theta
     print ('delta_x = {}   delta_y = {}   delta_theta = {}'.format(delta_x, delta_y, delta_theta))
     deltas = [delta_x, delta_y, delta_theta]
@@ -79,8 +79,8 @@ def ls_fit(n, x, y, xt, yt):
     sum_delta_y2 = 0.0
     #sum_delta_theta2 = 0.0
     for i in range(n):
-        sum_delta_x2 = sum_delta_x2 + (-xt[i] + x[i] - delta_x) * (-xt[i] + x[i] - delta_x) 
-        sum_delta_y2 = sum_delta_y2 + (-yt[i] + y[i] - delta_y) * (-yt[i] + y[i] - delta_y) 
+        sum_delta_x2 += (-xt[i] + x[i] - delta_x) * (-xt[i] + x[i] - delta_x)
+        sum_delta_y2 += (-yt[i] + y[i] - delta_y) * (-yt[i] + y[i] - delta_y)
     
     sigma_x = np.sqrt(sum_delta_x2/n)   # sigma for x-offset  -- is this right?
     sigma_y = np.sqrt(sum_delta_y2/n)   # sigma for y-offset  -- is this right?

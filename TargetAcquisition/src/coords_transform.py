@@ -52,7 +52,7 @@ def set_params(transf_direction, detector, filter_input, tilt, debug):
     path2text_files = "../Coords_transforms/files_from_tony/"
     gwa_xtil = 0.0  
     gwa_ytil = 0.0
-    if tilt==False:
+    if not tilt:
         # Constants used for the no tilt case
         gwa_xtil = 0.343027200  
         gwa_ytil = 0.197058170
@@ -120,9 +120,9 @@ def ct_backward(transf_direction, detector, filter_input, x_input, y_input, tilt
     xt, yt = 0.0, 0.0
     for i in range(FitOrder_ote+1):
         for j in range(FitOrder_ote+1-i):
-            ict = ict + 1
-            xt = xt + filxback[ict] * x_input**i * y_input**j
-            yt = yt + filyback[ict] * x_input**i * y_input**j
+            ict += 1
+            xt += filxback[ict] * x_input ** i * y_input ** j
+            yt += filyback[ict] * x_input ** i * y_input ** j
             #print ("ict, i, j, xt, yt", ict, i, j, xt, yt)
     if debug:
         print ("(coords_transform - ct_backward):  x_input=", x_input, " y_input=", y_input)
@@ -177,9 +177,9 @@ def ct_backward(transf_direction, detector, filter_input, x_input, y_input, tilt
     xt_det, yt_det = 0.0, 0.0
     for i in range(FitOrder_det+1):
         for j in range(FitOrder_det+1-i):
-            ict_det = ict_det + 1
-            xt_det = xt_det + detxback[ict_det] * xt_corr**i * yt_corr**j 
-            yt_det = yt_det + detyback[ict_det] * xt_corr**i * yt_corr**j
+            ict_det += 1
+            xt_det += detxback[ict_det] * xt_corr ** i * yt_corr ** j
+            yt_det += detyback[ict_det] * xt_corr ** i * yt_corr ** j
             #print ("ict, i, j, xt, yt", ict_det, i, j, xt_det, yt_det)
     if debug:
         print ("(coords_transform - ct_backward):  x_input=", x_input, " y_input=", y_input, " OTE_x=", xt_det, "OTE_y=", yt_det) 
@@ -199,9 +199,9 @@ def ct_forward(transf_direction, detector, filter_input, x_input, y_input, tilt,
     xt, yt = 0.0, 0.0
     for i in range(FitOrder_det+1):
         for j in range(FitOrder_det+1-i):
-            ict = ict + 1
-            xt = xt + detxfor[ict] * x_input**i * y_input**j
-            yt = yt + detyfor[ict] * x_input**i * y_input**j
+            ict += 1
+            xt += detxfor[ict] * x_input ** i * y_input ** j
+            yt += detyfor[ict] * x_input ** i * y_input ** j
     if debug:
         print ("(coords_transform - ct_forward):  x_input=", x_input, " y_input=", x_input) 
         print ("                                  GWA_x=", xt, " GWA_y=", yt)
@@ -256,9 +256,9 @@ def ct_forward(transf_direction, detector, filter_input, x_input, y_input, tilt,
     xt_ote, yt_ote = 0.0, 0.0
     for i in range(FitOrder_ote+1):
         for j in range(FitOrder_ote+1-i):
-            ict_ote = ict_ote + 1
-            xt_ote = xt_ote + filxfor[ict_ote] * xt_corr**i * yt_corr**j 
-            yt_ote = yt_ote + filyfor[ict_ote] * xt_corr**i * yt_corr**j
+            ict_ote += 1
+            xt_ote += filxfor[ict_ote] * xt_corr ** i * yt_corr ** j
+            yt_ote += filyfor[ict_ote] * xt_corr ** i * yt_corr ** j
     if debug:
         print ("(coords_transform - ct_forward):  x_input=", x_input, " y_input=", y_input, " OTE_x=", xt_ote, "OTE_y=", yt_ote) 
     
@@ -267,30 +267,32 @@ def ct_forward(transf_direction, detector, filter_input, x_input, y_input, tilt,
     return x_out, y_out    
     
 
-# Print diagnostic load message
-print("(coords_transform): Coordinate transform algorithm Version {} loaded!".format(__version__))
+if __name__ == '__main__':
+
+    # Print diagnostic load message
+    print("(coords_transform): Coordinate transform algorithm Version {} loaded!".format(__version__))
 
 
-###########################################################################################################
+    ###########################################################################################################
 
 
-# Test functions
+    # Test functions
 
-testing = False
-if testing: 
-    # Set test script parameters
-    transf_direction = "forward"   # Direction of transformation, string: forward or backward
-    detector = 491                 # Which detector are we working with: 491 or 492
-    filter_input = "F140X"         # Filter being used, string: F140X, CLEAR, or F110W
-    x_input = 1542.5               # Depending on transform direction, either X or V2 centroid
-    y_input = 1542.5               # Depending on transform direction, either X or V2 centroid
-    tilt = False                   # Use tilt: True or False
-    debug = False                  # Print diagnostics to screen: True or False
-    
-    # Run transformation
-    x_out, y_out = coords_transf(transf_direction, detector, filter_input, x_input, y_input, tilt, debug)
-    print ("Final results: ")
-    if transf_direction=="forward":
-        print ("* For direction=", transf_direction, "   \n coordinates are=", x_out, y_out, " arcsec")
-    if transf_direction=="backward":
-        print ("* For direction=", transf_direction, "   \n coordinates are=", x_out, y_out, " pixels")
+    testing = False
+    if testing:
+        # Set test script parameters
+        transf_direction = "forward"   # Direction of transformation, string: forward or backward
+        detector = 491                 # Which detector are we working with: 491 or 492
+        filter_input = "F140X"         # Filter being used, string: F140X, CLEAR, or F110W
+        x_input = 1542.5               # Depending on transform direction, either X or V2 centroid
+        y_input = 1542.5               # Depending on transform direction, either X or V2 centroid
+        tilt = False                   # Use tilt: True or False
+        debug = False                  # Print diagnostics to screen: True or False
+
+        # Run transformation
+        x_out, y_out = coords_transf(transf_direction, detector, filter_input, x_input, y_input, tilt, debug)
+        print ("Final results: ")
+        if transf_direction=="forward":
+            print ("* For direction=", transf_direction, "   \n coordinates are=", x_out, y_out, " arcsec")
+        if transf_direction=="backward":
+            print ("* For direction=", transf_direction, "   \n coordinates are=", x_out, y_out, " pixels")

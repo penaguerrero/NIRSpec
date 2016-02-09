@@ -174,7 +174,7 @@ line0a = "{:<5} {:<15} {:<16} {:>23} {:>32} {:>33} {:>26} {:>15} {:>35} {:>38} {
                                                                   "Centroid width: 3", "5", "7", 
                                                                   "TruePositions", "LoLeftCoords",
                                                                   "Factor",
-                                                                  "Difference with: checkbox 3", "checkbox 5", "checkbox 7")
+                                                                  "Difference with: centroid window 3", "centroid window 5", "centroid window 7")
 line0b = "{:>25} {:>12} {:>16} {:>14} {:>16} {:>14} {:>16} {:>14} {:>12} {:>10} {:>26} {:>16} {:>26} {:>16} {:>28} {:>16}".format(
                                                                        "x", "y", "x", "y", "x", "y", 
                                                                        "TrueX", "TrueY", "LoLeftX", "LoLeftY",
@@ -189,7 +189,7 @@ if save_text_file:
 display_fig_name_path = main_path_outfiles+"/centroid_figs"
 
 # Start the loop in the given directory
-if just_read_text_file != True:
+if not just_read_text_file:
     dir_stars = glob(os.path.join(dir2test,"postageout_star_*.fits"))   # get all star fits files in that directory
     for star in dir_stars:
         if single_star:
@@ -203,7 +203,7 @@ if just_read_text_file != True:
                 print ("Star: ", os.path.basename(star))
                 # Make sure the file actually exists
                 star_exists = os.path.isfile(star)
-                if star_exists == False:
+                if not star_exists:
                     print ("The file: ", star, "\n    does NOT exist. Exiting the script.")
                     exit() 
                 
@@ -232,7 +232,7 @@ if just_read_text_file != True:
                         master_img_bgcorr_max = psf.max()
                         while master_img_bgcorr_max == 0.0:
                             print('  IMPORTANT WARNING!!! Combined ramped images have a max of 0.0 with bg_frac=', bg_frac)
-                            bg_frac = bg_frac - 0.02
+                            bg_frac -= 0.02
                             if bg_frac < 0.0:   # prevent an infinite loop
                                 print ('   ERROR - Cannot subtract from  bg_frac < 0.0 ...')
                                 bg_frac = 0.0
@@ -298,9 +298,9 @@ if 'frac' not in bg_method:
     plt.title(case+'_BG'+bg_method)
     plt.xlabel('Radial offset in X')
     plt.ylabel('Radial offset in Y')
-    plt.plot(offsets[0], offsets[1], 'bo', ms=8, alpha=0.7, label='Checkbox=3')
-    plt.plot(offsets[2], offsets[1], 'go', ms=8, alpha=0.7, label='Checkbox=5')
-    plt.plot(offsets[4], offsets[1], 'ro', ms=8, alpha=0.7, label='Checkbox=7')
+    plt.plot(offsets[0], offsets[1], 'bo', ms=8, alpha=0.7, label='Centroid window=3')
+    plt.plot(offsets[2], offsets[1], 'go', ms=8, alpha=0.7, label='Centroid window=5')
+    plt.plot(offsets[4], offsets[1], 'ro', ms=8, alpha=0.7, label='Centroid window=7')
     xmin, xmax = ax1.get_xlim()
     plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
     ymin, ymax = ax1.get_ylim()
@@ -338,7 +338,7 @@ else:
     sig3, mean3, sig5, mean5, sig7, mean7 = tf.get_frac_stdevs(frac_data)
     frac_bgs = ['0.0', '0.1', '0.2', '0.3', '0.4', '0.5' ,'0.6' ,'0.7', '0.8', '0.9', '1.0']
     print ('\n{:<4} {:<20} {:>10}'.format('FrBG', 'Standard_deviation', 'Mean_y-offset'))
-    print ('Checkbox sizes:')
+    print ('Centroid window sizes:')
     print ('{:<4} {:<6} {:<6} {:<6} {:<6} {:<6} {:<6}'.format('', '3', '5', '7', '3', '5', '7'))
     for fbg, s3, s5, s7, m3, m5, m7 in zip(frac_bgs, sig3, sig5, sig7, mean3, mean5, mean7):
         print('{:<4} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, s3, s5, s7, m3, m5, m7))
@@ -346,8 +346,8 @@ else:
     fig2.subplots_adjust(hspace=0.30)
     ax1 = fig2.add_subplot(311)
     ax1.set_title(case+"_BGfrac")
-    ax1.set_xlabel('Radial offset in X: Checkbox=3')
-    ax1.set_ylabel('Radial offset in Y: Checkbox=3')
+    ax1.set_xlabel('Radial offset in X: Centroid window=3')
+    ax1.set_ylabel('Radial offset in Y: Centroid window=3')
     ax1.plot(frac00[0], frac00[1], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
     ax1.plot(frac01[0], frac01[1], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
     ax1.plot(frac02[0], frac02[1], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
@@ -370,8 +370,8 @@ else:
     ax1.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box   
     ax2 = fig2.add_subplot(312)
-    ax2.set_xlabel('Radial offset in X: Checkbox=5')
-    ax2.set_ylabel('Radial offset in Y: Checkbox=5')
+    ax2.set_xlabel('Radial offset in X: Centroid window=5')
+    ax2.set_ylabel('Radial offset in Y: Centroid window=5')
     ax2.plot(frac00[2], frac00[3], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
     ax2.plot(frac01[2], frac01[3], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
     ax2.plot(frac02[2], frac02[3], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
@@ -395,7 +395,7 @@ else:
     sigy = 0.9
     for fbg, s3, s5, s7 in zip(frac_bgs, sig3, sig5, sig7):
         line = ('{:<7} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, s3, s5, s7))
-        sigy = sigy - 0.08
+        sigy -= 0.08
         ax2.annotate(line, xy=(sigx, sigy), xycoords='axes fraction' )
     # Shrink current axis by 10%
     box = ax2.get_position()
@@ -403,8 +403,8 @@ else:
     # put legend out of the plot box
     #ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))            
     ax3 = fig2.add_subplot(313)
-    ax3.set_xlabel('Radial offset in X: Checkbox=7')
-    ax3.set_ylabel('Radial offset in Y: Checkbox=7')
+    ax3.set_xlabel('Radial offset in X: Centroid window=7')
+    ax3.set_ylabel('Radial offset in Y: Centroid window=7')
     ax3.plot(frac00[4], frac00[5], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
     ax3.plot(frac01[4], frac01[5], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
     ax3.plot(frac02[4], frac02[5], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
@@ -429,7 +429,7 @@ else:
     sigy = 0.9
     for fbg, m3, m5, m7 in zip(frac_bgs, mean3, mean5, mean7):
         line = ('{:<7} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, m3, m5, m7))
-        sigy = sigy - 0.08
+        sigy -= 0.08
         ax3.annotate(line, xy=(sigx, sigy), xycoords='axes fraction' )
     box = ax3.get_position()
     ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
@@ -443,11 +443,11 @@ else:
 
 # Make the plot of magnitude (in x) versus radial offset distance (in y) for Scene2
 if "s2" in case:
-    print ('For Checkbox=3: ')
+    print ('For centroid window=3: ')
     sig3, mean3 = tf.find_std(offsets[1])
-    print ('For Checkbox=5: ')
+    print ('For centroid window=5: ')
     sig5, mean5 = tf.find_std(offsets[3])
-    print ('For Checkbox=7: ')
+    print ('For centroid window=7: ')
     sig7, mean7 = tf.find_std(offsets[5])
     if 'frac' not in bg_method:
         fig3 = plt.figure(1, figsize=(12, 10))
@@ -455,9 +455,9 @@ if "s2" in case:
         plt.title(case+'_BG'+bg_method)
         plt.xlabel('Magnitude')
         plt.ylabel('Radial offset in Y')
-        plt.plot(mag, offsets[1], 'bo', ms=8, alpha=0.7, label='Checkbox=3')
-        plt.plot(mag, offsets[3], 'go', ms=8, alpha=0.7, label='Checkbox=5')
-        plt.plot(mag, offsets[5], 'ro', ms=8, alpha=0.7, label='Checkbox=7')
+        plt.plot(mag, offsets[1], 'bo', ms=8, alpha=0.7, label='centroid window=3')
+        plt.plot(mag, offsets[3], 'go', ms=8, alpha=0.7, label='centroid window=5')
+        plt.plot(mag, offsets[5], 'ro', ms=8, alpha=0.7, label='centroid window=7')
         #plt.legend(loc='lower left')
         plt.legend(loc='upper right')
         for si,xi,yi in zip(bench_star, mag, offsets[1]): 
@@ -494,7 +494,7 @@ if "s2" in case:
         sig3, mean3, sig5, mean5, sig7, mean7 = tf.get_frac_stdevs(frac_data)
         frac_bgs = ['0.0', '0.1', '0.2', '0.3', '0.4', '0.5' ,'0.6' ,'0.7', '0.8', '0.9', '1.0']
         print ('\n{:<4} {:<20} {:>10}'.format('FrBG', 'Standard_deviation', 'Mean_y-offset'))
-        print ('Checkbox sizes:')
+        print ('centroid window sizes:')
         print ('{:<4} {:<6} {:<6} {:<6} {:<6} {:<6} {:<6}'.format('', '3', '5', '7', '3', '5', '7'))
         for fbg, s3, s5, s7, m3, m5, m7 in zip(frac_bgs, sig3, sig5, sig7, mean3, mean5, mean7):
             print('{:<4} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, s3, s5, s7, m3, m5, m7))
@@ -503,7 +503,7 @@ if "s2" in case:
         ax1 = fig4.add_subplot(311)
         ax1.set_title(case+"_BGfrac")
         ax1.set_xlabel('Magnitude')
-        ax1.set_ylabel('Radial offset in Y: Checkbox=3')
+        ax1.set_ylabel('Radial offset in Y: centroid window=3')
         plt.hlines(0.0, 18.0, 23.0, colors='k', linestyles='dashed')
         ax1.plot(mag, frac00[1], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
         ax1.plot(mag, frac01[1], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
@@ -524,7 +524,7 @@ if "s2" in case:
         ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))            
         ax2 = fig4.add_subplot(312)
         ax2.set_xlabel('Magnitude')
-        ax2.set_ylabel('Radial offset in Y: Checkbox=5')
+        ax2.set_ylabel('Radial offset in Y: centroid window=5')
         plt.hlines(0.0, 18.0, 23.0, colors='k', linestyles='dashed')
         ax2.plot(mag, frac00[3], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
         ax2.plot(mag, frac01[3], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
@@ -543,7 +543,7 @@ if "s2" in case:
         sigy = 0.9
         for fbg, s3, s5, s7 in zip(frac_bgs, sig3, sig5, sig7):
             line = ('{:<7} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, s3, s5, s7))
-            sigy = sigy - 0.08
+            sigy -= 0.08
             ax2.annotate(line, xy=(sigx, sigy), xycoords='axes fraction' )
         # Shrink current axis by 10%
         box = ax2.get_position()
@@ -552,7 +552,7 @@ if "s2" in case:
         #ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))            
         ax3 = fig4.add_subplot(313)
         ax3.set_xlabel('Magnitude')
-        ax3.set_ylabel('Radial offset in Y: Checkbox=7')
+        ax3.set_ylabel('Radial offset in Y: centroid window=7')
         plt.hlines(0.0, 18.0, 23.0, colors='k', linestyles='dashed')
         ax3.plot(mag, frac00[5], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
         ax3.plot(mag, frac01[5], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
@@ -571,7 +571,7 @@ if "s2" in case:
         sigy = 0.9
         for fbg, m3, m5, m7 in zip(frac_bgs, mean3, mean5, mean7):
             line = ('{:<7} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, m3, m5, m7))
-            sigy = sigy - 0.08
+            sigy -= 0.08
             ax3.annotate(line, xy=(sigx, sigy), xycoords='axes fraction' )
         # Shrink current axis by 10%
         box = ax3.get_position()
@@ -588,4 +588,4 @@ if "s2" in case:
 if not single_star:
     print ("\n Centroids and differences were written into: \n  {}".format(output_file))
 
-print ("\n Controlled test script finished. Took  %s  seconds to finish. \n" % ((time.time() - start_time)) )
+print ("\n Controlled test script finished. Took  %s  seconds to finish. \n" % (time.time() - start_time))

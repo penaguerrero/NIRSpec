@@ -54,8 +54,8 @@ def get_raw_star_directory(path4starfiles, scene, shutters, noise, redo=True):
         position1 = path4starfiles+"Scene_"+repr(scene)+"_AB1823/NIRSpec_TA_Sim_AB1823 first "+shutter_vel+noise_level+"/postage"
         position2 = path4starfiles+"Scene_"+repr(scene)+"_AB1823/NIRSpec_TA_Sim_AB1823 shifted "+shutter_vel+noise_level+"/postage"
     if redo:
-        position1 = position1+"_redo"
-        position2 = position2+"_redo"
+        position1 += "_redo"
+        position2 += "_redo"
     dir2test_list = [position1, position2]
     return dir2test_list    
     
@@ -406,7 +406,7 @@ def get_fracdata(offsets):
             frac005y.append(offsets[3][i])
             frac007x.append(offsets[4][i])
             frac007y.append(offsets[5][i])
-            i0 = i0+11
+            i0 += 11
         if i == i1:
             frac013x.append(offsets[0][i])
             frac013y.append(offsets[1][i])
@@ -414,7 +414,7 @@ def get_fracdata(offsets):
             frac015y.append(offsets[3][i])
             frac017x.append(offsets[4][i])
             frac017y.append(offsets[5][i])
-            i1 = i1+11
+            i1 += 11
         if i == i2:
             frac023x.append(offsets[0][i])
             frac023y.append(offsets[1][i])
@@ -422,7 +422,7 @@ def get_fracdata(offsets):
             frac025y.append(offsets[3][i])
             frac027x.append(offsets[4][i])
             frac027y.append(offsets[5][i])
-            i2 = i2+11
+            i2 += 11
         if i == i3:
             frac033x.append(offsets[0][i])
             frac033y.append(offsets[1][i])
@@ -430,7 +430,7 @@ def get_fracdata(offsets):
             frac035y.append(offsets[3][i])
             frac037x.append(offsets[4][i])
             frac037y.append(offsets[5][i])
-            i3 = i3+11
+            i3 += 11
         if i == i4:
             frac043x.append(offsets[0][i])
             frac043y.append(offsets[1][i])
@@ -438,7 +438,7 @@ def get_fracdata(offsets):
             frac045y.append(offsets[3][i])
             frac047x.append(offsets[4][i])
             frac047y.append(offsets[5][i])
-            i4 = i4+11
+            i4 += 11
         if i == i5:
             frac053x.append(offsets[0][i])
             frac053y.append(offsets[1][i])
@@ -446,7 +446,7 @@ def get_fracdata(offsets):
             frac055y.append(offsets[3][i])
             frac057x.append(offsets[4][i])
             frac057y.append(offsets[5][i])
-            i5 = i5+11
+            i5 += 11
         if i == i6:
             frac063x.append(offsets[0][i])
             frac063y.append(offsets[1][i])
@@ -454,7 +454,7 @@ def get_fracdata(offsets):
             frac065y.append(offsets[3][i])
             frac067x.append(offsets[4][i])
             frac067y.append(offsets[5][i])
-            i6 = i6+11
+            i6 += 11
         if i == i7:
             frac073x.append(offsets[0][i])
             frac073y.append(offsets[1][i])
@@ -462,7 +462,7 @@ def get_fracdata(offsets):
             frac075y.append(offsets[3][i])
             frac077x.append(offsets[4][i])
             frac077y.append(offsets[5][i])
-            i7 = i7+11
+            i7 += 11
         if i == i8:
             frac083x.append(offsets[0][i])
             frac083y.append(offsets[1][i])
@@ -470,7 +470,7 @@ def get_fracdata(offsets):
             frac085y.append(offsets[3][i])
             frac087x.append(offsets[4][i])
             frac087y.append(offsets[5][i])
-            i8 = i8+11
+            i8 += 11
         if i == i9:
             frac093x.append(offsets[0][i])
             frac093y.append(offsets[1][i])
@@ -478,7 +478,7 @@ def get_fracdata(offsets):
             frac095y.append(offsets[3][i])
             frac097x.append(offsets[4][i])
             frac097y.append(offsets[5][i])
-            i9 = i9+11
+            i9 += 11
         if i == i10:
             frac103x.append(offsets[0][i])
             frac103y.append(offsets[1][i])
@@ -486,7 +486,7 @@ def get_fracdata(offsets):
             frac105y.append(offsets[3][i])
             frac107x.append(offsets[4][i])
             frac107y.append(offsets[5][i])
-            i10 = i10+11
+            i10 += 11
     frac00 = np.array([frac003x, frac003y, frac005x, frac005y, frac007x, frac007y])
     frac01 = np.array([frac013x, frac013y, frac015x, frac015y, frac017x, frac017y])
     frac02 = np.array([frac023x, frac023y, frac025x, frac025y, frac027x, frac027y])
@@ -510,7 +510,7 @@ def find_std(arr):
         diff = a - mean
         diffsq = diff * diff
         diff2meansq_list.append(diffsq)
-    std = ( 1.0/(N) * sum(diff2meansq_list) )**(0.5)
+    std = (1.0 / N * sum(diff2meansq_list)) ** 0.5
     #print ('sigma = ', std, '    mean = ', mean)
     return std, mean
 
@@ -852,31 +852,31 @@ def convert2fulldetector(detector, stars, P1P2data, bench_stars, benchmark_xLyL_
     x_corr = 0.086
     y_corr = 0.077
     if detector == 491:
-        x13 = x13 - x_corr
-        x15 = x15 - x_corr
-        x17 = x17 - x_corr
-        y13 = y13 - y_corr
-        y15 = y15 - y_corr
-        y17 = y17 - y_corr
-        x23 = x23 - x_corr
-        x25 = x25 - x_corr
-        x27 = x27 - x_corr
-        y23 = y23 - y_corr
-        y25 = y25 - y_corr
-        y27 = y27 - y_corr
+        x13 -= x_corr
+        x15 -= x_corr
+        x17 -= x_corr
+        y13 -= y_corr
+        y15 -= y_corr
+        y17 -= y_corr
+        x23 -= x_corr
+        x25 -= x_corr
+        x27 -= x_corr
+        y23 -= y_corr
+        y25 -= y_corr
+        y27 -= y_corr
     elif detector == 492:
-        x13 = x13 + x_corr
-        x15 = x15 + x_corr
-        x17 = x17 + x_corr
-        y13 = y13 + y_corr
-        y15 = y15 + y_corr
-        y17 = y17 + y_corr
-        x23 = x23 + x_corr
-        x25 = x25 + x_corr
-        x27 = x27 + x_corr
-        y23 = y23 + y_corr
-        y25 = y25 + y_corr
-        y27 = y27 + y_corr        
+        x13 += x_corr
+        x15 += x_corr
+        x17 += x_corr
+        y13 += y_corr
+        y15 += y_corr
+        y17 += y_corr
+        x23 += x_corr
+        x25 += x_corr
+        x27 += x_corr
+        y23 += y_corr
+        y25 += y_corr
+        y27 += y_corr
     return x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27
         
     

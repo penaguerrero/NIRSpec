@@ -32,7 +32,7 @@ testnum, det_x, det_y, sky_x, sky_y = np.loadtxt(fname, skiprows=3, unpack=True)
 
 # give the inputs of sky to transform to detector coordinates
 transf_direction = "backward"
-if single_case != None:
+if single_case is not None:
     save_txt_file = False   # just in case, do not overwrite text file with only one case.
     xout_det, yout_det = ct.coords_transf(transf_direction, detector, filter_input, sky_x[single_case], sky_y[single_case], tilt, debug)
 else:
@@ -40,7 +40,7 @@ else:
 
 # give the inputs of detector to transform to sky coordinates
 transf_direction = "forward" 
-if single_case != None:
+if single_case is not None:
     xout_sky, yout_sky = ct.coords_transf(transf_direction, detector, filter_input, det_x[single_case], det_y[single_case], tilt, debug)
 else:
     xout_sky, yout_sky = ct.coords_transf(transf_direction, detector, filter_input, det_x, det_y, tilt, debug)
@@ -49,7 +49,7 @@ else:
 out_file = "../Coords_transforms/testing_coordstransf_"+str(detector)+"_"+filter_input+"_notilt.txt"
 line0 = "{:<10} {:<16} {:<20} {:<16} {:<16}".format("\nTest_No.", "Detector_X", "Detector_Y", "Sky_X", "Sky_Y")
 print (line0)
-if single_case != None:
+if single_case is not None:
     line1 = "{:<10} {:<16} {:<20} {:<16} {:<16}".format(single_case, xout_det, yout_det, xout_sky, yout_sky)
     print (line1) 
 else:

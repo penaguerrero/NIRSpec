@@ -64,7 +64,7 @@ def ls_fit_iter(niter, xt, yt, x, y):
         sum_xty = 0.0
         
         for i in range(n):
-            sum_tot = sum_tot + 1.0
+            sum_tot += 1.0
             sum_x = sum_x + x[i]
             sum_y = sum_y + y[i]
             sum_xt = sum_xt + xt[i]
@@ -78,15 +78,15 @@ def ls_fit_iter(niter, xt, yt, x, y):
         
         delta_x = (sum_tot*(sum_xt2 + sum_yt2) - sum_xt*sum_xt) * (sum_x - sum_xt)
         delta_x = delta_x - (sum_y-sum_yt)*sum_xt*sum_yt - sum_tot*sum_yt*(sum_xyt-sum_xty)
-        delta_x = delta_x/det    # offset in x-coordinate
-        
+        delta_x /= det  # offset in x-coordinate
+
         delta_y = (sum_tot*(sum_xt2+sum_yt2) - sum_yt*sum_yt) * (sum_y-sum_yt)
         delta_y = delta_y - (sum_x-sum_xt)*sum_xt*sum_yt - sum_tot*sum_xt*(sum_xty-sum_xyt)
-        delta_y = delta_y/det    # offset in y-coordinate
-        
+        delta_y /= det  # offset in y-coordinate
+
         delta_theta = sum_tot*((sum_xt*sum_y-sum_xt*sum_yt) + sum_tot*(sum_xyt-sum_xty))
-        delta_theta = delta_theta/det    # roll angle correction  (what units??)
-        
+        delta_theta /= det  # roll angle correction  (what units??)
+
         # outputs:  delta_x, delta_y, delta_theta, sigma_x, sigma_y, sigma_theta
         line1 = '(least_squares_iterate):  iteration number: {}'.format(nit)
         line2 = '(least_squares_iterate):  delta_x = {}   delta_y = {}   delta_theta = {}'.format(delta_x, delta_y, delta_theta*(180.0/np.pi)*3600.0)
@@ -97,8 +97,8 @@ def ls_fit_iter(niter, xt, yt, x, y):
         sum_delta_y2 = 0.0
         sum_delta_theta2 = 0.0
         for i in range(n):
-            sum_delta_x2 = sum_delta_x2 + (-xt[i] + x[i] - delta_x) * (-xt[i] + x[i] - delta_x) 
-            sum_delta_y2 = sum_delta_y2 + (-yt[i] + y[i] - delta_y) * (-yt[i] + y[i] - delta_y) 
+            sum_delta_x2 += (-xt[i] + x[i] - delta_x) * (-xt[i] + x[i] - delta_x)
+            sum_delta_y2 += (-yt[i] + y[i] - delta_y) * (-yt[i] + y[i] - delta_y)
         
         sigma_x = np.sqrt(sum_delta_x2/n)   # sigma for xtrue-offset  -- is this right?
         sigma_y = np.sqrt(sum_delta_y2/n)   # sigma for ytrue-offset  -- is this right?
@@ -166,26 +166,27 @@ def ls_fit_iter(niter, xt, yt, x, y):
     # Still do not know how to do delta_theta sigma  -- is this calculation needed?
 
 
-# Print diagnostic load message
-print("(least_squares_iterate): Least squares iteration algorithm Version {} loaded!".format(__version__))
+if __name__ == '__main__':
 
+    # Print diagnostic load message
+    print("(least_squares_iterate): Least squares iteration algorithm Version {} loaded!".format(__version__))
 
-testing = False
-if testing: 
-    # Set test values  for arrays
-    n = 10            # max number of iterations
-    xtrue = np.array(range(10))     # true x-coordinate of each reference star: from 0 to 9
-    ytrue = np.array(range(1, 11))  # true y-coordinate of each reference star: from 1 to 10
-    xinput = xtrue + 0.02     # measured centroid x-coordinate of each reference star
-    yinput = ytrue + 0.01     # measured centroid y-coordinate of each reference star
-    deltas, sigmas, _ = ls_fit_iter(n, xinput, yinput, xtrue, ytrue)
-    """
-    With these parameters output should be:
-        (least_squares_iterate): Least squares iteration algorithm Version 1.0 loaded!
-        (least_squares_iterate):  elements_left=10 out of original_elements=10
-        (least_squares_iterate):  iteration number: 0
-        (least_squares_iterate):  delta_x = -0.02   delta_y = -0.01   delta_theta = -0.00667878787879
-        (least_squares_iterate):  sigma_x = 4.564982887e-15   sigma_y = 3.69348008392e-15   sigma_theta = -999.0
-    """
+    testing = False
+    if testing:
+        # Set test values  for arrays
+        n = 10            # max number of iterations
+        xtrue = np.array(range(10))     # true x-coordinate of each reference star: from 0 to 9
+        ytrue = np.array(range(1, 11))  # true y-coordinate of each reference star: from 1 to 10
+        xinput = xtrue + 0.02     # measured centroid x-coordinate of each reference star
+        yinput = ytrue + 0.01     # measured centroid y-coordinate of each reference star
+        deltas, sigmas, _, _ = ls_fit_iter(n, xinput, yinput, xtrue, ytrue)
+        """
+        With these parameters output should be:
+            (least_squares_iterate): Least squares iteration algorithm Version 1.0 loaded!
+            (least_squares_iterate):  elements_left=10 out of original_elements=10
+            (least_squares_iterate):  iteration number: 0
+            (least_squares_iterate):  delta_x = -0.02   delta_y = -0.01   delta_theta = -0.00667878787879
+            (least_squares_iterate):  sigma_x = 4.564982887e-15   sigma_y = 3.69348008392e-15   sigma_theta = -999.0
+        """
     
 

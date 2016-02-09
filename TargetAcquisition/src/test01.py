@@ -1,4 +1,4 @@
-''' 1. MODULES '''
+""" 1. MODULES """
 # Import necessary modules
 from __future__ import division     # Added by Maria Pena-Guerrero
 import numpy as np
@@ -270,8 +270,8 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
             xloc = ii + 1
             yloc = jj + 1
             c_sum = c_sum + image[jj, ii]
-            xsum = xsum + xloc * image[jj, ii]
-            ysum = ysum + yloc * image[jj, ii]
+            xsum += xloc * image[jj, ii]
+            ysum += yloc * image[jj, ii]
             
     if debug:
         # Initial sum calculation (before iterations)
@@ -318,12 +318,12 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 # If on the border, the scale weight
                 if xoff <= xhw:
                     xweight = 1
-                elif xoff > xhw and xoff < (xhw + 1):
+                elif xhw < xoff < (xhw + 1):
                     xweight = xhw + 1 - xoff
                     
                 if yoff <= yhw:
                     yweight = 1
-                elif yoff > yhw and yoff < (yhw + 1):
+                elif yhw < yoff < (yhw + 1):
                     yweight = yhw + 1 - yoff
                     
                 # Compute cummulative weight
@@ -332,10 +332,10 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 # Calculate centroid
                 xloc = ii + 1
                 yloc = jj + 1
-                
-                c_sum = c_sum + image[jj, ii] * weight
-                xsum = xsum + xloc * image[jj, ii] * weight
-                ysum = ysum + yloc * image[jj, ii] * weight
+
+                c_sum += image[jj, ii] * weight
+                xsum += xloc * image[jj, ii] * weight
+                ysum += yloc * image[jj, ii] * weight
                 
         if c_sum == 0:
             print('(centroid_2D): ERROR - Divide by zero.')
@@ -430,20 +430,20 @@ def find2D_higher_moments(image, centroid, halfwidths, c_sum):
             
             if xoff <= xhw:
                 xweight = 1
-            elif xoff > xhw and xoff < (xhw + 1):
+            elif xhw < xoff < (xhw + 1):
                 xweight = xhw + 1 - xoff
                 
             if yoff <= yhw:
                 yweight = 1
-            elif yoff > yhw and yoff < (yhw + 1):
+            elif yhw < yoff < (yhw + 1):
                 yweight = yhw + 1 - yoff
                 
             weight = xweight * yweight
-            
-            xmoment2 = xmoment2 + xloc**2 * image[jj, ii] * weight
-            xmoment3 = xmoment3 + xloc**3 * image[jj, ii] * weight
-            ymoment2 = ymoment2 + yloc**2 * image[jj, ii] * weight
-            ymoment3 = ymoment3 + yloc**3 * image[jj, ii] * weight
+
+            xmoment2 += xloc ** 2 * image[jj, ii] * weight
+            xmoment3 += xloc ** 3 * image[jj, ii] * weight
+            ymoment2 += yloc ** 2 * image[jj, ii] * weight
+            ymoment3 += yloc ** 3 * image[jj, ii] * weight
             
     xmoment2 = xmoment2 / c_sum
     xmoment3 = xmoment3 / c_sum
@@ -495,7 +495,7 @@ def centroid_1D(image, xpeak, xhw, debug=False):
     for ii in xrange(int(xpeak - xhw - 1), int(xpeak + xhw - 1)):
         c_sum = c_sum + vector[ii]
         xloc = ii + 1
-        xcen = xcen + xloc * vector[ii]
+        xcen += xloc * vector[ii]
     
     print('(centroid_1D): Sum = ', c_sum)
     
@@ -503,7 +503,7 @@ def centroid_1D(image, xpeak, xhw, debug=False):
     if c_sum == 0:
         print('(centroid_1D): ERROR - divide by zero')
     else:
-        xcen = xcen / c_sum
+        xcen /= c_sum
         
     print('(centroid_1D): Centroid = ', xcen-1)
         
@@ -554,11 +554,11 @@ def find1D_higher_moments(image, xcen, xhw, c_sum):
         
         if xoff <= xhw:
             xweight = 0
-        elif xoff > xhw and xoff < xhw + 1:
+        elif xhw < xoff < xhw + 1:
             xweight = xhw + 1 - xoff
-            
-        xmoment2 = xmoment2 + xloc**2 * vector[ii] * xweight
-        xmoment3 = xmoment3 + xloc**3 * vector[ii] * xweight
+
+        xmoment2 += xloc ** 2 * vector[ii] * xweight
+        xmoment3 += xloc ** 3 * vector[ii] * xweight
         
     xmoment2 = xmoment2 / c_sum
     xmoment3 = xmoment3 / c_sum

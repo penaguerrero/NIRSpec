@@ -95,7 +95,7 @@ def divide_array_by_starNo(arrX, arrY):
     counter = 0
     star_arrayX, star_arrayY = np.array([]), np.array([])
     for itemX, itemY in zip(arrX, arrY):
-        counter = counter + 1
+        counter += 1
         if counter <= len(frac_values):
             star_arrayX = np.append(star_arrayX, itemX)
             star_arrayY = np.append(star_arrayY, itemY)
@@ -157,7 +157,7 @@ def second_smallest(numbers):
 
 #  --> CODE
 
-if single_case != None:
+if single_case is not None:
     save_txt_file = False   # just in case, do not overwrite text file with only one case.
 
 # Define the paths for results and inputs
@@ -488,8 +488,8 @@ for infile in input_files_list:
         line4 = "{:<5} {:<20} {:<40} {:<40} {:<23} {:<9}".format("Star", "BG_value", "Checkbox=3", "Checkbox=5", "Checkbox=7", "MinDiff")
         line5 = "{:>25} {:>17} {:>22} {:>17} {:>22} {:>17}".format("x", "y", "x", "y", "x", "y")        
     if "frac" in case:
-        line4 = line4 + " {:>23}".format("BestFracVal")
-        line5 = line5 + " {:>25} {:>10} {:>10}".format("Cbx3", "Cbx5", "Cbx7")
+        line4 += " {:>23}".format("BestFracVal")
+        line5 += " {:>25} {:>10} {:>10}".format("Cbx3", "Cbx5", "Cbx7")
     print (line0)
     print (line0bis)
     print (line1)
@@ -565,10 +565,10 @@ for infile in input_files_list:
             line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7}".format(st, bg_value[i], 
                     T1_diffV2_3[i], T1_diffV3_3[i], T1_diffV2_5[i], T1_diffV3_5[i], T1_diffV2_7[i], T1_diffV3_7[i], T1_min_diff[i])
         if "frac" in case:
-            line6 = line6 + " {:<4} {:<5} {:<4} {:<5} {:<4} {:<5}".format(
-                            T1list_best_frbg_value_V2_3[i], T1list_best_frbg_value_V3_3[i],
-                            T1list_best_frbg_value_V2_5[i], T1list_best_frbg_value_V3_5[i],
-                            T1list_best_frbg_value_V2_7[i], T1list_best_frbg_value_V3_7[i])
+            line6 += " {:<4} {:<5} {:<4} {:<5} {:<4} {:<5}".format(
+                T1list_best_frbg_value_V2_3[i], T1list_best_frbg_value_V3_3[i],
+                T1list_best_frbg_value_V2_5[i], T1list_best_frbg_value_V3_5[i],
+                T1list_best_frbg_value_V2_7[i], T1list_best_frbg_value_V3_7[i])
         print (line6)
         if save_txt_file:
             to.write(line6+"\n")
@@ -609,8 +609,8 @@ for infile in input_files_list:
         line4 = "{:<5} {:<20} {:<40} {:<40} {:<23} {:<9}".format("Star", "BG_value", "Checkbox=3", "Checkbox=5", "Checkbox=7", "MinDiff")
         line5 = "{:>25} {:>17} {:>22} {:>17} {:>22} {:>17}".format("x", "y", "x", "y", "x", "y")        
     if "frac" in case:
-        line4 = line4 + " {:>23}".format("BestFracVal")
-        line5 = line5 + " {:>25} {:>10} {:>10}".format("Cbx3", "Cbx5", "Cbx7")
+        line4 += " {:>23}".format("BestFracVal")
+        line5 += " {:>25} {:>10} {:>10}".format("Cbx3", "Cbx5", "Cbx7")
     print (line0)
     print (line0bis)
     print (line1)
@@ -686,10 +686,10 @@ for infile in input_files_list:
             line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:<7}".format(st, bg_value[i], 
                     T2_diffV2_3[i], T2_diffV3_3[i], T2_diffV2_5[i], T2_diffV3_5[i], T2_diffV2_7[i], T2_diffV3_7[i], T2_min_diff[i])            
         if "frac" in case:
-            line6 = line6 + " {:<4} {:<5} {:<4} {:<5} {:<4} {:<5}".format(
-                            T2list_best_frbg_value_V2_3[i], T2list_best_frbg_value_V3_3[i],
-                            T2list_best_frbg_value_V2_5[i], T2list_best_frbg_value_V3_5[i],
-                            T2list_best_frbg_value_V2_7[i], T2list_best_frbg_value_V3_7[i])
+            line6 += " {:<4} {:<5} {:<4} {:<5} {:<4} {:<5}".format(
+                T2list_best_frbg_value_V2_3[i], T2list_best_frbg_value_V3_3[i],
+                T2list_best_frbg_value_V2_5[i], T2list_best_frbg_value_V3_5[i],
+                T2list_best_frbg_value_V2_7[i], T2list_best_frbg_value_V3_7[i])
         print (line6)
         if save_txt_file:
             to.write(line6+"\n")
@@ -743,8 +743,8 @@ for infile in input_files_list:
                     "Diff2_Chbx_3", "Diff2_Chbx_5", "Diff2_Chbx_7", "MinDiff1", "MinDiff2")
         line7 = "{:>25} {:>17} {:>22} {:>17} {:>22} {:>17} {:>22} {:>17} {:>22} {:>17} {:>22} {:>17}".format("x", "y", "x", "y", "x", "y", "x", "y", "x", "y", "x", "y")        
     if "frac" in case:
-        line6 = line6 + " {:>33}".format("BestFracVal")
-        line7 = line7 + " {:>33} {:>10} {:>10} {:>11} {:>10} {:>10}".format("P13", "P15", "P17", "P23", "P25", "P27")
+        line6 += " {:>33}".format("BestFracVal")
+        line7 += " {:>33} {:>10} {:>10} {:>11} {:>10} {:>10}".format("P13", "P15", "P17", "P23", "P25", "P27")
     print (line0)
     print (line0bis)
     print (line1)
@@ -861,13 +861,13 @@ for infile in input_files_list:
                     T3_diffV2_23[i], T3_diffV3_23[i], T3_diffV2_25[i], T3_diffV3_25[i], T3_diffV2_27[i], T3_diffV3_27[i], 
                     T3_min_diff1[i], T3_min_diff2[i])            
         if "frac" in case:
-            line8 = line8 + " {:<4} {:<5} {:<4} {:<5} {:<4} {:<6} {:<4} {:<5} {:<4} {:<5} {:<4} {:<5}".format(
-                            T3list_best_frbg_value_V2_13[i], T3list_best_frbg_value_V3_13[i],
-                            T3list_best_frbg_value_V2_15[i], T3list_best_frbg_value_V3_15[i],
-                            T3list_best_frbg_value_V2_17[i], T3list_best_frbg_value_V3_17[i],
-                            T3list_best_frbg_value_V2_23[i], T3list_best_frbg_value_V3_23[i],
-                            T3list_best_frbg_value_V2_25[i], T3list_best_frbg_value_V3_25[i],
-                            T3list_best_frbg_value_V2_27[i], T3list_best_frbg_value_V3_27[i])
+            line8 += " {:<4} {:<5} {:<4} {:<5} {:<4} {:<6} {:<4} {:<5} {:<4} {:<5} {:<4} {:<5}".format(
+                T3list_best_frbg_value_V2_13[i], T3list_best_frbg_value_V3_13[i],
+                T3list_best_frbg_value_V2_15[i], T3list_best_frbg_value_V3_15[i],
+                T3list_best_frbg_value_V2_17[i], T3list_best_frbg_value_V3_17[i],
+                T3list_best_frbg_value_V2_23[i], T3list_best_frbg_value_V3_23[i],
+                T3list_best_frbg_value_V2_25[i], T3list_best_frbg_value_V3_25[i],
+                T3list_best_frbg_value_V2_27[i], T3list_best_frbg_value_V3_27[i])
         print (line8)
         if save_txt_file:
             to.write(line8+"\n")

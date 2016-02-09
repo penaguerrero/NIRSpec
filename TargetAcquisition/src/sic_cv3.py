@@ -59,100 +59,6 @@ show_disp = False                  # Show display of resulting positions? (will 
 
 ###########################################################################################################
 
-# --> FUNCTIONS
-
-def find_centroid(fits_file, bg_corr_info, recursive_centroids_info, display_centroids_info, x_centroids, y_centroids):
-    """ This function reads the image, finds the centroid, and displays the result.
-    It returns the centroid values. """
-    
-    # unfold information
-    background_method, bg_value, bg_frac, debug = bg_corr_info
-    xwidth_list, ywidth_list, checkbox_size, max_iter, threshold, determine_moments, display_master_img, vlim = recursive_centroids_info
-    case, show_disp, save_centroid_disp = display_centroids_info
-    x_centroids3, y_centroids3 = x_centroids[0], y_centroids[0]
-    x_centroids5, y_centroids5 = x_centroids[1], y_centroids[1]
-    x_centroids7, y_centroids7 = x_centroids[2], y_centroids[2]
-    
-    # get detector and name of base name of each fits file
-    ff = os.path.basename(fits_file)
-    ff1 = string.split(ff, sep="_")
-    detector = ff1[2]
-    #fits_trial = ff1[1]
-    #fits_base = ff1[0]
-    
-    # Read FITS image 
-    #img = fits.open(fits_file)
-    #img.info()
-    #raw_input()
-    #hdr = fits.getheader(fits_file, 0)
-    #print("** HEADER:", hdr)
-    master_img = fits.getdata(fits_file, 0)
-    print ('Master image shape: ', np.shape(master_img))
-    # Obtain the combined FITS image that combines all frames into one image AND
-    # check if all image is zeros, take the image that still has a max value
-    psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
-                        bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
-    cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list, 
-                                               checkbox_size, max_iter, threshold, 
-                                               determine_moments, debug)
-    cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = taf.centroid2fulldetector(cb_centroid_list_in32x32pix, 
-                                                                                        true_center)
-    if output_full_detector==False:
-        cb_centroid_list = cb_centroid_list_in32x32pix
-    if show_centroids:
-        print ('***** Measured centroids:')
-        print ('      cb_centroid_list = ', cb_centroid_list)
-        #print ('           True center = ', true_center)
-
-    x_centroids3.append(cb_centroid_list[0][0])
-    y_centroids3.append(cb_centroid_list[0][1])
-    if len(xwidth_list) != 1:
-        x_centroids5.append(cb_centroid_list[1][0])
-        y_centroids5.append(cb_centroid_list[1][1])
-        x_centroids7.append(cb_centroid_list[2][0])
-        y_centroids7.append(cb_centroid_list[2][1])
-    x_centroids = [x_centroids3, x_centroids5, x_centroids7]
-    y_centroids = [y_centroids3, y_centroids5, y_centroids7]
-        
-    # Show the display with the measured and true positions
-    ff = string.replace(ff, ".fits", "")
-    fits_names.append(ff)
-    fig_name = os.path.join(output_file_path, ff+".jpg")
-    # Display the combined FITS image that combines all frames into one image
-    m_img = display_master_img
-    if display_master_img: 
-        m_img = taf.readimage(master_img, backgnd_subtraction_method=None, bg_method=None, 
-                          bg_value=None, bg_frac=None, debug=False)
-    taf.display_centroids(detector, ff, case, psf, true_center32x32, cb_centroid_list_in32x32pix, 
-                         show_disp, vlim, savefile=save_centroid_disp, fig_name=fig_name, display_master_img=m_img)  
-    
-    return x_centroids, y_centroids
-        
-
-def print_file_lines(output_file, save_text_file, xwidth_list, ff, background2use, 
-                     i, x_centroids, y_centroids):
-    """ This function prints the info on screen AND in a text file. """
-    x_centroids3, y_centroids3 = x_centroids[0], y_centroids[0]
-    x_centroids5, y_centroids5 = x_centroids[1], y_centroids[1]
-    x_centroids7, y_centroids7 = x_centroids[2], y_centroids[2]
-    if len(xwidth_list)==1:
-        line1 = "{:<40} {:>4} {:>16} {:>16}".format(
-                                   ff, background2use, x_centroids3[i], y_centroids3[i])
-    else:
-        line1 = "{:<40} {:>4} {:>16} {:>14} {:>18} {:>14} {:>18} {:>14}".format(
-                                                               ff, background2use, 
-                                                               x_centroids3[i], y_centroids3[i],
-                                                               x_centroids5[i], y_centroids5[i], 
-                                                               x_centroids7[i], y_centroids7[i])
-    print (line1)
-    if save_text_file:
-        f = open(output_file, "a")
-        f.write(line1+"\n")  
-
-
-###########################################################################################################
-
-# ---> CODE
 
 # Paths
 main_path = "../SIC_CV3"
@@ -199,11 +105,13 @@ y_centroids7 = []
 x_centroids = [x_centroids3, x_centroids5, x_centroids7]
 y_centroids = [y_centroids3, y_centroids5, y_centroids7]
 
+centroids_info = [true_center, output_full_detector, show_centroids]
+
 # start the loop over the fits files
 for fits_file in dir2test:
     print ("Running centroid algorithm... ")
     
-    bg_corr_info = [background_method, bg_value, bg_frac, debug]
+    bg_corr_info = [backgnd_subtraction_method, background_method, bg_value, bg_frac, debug]
     recursive_centroids_info = [xwidth_list, ywidth_list, checkbox_size, max_iter, threshold, 
                                 determine_moments, display_master_img, vlim]
     display_centroids_info = [case, show_disp, save_centroid_disp]
@@ -211,11 +119,13 @@ for fits_file in dir2test:
     if analyze_all_frac_values:
         for bgf in bg_frac:
             bg_corr_info = [background_method, bg_value, bgf, debug]
-            x_centroids, y_centroids = find_centroid(fits_file, bg_corr_info, recursive_centroids_info, 
-                                                     display_centroids_info, x_centroids, y_centroids)
+            x_centroids, y_centroids = taf.find_centroid(fits_file, bg_corr_info, recursive_centroids_info,
+                                                         display_centroids_info, x_centroids, y_centroids,
+                                                         fits_names, output_file_path, centroids_info)
     else:
-        x_centroids, y_centroids = find_centroid(fits_file, bg_corr_info, recursive_centroids_info, 
-                                                 display_centroids_info, x_centroids, y_centroids)
+        x_centroids, y_centroids = taf.find_centroid(fits_file, bg_corr_info, recursive_centroids_info,
+                                                     display_centroids_info, x_centroids, y_centroids,
+                                                     fits_names, output_file_path, centroids_info)
 
 # Write the results in a text file
 output_file = os.path.join(output_file_path, case+bg_choice+".txt")
@@ -251,9 +161,9 @@ if analyze_all_frac_values:
 for i, ff in enumerate(fits_names):
     if analyze_all_frac_values:
         background2use = background2use_list[i]
-    line1 = print_file_lines(output_file, save_text_file, xwidth_list, ff, background2use, 
+    taf.print_file_lines(output_file, save_text_file, xwidth_list, ff, background2use,
                              i, x_centroids, y_centroids)
 
 
 
-print ("\n SIC test CV3 data script finished. Took  %s  seconds to finish. \n" % ((time.time() - start_time)) )
+print ("\n SIC test CV3 data script finished. Took  %s  seconds to finish. \n" % (time.time() - start_time))
