@@ -47,23 +47,21 @@ def bg_correction(img, bg_method=None, bg_value=None, bg_frac=None, debug=False)
         assumed to contain significant counts from astronomical sources, 
         cosmic rays, or hot pixels. See code).
 
-    Keyword arguments:
-    img        -- Image 
-    bg_method  -- Either None value or string: "fixed" or "frac"
-    bg_value   -- Fixed value to subtract from each pixel (this has to 
-                  be set if bg_method = "fixed")
-    bg_frac    -- Fractional value to subtract from image (this has to 
-                  be set if bg_method = "frac")
+    Args:
+        img        -- Image
+        bg_method  -- Either None value or string: "fixed" or "frac"
+        bg_value   -- Float, fixed value to subtract from each pixel (this has to
+                      be set if bg_method = "fixed")
+        bg_frac    -- Float, fractional value to subtract from image (this has to
+                      be set if bg_method = "frac")
     
-    Output(s):
-    img_bgcorr -- The group of 3 background subtracted images 
+    Returns:
+        img_bgcorr -- The group of 3 background subtracted images
 
     Example usage:
-    
         >> img_bgcorr = bg_correction(master_img, bg_method='frac', bg_value=0.4)
-
-        Correct each ramped image from background.
     """
+    # Make sure to return the image as is if None is selected
     if bg_method is None:
         return img
     
@@ -80,8 +78,6 @@ def bg_correction(img, bg_method=None, bg_value=None, bg_frac=None, debug=False)
         if bg_frac is None:
             print ("ERROR - Background_method set to 'fractional': bg_frac needs to be a float number, got None.")
             exit()
-        #if bg_frac == 0.0:   #?
-        #    return master_img
         # Find the pixel value (bg) that represents that fraction of the population
         img_original = copy.deepcopy(img)
         sorted_img = np.sort(np.ravel(img))   # flatten the image and sort it
@@ -106,18 +102,18 @@ def centroid2fulldetector(cb_centroid_list, true_center):
     """
     Transform centroid coordinates into full detector coordinates.
     
-    KEYWORD ARGUMENTS:
-    cb_centroid_list           -- Centroid window based centroid determined by target acquisition (TA) algorithm in
-                                  terms of 32 by 32 pixels for centroid window sizes 3, 5, and 7
-    true_center                -- Actual (true) position of star in terms of full detector  
+    Args:
+        cb_centroid_list           -- List, centroid window based centroid determined by TA algorithm in
+                                      terms of 32 by 32 pixels for centroid window sizes 3, 5, and 7
+        true_center                -- List, actual (true) position of star in terms of full detector
     
-    OUTPUT:
-    cb_centroid_list_fulldetector  -- List of centroid locations determined with the TA algorithm in 
-                                      terms of full detector. List is for positions determined with
-                                      3, 5, and 7 centroid window sizes.
-    loleftcoords                   -- Coordinates of the lower left corner of the 32x32 pixel box
-    true_center32x32               -- True center given in coordinates of 32x32 pix
-    differences_true_TA            -- Difference of true-observed positions       
+    Returns:
+        cb_centroid_list_fulldetector  -- List of centroid locations determined with the TA algorithm in
+                                          terms of full detector. List is for positions determined with
+                                          3, 5, and 7 centroid window sizes.
+        loleftcoords                   -- List, Coordinates of the lower left corner of the 32x32 pixel box
+        true_center32x32               -- List, true center given in coordinates of 32x32 pix
+        differences_true_TA            -- List, difference of true-observed positions
     """
         
     # Get the lower left corner coordinates in terms of full detector. We subtract 16.0 because indexing
@@ -127,8 +123,7 @@ def centroid2fulldetector(cb_centroid_list, true_center):
     loleft_x = np.floor(corrected_x) - 16.0
     loleft_y = np.floor(corrected_y) - 16.0
     loleftcoords = [loleft_x, loleft_y]
-    #print(loleft_x, loleft_y)
-    
+
     # get center in terms of 32x32 cutout
     true_center32x32 = [corrected_x-loleft_x, corrected_y-loleft_y]
     
@@ -164,14 +159,14 @@ def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=
     """
     This function obtains the differences of the input arrays with the reference or benchmark data.
     Args:
-        case: string, for example 'Scene2_rapid_real_bgFrac'
-        bench_stars: numpy array of the star numbers being used
-        benchV2: numpy array of the benchmark V2s
-        benchV3: numpy array of the benchmark V3s
-        stars: list of the star numbers being studied
-        V2in: numpy array of measured V2s
-        V3in: numpy array of measured V3s
-        arcsecs: True or False (if False results are in degrees)
+        case        -- string, for example 'Scene2_rapid_real_bgFrac'
+        bench_stars -- numpy array of the star numbers being used
+        benchV2     -- numpy array of the benchmark V2s
+        benchV3     -- numpy array of the benchmark V3s
+        stars       -- list of the star numbers being studied
+        V2in        -- numpy array of measured V2s
+        V3in        -- numpy array of measured V3s
+        arcsecs     -- True or False (if False results are in degrees)
 
     Returns:
         4 lists: diffV2, diffV3, bench_V2_list, bench_V3_list
@@ -242,18 +237,18 @@ def display_centroids(detector, st, case, psf, corr_true_center_centroid,
     This function displays de the centroids for the 32x32 pixel cutout images, showing
     the true position as wel as the measured centroids.
     Args:
-        detector: integer, either 491 or 492
-        st: integer, star number
-        case: string, for example 'Scene2_rapid_real_bgFrac'
-        psf:  numpy array of shape (3, 32, 32) -- cutout of 3 ramped images
-        corr_true_center_centroid: list of x and y true pixel positions
-        corr_cb_centroid_list: list of 3 lists, x and y pixel positions for centroiding window 3, 5, and 7
-        show_disp: True or False
-        vlims: tuple, example: (10.0, 50.0)
-        savefile: True or False, save or not the image as a .jpg
-        fig_name: string
-        redos: True or False, use or not the directories with _redo
-        display_master_img: True or False, show the initial image (before background subtraction)
+        detector                  -- integer, either 491 or 492
+        st                        -- integer, star number
+        case                      -- string, for example 'Scene2_rapid_real_bgFrac'
+        psf                       --  numpy array of shape (3, 32, 32) -- cutout of 3 ramped images
+        corr_true_center_centroid -- list of x and y true pixel positions
+        corr_cb_centroid_list     -- list of 3 lists, x and y pixel positions for centroiding window 3, 5, and 7
+        show_disp                 -- True or False, show the 32x32 image with true center and measured positions
+        vlims                     -- tuple, example: (10.0, 50.0)
+        savefile                  -- True or False, save or not the image as a .jpg
+        fig_name                  -- string, name for the figure
+        redos                     -- True or False, use or not the directories with _redo
+        display_master_img        -- True or False, show the initial image (before background subtraction)
 
     Returns:
         Nothing.
@@ -378,8 +373,8 @@ def do_Piers_correction(detector, cb_centroid_list):
     """ This function performs the average correction found by Pierre in each of
         the x and y measured centroids.
     Args:
-        detector: integer, either 491 or 492
-        cb_centroid_list: list of 3 lists (measured centroids for centroid window sizes 3, 5, and 7)
+        detector          -- integer, either 491 or 492
+        cb_centroid_list  -- list of 3 lists (measured centroids for centroid window sizes 3, 5, and 7)
 
     Returns:
         List of 3 lists corresponding to corrected centroids for centroid window sizes 3, 5, and 7
@@ -398,17 +393,17 @@ def find_centroid(fits_file, bg_corr_info, recursive_centroids_info, display_cen
     It returns the centroid values.
 
     Args:
-        fits_file: name of the fits file being studied
-        bg_corr_info: list of the information concerning background subtraction
-        recursive_centroids_info: list of information for running centroid algorithm
-        display_centroids_info: list of information to show and display the centroids
-        x_centroids: list of centroids for centroid window sizes of 3, 5, and 7 for x position
-        y_centroids: list of centroids for centroid window sizes of 3, 5, and 7 for y position
-        fits_names: list to the append the studied files (so that it ends up being the same
-                    length as the list of the measured centroids -- in case of fractional background)
-        output_file_path: path for the output file
-        centroids_info: list of the information concerning the true centroids, the output in full
-                        detector coordinates, and the on-screen measured centroids
+        fits_file                -- name of the fits file being studied
+        bg_corr_info             -- list of the information concerning background subtraction
+        recursive_centroids_info -- list of information for running centroid algorithm
+        display_centroids_info   -- list of information to show and display the centroids
+        x_centroids              -- list of centroids for centroid window sizes of 3, 5, and 7 for x position
+        y_centroids              -- list of centroids for centroid window sizes of 3, 5, and 7 for y position
+        fits_names               -- list to the append the studied files (so that it ends up being the same
+                                    length as the list of the measured centroids -- in case of fractional background)
+        output_file_path         -- path for the output file
+        centroids_info           -- list of the information concerning the true centroids, the output in full
+                                    detector coordinates, and the on-screen measured centroids
     Returns:
         x_centroids = list of 3 lists corresponding to pixel x-positions for centroid window sizes 3, 5, and 7
         y_centroids = list of 3 lists corresponding to pixel y-positions for centroid window sizes 3, 5, and 7
@@ -482,11 +477,15 @@ def find_std(arr):
     """
     This function determines the standard deviation of the given array.
     Args:
-        arr: numpy array for which the standard deviation and means are to be determined
+        arr = numpy array for which the standard deviation and means are to be determined
 
     Returns:
         std = standard deviation of the given array
         mean = mean value of the given array
+
+    Usage:
+         import TA_functions as taf
+         std, mean = taf.find_std(y_positions)
     """
     N = float(len(arr))
     mean = sum(arr) / N
@@ -550,11 +549,11 @@ def get_raw_star_directory(path4starfiles, scene, shutters, noise, redo=True):
         path_scene2_rapid_shifted = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID/postage"
         path_scene2_rapid_shifted_nonoise = "Scene_2_AB1823/NIRSpec_TA_Sim_AB1823 shifted NRSRAPID no_noise/postage"
     Args:
-        path4starfiles: string, path to get to the files
-        scene: integer, either 1 or 2
-        shutters: string, shutter velocity: 'rapid' or 'slow'
-        noise: string, noise level: 'nonoise' or 'real'
-        redo: True or False, go to (or not) to the directories that have a _redo at the end
+        path4starfiles -- string, path to get to the files
+        scene          -- integer, either 1 or 2
+        shutters       -- string, shutter velocity: 'rapid' or 'slow'
+        noise          -- string, noise level: 'nonoise' or 'real'
+        redo           -- True or False, go to (or not) to the directories that have a _redo at the end
     Returns:
         dir2test_list = A list of strings with the paths to position files 1 and 2
     """
@@ -581,11 +580,11 @@ def get_raw_star_directory(path4starfiles, scene, shutters, noise, redo=True):
     
 def Pier_correction(detector, XandYarr):
     """ This function corrects the measured centroids for the average values.
-    KEYWORD ARGUMENTS:
-        Pier_corr                  -- Perform average correction suggested by Pier: True or False
+    Args:
+        Pier_corr         -- Perform average correction suggested by Pier: True or False
         
-    OUTPUT:
-    cb_centroid_list               -- Values corrected for Pier's values 
+    Returns:
+        cb_centroid_list  -- List, values corrected for Pier's values
     """
     # Corrections for offsets in positions (see section 2.5 of Technical Notes in Documentation directory)
     offset_491 = (-0.086, -0.077)
@@ -617,6 +616,8 @@ def print_file_lines(output_file, save_text_file, xwidth_list, ff, background2us
         i              -- the index of line to append to the file = integer
         x_centroids    -- list of the x measured centroids for centroid window sizes 3, 5, and 7
         y_centroids    -- list of the y measured centroids for centroid window sizes 3, 5, and 7
+    Returns:
+        Nothing.
     """
     x_centroids3, y_centroids3 = x_centroids[0], y_centroids[0]
     x_centroids5, y_centroids5 = x_centroids[1], y_centroids[1]
@@ -638,21 +639,21 @@ def print_file_lines(output_file, save_text_file, xwidth_list, ff, background2us
 
 def Nsigma_rejection(N, x, y, max_iterations=10):
     """ This function will reject any residuals that are not within N*sigma in EITHER coordinate. 
-        Input: 
-                 - x and y must be the arrays of the differences with respect to true values: True-Measured 
-                 - N is the factor (integer or float) by which sigma will be multiplied
-                 - max_iterations is the maximum integer allowed iterations 
-        Output:
-                 - sigma_x = the standard deviation of the new array x 
-                 - mean_x  = the mean of the new array x 
-                 - sigma_y = the standard deviation of the new array y
-                 - mean_y  = the mean of the new array y
-                 - x_new   = the new array x (with rejections) 
-                 - y_new   = the new array y (with rejections) 
-                 - niter   = the number of iterations to reach a convergence (no more rejections)
-        Usage:
-             import TA_functions as taf
-             sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter = taf.Nsigma_rejection(N, x, y, max_iterations=10)
+    Args:
+         - x and y must be the numpy arrays of the differences with respect to true values: True-Measured
+         - N is the factor (integer or float) by which sigma will be multiplied
+         - max_iterations is the maximum integer allowed iterations
+    Returns:
+         - sigma_x = the standard deviation of the new array x
+         - mean_x  = the mean of the new array x
+         - sigma_y = the standard deviation of the new array y
+         - mean_y  = the mean of the new array y
+         - x_new   = the new array x (with rejections)
+         - y_new   = the new array y (with rejections)
+         - niter   = the number of iterations to reach a convergence (no more rejections)
+    Usage:
+         import TA_functions as taf
+         sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter = taf.Nsigma_rejection(N, x, y, max_iterations=10)
     """
     N = float(N)
     or_sigma_x, or_mean_x = find_std(x)
@@ -705,9 +706,9 @@ def read_listfile(list_file_name, detector=None, background_method=None):
     This function reads the fits table that contains the flux and converts to magnitude for the
     simulated stars.
     Args:
-        list_file_name: string, fits file of the list file to be used
-        detector:integer, either 491 or 492
-        background_method: None or string, either 'fractional' or 'fixed'
+        list_file_name    -- string, fits file of the list file to be used
+        detector          -- integer, either 491 or 492
+        background_method -- None or string, either 'fractional' or 'fixed'
 
     Returns:
         5 numpy arrays and a string: star_number, xpos, ypos, factor, mag, bg_method
@@ -745,8 +746,8 @@ def read_positionsfile(positions_file_name, detector=None):
     """
     This function reads the fits table that contains the true full detector positions of all simulated stars.
     Args:
-        positions_file_name: string, name of the fits file to be read
-        detector: integer, 491 or 492
+        positions_file_name -- string, name of the fits file to be read
+        detector            -- integer, 491 or 492
 
     Returns:
         5 numpy arrays: star_number, xpos, ypos, trueV2, trueV3
@@ -838,9 +839,9 @@ def read_star_param_files(test_case, path4starfiles=None, paths_list=None):
     """
     This function reads the corresponding star parameters file and returns the data for P1 and P2.
     Args:
-        test_case: string, for example 'Scene2_rapid_real_bgFrac'
-        path4starfile: string, path to find the fits file that is in the postage stamps directory
-        list_file1: string, name of the file to get magnitudes for position 1
+        test_case     -- string, for example 'Scene2_rapid_real_bgFrac'
+        path4starfile -- string, path to find the fits file that is in the postage stamps directory
+        list_file1    -- string, name of the file to get magnitudes for position 1
 
     Returns:
         2 lists: benchmark_data, magnitudes
@@ -863,7 +864,7 @@ def read_star_param_files(test_case, path4starfiles=None, paths_list=None):
             if case in test_case:
                 dirs4test = bench_dirs[i]
             
-    # *** THE star_parameters FILES HAVE THE SAME DATA FOR BOTH DETECTORS.
+    # *** THE star_parameters.txt FILES in the postage stamps directory HAVE THE SAME DATA FOR BOTH DETECTORS.
 
     # Read fits table with benchmark data
     main_path_infiles = "../PFforMaria/"
@@ -940,24 +941,20 @@ def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_va
     with each succesive image containing more photon counts than the next. 
     Uses a cube-differencing calculation to eliminate random measurements
     such as cosmic rays.
-    Keyword arguments:
-    master_img                 -- 3-framed image (as per NIRSpec output images)
-    backgnd_subtraction_method -- 1 = Do background subtraction on final image (after subtracting 3-2 and 2-1), 
-                                      before converting negative values into zeros
-                                  2 = Do background subtraction on 3-2 and 2-1 individually
-    Output(s):
-    omega -- A combined FITS image that combines all frames into one image.
+    Args:
+        master_img                 -- 3-framed image (as per NIRSpec output images)
+        backgnd_subtraction_method -- 1 = Do background subtraction on final image (after subtracting 3-2 and 2-1),
+                                          before converting negative values into zeros
+                                      2 = Do background subtraction on 3-2 and 2-1 individually
+    Returns:
+        omega -- A combined FITS image that combines all frames into one image.
     """
     
     # Read in input file, and generate the alpha and beta images
     # (for subtraction)
-    #alpha = master_img[1, :, :] - master_img[0, :, :]
-    #beta = master_img[2, :, :] - master_img[1, :, :]
     alpha = master_img[1] - master_img[0]
     beta = master_img[2] - master_img[1]
-    #fits.writeto("/Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/alpha.fits", alpha)
-    #fits.writeto("/Users/pena/Documents/AptanaStudio3/NIRSpec/TargetAcquisition/beta.fits", beta)
-    
+
     # Perform background subtraction if backgnd_subtraction_method=1
     if backgnd_subtraction_method == 2:
         print ("*  Background subtraction being done on 3-2 and 2-1 individually...")
@@ -988,7 +985,7 @@ def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_va
         print ('max_image = ', image.max())
         print ('min_image = ', image.min())
         for j in range(np.shape(image)[0]):
-            print (j, image[j, :])#, alpha[j, :], beta[j, :])
+            print (j, image[j, :])
     
 
     print('(readimage): Image processed!')
@@ -1050,7 +1047,6 @@ def TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     T1_V2_3, T1_V3_3 = ct.coords_transf(transf_direction, detector, filter_input, avgx3, avgy3, tilt, debug)
     T1_V2_5, T1_V3_5 = ct.coords_transf(transf_direction, detector, filter_input, avgx5, avgy5, tilt, debug)
     T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, debug)
-    # TEST 1: (a) Avg P1 and P2, (b) transform to V2-V3, (c) compare to avg reference positions (V2-V3 space)
     # Step (c) - comparison
     T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
     T1_diffV2_5, T1_diffV3_5, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
@@ -1174,9 +1170,9 @@ def TEST3(detector, transf_direction, stars, case, bench_starP1, bench_Vs, P1P2d
     if debug:
         print ("TEST 3: ")
         print ("transformations: detector P1 and P2 (x, y),  sky P1 and P2 (V2, V3),  true P1 and P2 (V2, V3)")
-        print ("            ChBx3: ", x13[0], y13[0], x23[0], y23[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
-        print ("            ChBx5: ", x15[0], y15[0], x25[0], y25[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
-        print ("            ChBx7: ", x17[0], y17[0], x27[0], y27[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print (" Centroid window 3: ", x13[0], y13[0], x23[0], y23[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print (" Centroid window 5: ", x15[0], y15[0], x25[0], y25[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print (" Centroid window 7: ", x17[0], y17[0], x27[0], y27[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
         raw_input(" * press enter to continue... \n")
     # Organize results
     T3_transformationsP1 = [T3_V2_13, T3_V3_13, T3_V2_15, T3_V3_15, T3_V2_17, T3_V3_17]
@@ -1424,7 +1420,8 @@ def combine2arrays(arr1, arr2, combined_arr):
         arr2: Either x or y measurement of position 2
         combined_arr: The already defined numpy array that the measurements are to be appended to.
 
-    Returns: a combined array of one dimension.
+    Returns:
+         combined_arr = A combined numpy array of one dimension.
     """
     for item in arr1:
         combined_arr = np.append(combined_arr, item)
@@ -1440,7 +1437,7 @@ def get_rejected_stars(stars_sample, rejected_elements_idx):
         stars_sample: list of stars in the sample
         rejected_elements_idx: the index list of the rejected stars
     Returns:
-        The list of rejected stars
+        rejected_elements = The list of rejected stars
     """
     rejected_elements = []
     if len(rejected_elements_idx) != len(stars_sample):
@@ -1463,11 +1460,11 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
         max_iterations: integer, maximum iterations for the Nsigma routine
 
     Returns:
-        results_stats = List with standard deviations and means, dictionary, minimum differences from centroid window
-        sizes 3, 5, and 7, and their repetitions, benchmark values, results from least squares
-        and Nsigma rejection routines, and list of rejected elements from each of those 2 routines.
-            results_stats = [st_devsAndMeans, diff_counter, bench_values, sigmas_deltas, sigma_reject,
-                            rejected_elementsLS, rejected_elementsNsig]
+        results_stats: List with standard deviations and means, dictionary, minimum differences from centroid window
+                       sizes 3, 5, and 7, and their repetitions, benchmark values, results from least squares
+                       and Nsigma rejection routines, and list of rejected elements from each of those 2 routines.
+        results_stats = [st_devsAndMeans, diff_counter, bench_values, sigmas_deltas, sigma_reject,
+                        rejected_elementsLS, rejected_elementsNsig]
     """
     T_V2_3, T_V3_3, T_V2_5, T_V3_5, T_V2_7, T_V3_7 = T_transformations
     T_V2_3, T_V3_3 = np.array(T_V2_3), np.array(T_V3_3)
@@ -1750,7 +1747,7 @@ def remove_bad_stars(stars_sample):
     Args:
         stars_sample = list of stars to be studied
     Returns:
-        The list of stars with the 'bad stars' removed.
+        stars_sample = list of stars with the 'bad stars' removed.
     """
     # paths to files
     scene1_bad_stars_file = os.path.abspath("../bad_stars/scene1_bad_stars.txt")
