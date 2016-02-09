@@ -98,17 +98,17 @@ backgnd_subtraction_method = 1     # 1    = Do background subtraction on final i
 #                                    2    = Do background subtraction on 3-2 and 2-1 individually
 #                                    None = Do not subtract background
 
-random_sample = False               # choose a random sample of stars from either detector: True or False
+random_sample = True               # choose a random sample of stars from either detector: True or False
 # control samples to be used when random is set to False
-#stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
+stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
 # OLNY detector 491
 #stars_sample = [101, 105, 108, 109, 111, 113, 114, 133, 136, 147, 150, 157, 158, 161, 181, 184, 185, 186, 194, 199]
 #stars_sample = [101, 104, 105, 112, 117, 118, 133, 135, 136, 140, 145, 151, 152, 157, 159, 161, 174, 178, 184, 200]   
 # ONLY detector 492
 #stars_sample = [8, 11, 19, 24, 30, 37, 39, 41, 48, 51, 55, 65, 73, 85, 87, 88, 90, 91, 93, 98]
-stars_sample = [2, 4, 8, 10, 11, 22, 25, 28, 33, 37, 54, 64, 68, 76, 80, 89, 96, 97, 99, 100]
+#stars_sample = [2, 4, 8, 10, 11, 22, 25, 28, 33, 37, 54, 64, 68, 76, 80, 89, 96, 97, 99, 100]
 # all stars of one detector or both
-#stars_sample = [s+101 for s in range(100)] 
+#stars_sample = [s+101 for s in range(100)]
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
 #6, 23, 50, 55, 65, 67, 70, 71, 73, 90, 105, 108, 119, 124, 126, 127, 137, 153, 186, 187
 

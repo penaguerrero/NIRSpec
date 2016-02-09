@@ -64,37 +64,16 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
         sumpeak = 0
         sumpeak_list = []
         xy_peak_list = []
-        for ii in xrange(xsize - checkbox):
-            for jj in xrange(ysize - checkbox):
+        for ii in xrange(xsize - checkbox +1):  # the +1 is because python stops the loop at idx=n
+            for jj in xrange(ysize - checkbox +1):  # the +1 is because python stops the loop at idx=n
                 t = np.sum(image[jj:jj+checkbox, ii:ii+checkbox])
                 if t > sumpeak:
                     xpeak = ii + chw + 1   
                     ypeak = jj + chw + 1
                     sumpeak = t
-                    #print('sum is in X from ii={} to ii+checkbox={}'.format(str(ii), str(ii+checkbox)))
-                    #print('       in Y from jj={} to jj+checkbox={}'.format(str(jj), str(jj+checkbox)))
-                    #print('xpeak, ypeak, sumpeak', xpeak, ypeak, sumpeak)
                     xy_peak = [xpeak, ypeak]
                     xy_peak_list.append(xy_peak)
                     sumpeak_list.append(sumpeak)
-                    """
-                    # Check that this peak is NOT a cosmic ray by finding if there is a single pixel with
-                    # the sum value, if there is DO NOT take this as the peak
-                    idx_t = np.where(image == t)
-                    print('idx_t=', idx_t[0], idx_t[1])
-                    if len(idx_t[0]) == 1 and len(sumpeak_list) != 1:
-                        # find second largest peak
-                        sumpeak_old = max(n for n in sumpeak_list if n!=max(sumpeak_list))
-                        idx_sumold = sumpeak_list.index(sumpeak_old)
-                        xpeak_old, ypeak_old = xy_peak_list[idx_sumold][0], xy_peak_list[idx_sumold][1]
-                        if sumpeak_old == 0:
-                            sumpeak_old = t
-                            xpeak_old, ypeak_old = xpeak, ypeak
-                        print ('sumpeak_old, xpeak_old, ypeak_old : ', sumpeak_old, xpeak_old, ypeak_old)
-                        print ('xpeak, ypeak, sumpeak : ', xpeak, ypeak, sumpeak)
-                        xpeak, ypeak = xpeak_old, ypeak_old
-                        sumpeak = sumpeak_old
-                        """
         print('(checkbox_2D): Checkbox not equal to both x/ysize.')
     
     # If the checkbox size is equal to both the X and Y sizes
@@ -108,7 +87,6 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
     # Find the centroid region half-width in x and y
     xhw = (xwidth - 1) / 2
     yhw = (ywidth - 1) / 2
-    #print ('xpeak, xhw, xsize : ', xpeak, xhw, xsize, '    ypeak, yhw, ysize : ', ypeak, yhw, ysize)
     if xpeak < xhw or xpeak > xsize - xhw or ypeak < yhw or ypeak > ysize - yhw:
         print('(checkbox_2D): WARNING - Peak too close to edge of image.')
         
@@ -183,7 +161,7 @@ def checkbox_1D(image, checkbox, xwidth=0, debug=False):
     if checkbox != xsize and checkbox != ysize:
         xpeak = 0
         sumpeak = 0
-        for ii in xrange(xsize - checkbox):
+        for ii in xrange(xsize - checkbox +1):  # the +1 is because python stops the loop at idx=n
             t = np.sum(vector[ii:ii+checkbox])
             if t > sumpeak:
                 xpeak = ii + 1
@@ -275,17 +253,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     # their appropriate variables
     xpeak, ypeak = checkbox_center
     xhw, yhw = checkbox_halfwidth 
-    
-    """
-    # If too close to the edge and small centroid area, include the border   - Added by M. Pena-Guerrero 
-    if xpeak==2.0 and xhw==1.0:
-        xhw = 2.0
-        print ("(centroid_2D): WARNING - too close to the edge on X and centroid area too small: including edge now.")
-    if ypeak==2.0 and yhw==1.0:
-        yhw = 2.0
-        print ("(centroid_2D): WARNING - too close to the edge on Y and centroid area too small: including edge now.")
-    """
-    
+
     # Added by M. Pena-Guerrero   ->   Remove the -1 if centroid is given in Python indexing (starting at 0)
     lolim_x = int(xpeak - xhw - 1)
     uplim_x = int(xpeak + xhw - 1)
@@ -311,8 +279,8 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
         uplim_y = 31
         print ('(centroid_2D): WARNING - upper limit in y is out of data, setting to 31.')
 
-    for ii in xrange(lolim_x, uplim_x):
-        for jj in xrange(lolim_y, uplim_y):
+    for ii in xrange(lolim_x, uplim_x+1):  # the +1 is because python stops the loop at idx=n
+        for jj in xrange(lolim_y, uplim_y+1):  # the +1 is because python stops the loop at idx=n
             xloc = ii + 1
             yloc = jj + 1
 
@@ -338,7 +306,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
         print('(centroid_2D): Init. Sum (before iterations) = ', c_sum)
 
     if c_sum == 0:
-        print('(centroid_2D): WARNING - Dividing by zero: c_sum=0. Maybe not reaching true centroid...')
+        print('(centroid_2D): WARNING - Dividing by zero: c_sum=0. Not going into the for loop! ')
         print('               Keeping checkbox center.')
         xcen, ycen = xpeak, ypeak
     else:
@@ -353,7 +321,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     
     print ('(centroid_2D): Maximum iterations = ', max_iter)   # Added by M. Pena-Guerrero
     
-    for kk in xrange(max_iter):
+    for kk in xrange(max_iter +1):  # the +1 is because python stops the loop at idx=n
         num_iter += 1
         c_sum = 0
         xsum = 0
@@ -372,8 +340,8 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
         #    print ('(np.floor(old_ycen - yhw) - 1, np.ceil(old_ycen + yhw) - 1): ', np.floor(old_ycen - yhw) - 1, np.ceil(old_ycen + yhw) - 1) 
         #    print ('iteration number: ', num_iter)
                 
-        for ii in xrange(np.int(x_range[0]), np.int(x_range[1])):
-            for jj in xrange(np.int(y_range[0]), np.int(y_range[1])):
+        for ii in xrange(np.int(x_range[0]), np.int(x_range[1]) +1):  # the +1 is because python stops the loop at idx=n
+            for jj in xrange(np.int(y_range[0]), np.int(y_range[1]) +1):  # the +1 is because python stops the loop at idx=n
 
                 # Initalize weights to zero
                 xweight = 0
@@ -382,9 +350,6 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 # Adjust weights given distance from current centroid
                 xoff = np.abs((ii + 1) - old_xcen)
                 yoff = np.abs((jj + 1) - old_ycen)
-                
-                #print ('ii, jj: ', ii, jj)
-                #print ('xoff, yoff: ', xoff, yoff)
 
                 # If within the original centroid box, set weight to 1
                 # for both x and y.
@@ -419,7 +384,7 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 ysum += yloc * image[jj, ii] * weight
         
         if c_sum == 0:
-            print('(centroid_2D): WARNING - Still dividing by zero: c_sum=0. Maybe not reaching true centroid...')
+            print('(centroid_2D): WARNING - Still dividing by zero --> c_sum is not being updated!')
             print('               Keeping checkbox center.')
             # If the centering box was too small, keep checkbox center
             xcen, ycen = checkbox_center
@@ -503,7 +468,7 @@ def centroid_1D(image, xpeak, xhw, debug=False):
     c_sum = 0.0
     xcen = 0.0
         
-    for ii in xrange(xpeak - xhw - 1, xpeak + xhw - 1):
+    for ii in xrange(xpeak - xhw - 1, xpeak + xhw - 1 +1):  # the +1 is because python stops the loop at idx=n
         c_sum = c_sum + vector[ii]
         xloc = ii + 1
         xcen += xloc * vector[ii]
@@ -569,8 +534,8 @@ def find2D_higher_moments(image, centroid, halfwidths, c_sum):
     y_range = np.array((np.floor(ycen - yhw) - 1, np.ceil(ycen + yhw) - 1))
     
     
-    for ii in xrange(np.int(x_range[0]), np.int(x_range[1])):
-        for jj in xrange(np.int(y_range[0]), np.int(y_range[1])):
+    for ii in xrange(np.int(x_range[0]), np.int(x_range[1]) +1):  # the +1 is because python stops the loop at idx=n
+        for jj in xrange(np.int(y_range[0]), np.int(y_range[1]) +1):  # the +1 is because python stops the loop at idx=n
             
             xloc = ii - np.floor(xcen)
             yloc = jj - np.floor(ycen)
@@ -647,7 +612,7 @@ def find1D_higher_moments(image, xcen, xhw, c_sum):
     # Set up x and y centroid scanning ranges
     x_range = np.array((np.floor(xcen - xhw) - 1, np.ceil(xcen + xhw) - 1))
 
-    for ii in xrange(np.int(x_range[0]), np.int(x_range[1])): 
+    for ii in xrange(np.int(x_range[0]), np.int(x_range[1]) +1):  # the +1 is because python stops the loop at idx=n
         xloc = (ii + 1) - np.floor(xcen)
         
         xweight = 0

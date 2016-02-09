@@ -46,8 +46,8 @@ backgnd_subtraction_method = 1     # 1    = Do background subtraction on final i
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
 ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
-vlim = (1.0,30)                    # Sensitivity limits of image, i.e. (0.001, 0.1) 
-threshold = 0.01                   # Convergence threshold of accepted difference between checkbox centroid and coarse location
+vlim = (1.0, 30)                   # Sensitivity limits of image, i.e. (0.001, 0.1)
+threshold = 0.3                    # Convergence threshold of accepted difference between checkbox centroid and coarse location
 max_iter = 10                      # Maximum number of iterations for finding coarse location
 debug = False                      # See all debug messages (i.e. values of all calculations)
 diffs_in_arcsecs = True            # Print the differences in arcsecs? True or False (=degrees) 
