@@ -282,16 +282,11 @@ for pos, dir2test in zip(positions, dir2test_list):
                 cb_centroid_list_in32x32pix = TAf.run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list,
                                                            checkbox_size, max_iter, threshold,
                                                            determine_moments, debug)
-                cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = TAf.centroid2fulldetector(cb_centroid_list_in32x32pix,
-                                                                                                    true_center)
+                corr_cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = TAf.centroid2fulldetector(cb_centroid_list_in32x32pix,
+                                                                                                    true_center, detector, perform_avgcorr=Pier_corr)
                 if not output_full_detector:
                     cb_centroid_list = cb_centroid_list_in32x32pix
                     true_center = true_center32x32
-                # Correct true centers for average value given by Pier
-                if Pier_corr:
-                    corr_cb_centroid_list = TAf.do_Piers_correction(detector, cb_centroid_list)
-                else:
-                    corr_cb_centroid_list = cb_centroid_list
                 if show_centroids:
                     print ('***** Measured centroids for centroid window sizes 3, 5, and 7, respectively:')
                     if output_full_detector:

@@ -283,6 +283,7 @@ def transform2fulldetector(detector, centroid_in_full_detector, cb_centroid_list
     d5 = [d5_x, d5_y]
     d7 = [d7_x, d7_y]
     diffs = [d3, d5, d7]
+    print(corr_true_center_centroid[0], corr_cb_centroid_list[0][0])
     differences_true_TA.append(diffs)
     return corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA
 
@@ -370,9 +371,9 @@ def read_positionsfile(positions_file_name, detector=None):
     #    raw_input()
     return star_number, xpos, ypos, trueV2, trueV3
 
-
 def get_fracdata(offsets):
-    """ This function gets arrays for each fractional background for the same star. """
+    """ This function gets arrays for each fractional background for the same star from the text file array
+    given by numpy.loadtxt. """
     frac003x, frac005x, frac007x = [], [], []
     frac003y, frac005y, frac007y = [], [], []
     frac013x, frac015x, frac017x = [], [], []

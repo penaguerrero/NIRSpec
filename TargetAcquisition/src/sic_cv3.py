@@ -36,11 +36,11 @@ DESCRIPTION:
 output_full_detector = False       # Give resulting coordinates in terms of full detector: True or False
 save_text_file = False             # Want to save the text file of comparison? True or False
 save_centroid_disp = False         # Save the display with measured and true positions?
-background_method = "frac"         # Select either 'fractional', 'fixed', or None   
-analyze_all_frac_values = False    # Do you want to analyze fractional values from 0.0 through 1.0? 
+background_method = 'frac'         # Select either 'fractional', 'fixed', or None
+analyze_all_frac_values = False    # Do you want to analyze fractional values from 0.0 through 1.0?
 background2use = 0.3               # Background to use for analysis: None or float
-backgnd_subtraction_method = 1     # 1    = Do background subtraction on final image (after subtracting 3-2 and 2-1), 
-#                                           before converting negative values into zeros
+backgnd_subtraction_method = 1     # 1    = Do background subtraction on final image (after subtracting 3-2 and 2-1),
+#                                           before converting negative values into zeros (OSS)
 #                                    2    = Do background subtraction on 3-2 and 2-1 individually
 #                                    None = Do not subtract background
 checkbox_size = 3                  # Real checkbox size
@@ -59,12 +59,14 @@ show_disp = False                  # Show display of resulting positions? (will 
 
 ###########################################################################################################
 
-
 # Paths
-main_path = "../SIC_CV3"
+main_path = os.path.abspath("../SIC_CV3")
 sic_cv3 = "/fits_files"
 
-# other variables that need to be defined 
+# Set up the output file and path for plots and figures
+output_file_path = os.path.join(main_path, "results")
+
+# other variables that need to be defined
 true_center = [0.0, 0.0]
 case = "SICtest_CV3"
 
@@ -88,10 +90,6 @@ if background_method is not None:
         bg_choice = "_bgFixed"
 else:
     background2use = 0.0
-
-
-# Set up the output file and path for plots and figures
-output_file_path = main_path+"/results"
 
 # Lists for later printing of results
 fits_names = []
@@ -118,7 +116,7 @@ for fits_file in dir2test:
 
     if analyze_all_frac_values:
         for bgf in bg_frac:
-            bg_corr_info = [background_method, bg_value, bgf, debug]
+            bg_corr_info = [backgnd_subtraction_method, background_method, bg_value, bgf, debug]
             x_centroids, y_centroids = taf.find_centroid(fits_file, bg_corr_info, recursive_centroids_info,
                                                          display_centroids_info, x_centroids, y_centroids,
                                                          fits_names, output_file_path, centroids_info)
@@ -129,12 +127,13 @@ for fits_file in dir2test:
 
 # Write the results in a text file
 output_file = os.path.join(output_file_path, case+bg_choice+".txt")
+
 line0 = "Centroid indexing starting at 1 !"
 if len(xwidth_list)==1:
-    line0a = "{:<50} {:>16} {:>20}".format("Fits file name", "Background", "Centroid width = 5")
+    line0a = "{:<50} {:>16} {:>20}".format("Fits file name", "Background", "Centroid window = 5")
     line0b = "{:>63} {:>10} {:>16}".format(background_method, "x", "y")
 else:
-    line0a = "{:<50} {:>16} {:>20} {:>27} {:>33}".format("Fits file name", "Background", "Centroid width: 3", "5", "7")
+    line0a = "{:<50} {:>16} {:>20} {:>27} {:>33}".format("Fits file name", "Background", "Centroid window: 3", "5", "7")
     line0b = "{:>63} {:>10} {:>14} {:>18} {:>14} {:>18} {:>14}".format(background_method, "x", "y", "x", "y", "x", "y")
     
 print (line0)

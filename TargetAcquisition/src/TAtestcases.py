@@ -76,7 +76,7 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 # Set test parameters
 detector = 491                     # Which detector are we working with: 491 or 492
-path_number = 12                   # Select 0 through 4 from paths_list above 
+path_number = 1                   # Select 0 through 4 from paths_list above
 vlim = (1.0,30)                    # sensitivity limits of image, i.e. (0.001, 0.1) 
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
@@ -87,20 +87,21 @@ backgnd_subtraction_method = 1     # 1    = Do background subtraction on final i
 #                                           before converting negative values into zeros
 #                                    2    = Do background subtraction on 3-2 and 2-1 individually
 #                                    None = Do not subtract background
-background_method = "frac"           # Select either 'fractional', 'fixed', or None   
+background_method = None           # Select either 'fractional', 'fixed', or None
 redos = True                       # Use the re-do postage stamps?
 debug = False                      # see all debug messages (i.e. values of all calculations)
 determine_moments = False          # Want to determine 2nd and 3rd moments?
 display_master_img = False         # Want to see the combined ramped images for every star?
 just_read_text_file = False        # skip the for loop to the plotting part
 centroid_in_full_detector = False  # Give resulting coordinates in terms of full detector: True or False
-show_disp = False                   # Show display of resulting positions: True or False
+show_disp = False                  # Show display of resulting positions: True or False
 save_centroid_disp = False         # To modify go to lines 306 and 307
 show_plot = True                   # Show plot(s) of x_offset vs y_offset and y_offset vs magnitude: True or False 
 plot_type = '.jpg'                 # Type of image to be saved: pdf, jpg, eps (it is better to convert from jpg to eps) 
+zoom_plot = True                   # Perform zoom-in from -1 to +1 of the resuduals plot: True or False
 save_plot = False                  # legend can be moved in line xxx
 save_text_file = False             # Want to save the text file of comparison? True or False
-perform_avgcorr = True            # Correct for average values given by Pierre? True or False
+perform_avgcorr = True             # Correct for average values given by Pierre? True or False
 single_star = False                # If only want to test one star set to True and type the path for a single star
 # NOTE: for the names of stars, single numbers before the .fits require 8 spaces after quad_star, 
 #       while 2 numbers require 7 spaces.  
@@ -271,6 +272,10 @@ if detector == 491:
 elif detector == 492:
     stars_detector = stars_492
 
+# offset lists
+x3offst, x5offst, x7offst = [], [], []
+y3offst, y5offst, y7offst = [], [], []
+
 # Start the loop in the given directory
 if not just_read_text_file:
     dir_stars = glob(os.path.join(dir2test,"postageout_star_*.fits"))   # get all star fits files in that directory
@@ -310,6 +315,7 @@ if not just_read_text_file:
                         psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
                                             bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
                         master_img_bgcorr_max = psf.max()
+                        '''
                         while master_img_bgcorr_max == 0.0:
                             print('  IMPORTANT WARNING!!! Combined ramped images have a max of 0.0 with bg_frac=', bg_frac)
                             bg_frac -= 0.02
@@ -321,22 +327,30 @@ if not just_read_text_file:
                             psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
                                                 bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
                             master_img_bgcorr_max = psf.max()
+                            '''
                         cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list, 
                                                                                   ywidth_list, checkbox_size, 
                                                                                   max_iter, threshold, 
                                                                                   determine_moments, debug)
                         # Transform to full detector coordinates in order to compare with real centers
                         ESA_center = [0,0]
-                        corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
+                        corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector,
                                                                                                       centroid_in_full_detector,
                                                                                                       cb_centroid_list_in32x32pix, ESA_center, 
                                                                                                       true_center, perform_avgcorr=perform_avgcorr)
+                        # Record offsets
+                        x3offst.append(differences_true_TA[0][0][0])
+                        y3offst.append(differences_true_TA[0][0][1])
+                        x5offst.append(differences_true_TA[0][1][0])
+                        y5offst.append(differences_true_TA[0][1][1])
+                        x7offst.append(differences_true_TA[0][2][0])
+                        y7offst.append(differences_true_TA[0][2][1])
+
                         # Write output into text file
                         bg = bg_frac
                         data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, 
                                       corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
                         tf.write2file(data2write, lines4screenandfile)
-                        #raw_input()
                 else:
                     # Obtain the combined FITS image that combines all frames into one image AND
                     # check if all image is zeros, take the image that still has a max value
@@ -353,7 +367,13 @@ if not just_read_text_file:
                                                                                                   cb_centroid_list_in32x32pix, ESA_center, 
                                                                                                   true_center, perform_avgcorr=perform_avgcorr)
                     print ('***** cb_centroid_list = ', cb_centroid_list_in32x32pix)
-                    #raw_input()
+                    # Record offsets
+                    x3offst.append(differences_true_TA[0][0][0])
+                    y3offst.append(differences_true_TA[0][0][1])
+                    x5offst.append(differences_true_TA[0][1][0])
+                    y5offst.append(differences_true_TA[0][1][1])
+                    x7offst.append(differences_true_TA[0][2][0])
+                    y7offst.append(differences_true_TA[0][2][1])
                     # Write output into text file
                     bg = background
                     data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
@@ -369,164 +389,68 @@ if not just_read_text_file:
 
 ### Obtain standard deviation from true star positions
 # Read the text file just written to get the offsets from the "real" positions of the fake stars
-print ("reading from: ", output_file)
-#print (os.path.isfile(output_file))
-offsets = np.loadtxt(output_file, skiprows=3, usecols=(13,14,15,16,17,18), unpack=True)
-sig3, mean3 = tf.find_std(offsets[1])
-sig5, mean5 = tf.find_std(offsets[3])
-sig7, mean7 = tf.find_std(offsets[5])
-if 'frac' not in bg_method:
-    fig1 = plt.figure(1, figsize=(12, 10))
-    ax1 = fig1.add_subplot(111)
-    plt.title(case+'_BG'+bg_method)
-    plt.xlabel('Radial offset in X')
-    plt.ylabel('Radial offset in Y')
-    plt.plot(offsets[0], offsets[1], 'bo', ms=8, alpha=0.7, label='Centroid window=3')
-    plt.plot(offsets[2], offsets[1], 'go', ms=8, alpha=0.7, label='Centroid window=5')
-    plt.plot(offsets[4], offsets[1], 'ro', ms=8, alpha=0.7, label='Centroid window=7')
-    xmin, xmax = ax1.get_xlim()
-    plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
-    ymin, ymax = ax1.get_ylim()
-    plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
-    #plt.legend(loc='lower right')
-    plt.legend(loc='upper right')
-    textinfig3 = r'$\sigma3$ = %0.2f    $\mu3$ = %0.2f' % (sig3, mean3)
-    textinfig5 = r'$\sigma5$ = %0.2f    $\mu5$ = %0.2f' % (sig5, mean5)
-    textinfig7 = r'$\sigma7$ = %0.2f    $\mu7$ = %0.2f' % (sig7, mean7)
-    ax1.annotate(textinfig3, xy=(0.15, 0.055), xycoords='axes fraction' )
-    ax1.annotate(textinfig5, xy=(0.15, 0.03), xycoords='axes fraction' )
-    ax1.annotate(textinfig7, xy=(0.15, 0.005), xycoords='axes fraction' )
-    for si,xi,yi in zip(star_number, offsets[0], offsets[1]): 
-        if yi>=1.0 or yi<=-1.0 or xi>=1.0 or xi<=-1.0:
-            si = int(si)
-            subxcoord = 5
-            subycoord = 0
-            side = 'left'
-            plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
-    if save_plot:
-        if background_method is None:
-            bg = 'None_'
-        else:
-            bg = 'fix_'
-        destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots/XoffsetVsYoffset_"+bg+case+plot_type)
-        if redos:
-            destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots_redo/XoffsetVsYoffset_"+bg+case+"_redo"+plot_type)
-        fig1.savefig(destination)
-        print ("\n Plot saved: ", destination)
-    if show_plot:
-        plt.show()
-    else:
-        plt.close('all')
+if just_read_text_file:
+    print ("reading from: ", output_file)
+    offsets = np.loadtxt(output_file, skiprows=3, usecols=(13,14,15,16,17,18), unpack=True)
 else:
-    frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = tf.get_fracdata(offsets)
-    frac_data  = [frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10]
-    sig3, mean3, sig5, mean5, sig7, mean7 = tf.get_frac_stdevs(frac_data)
+    offsets_list = [x3offst, y3offst, x5offst, y5offst, x7offst, y7offst]
+    offsets = np.array(offsets_list)
+
+# Plots if case is not fractional
+if 'frac' not in bg_method:
+    sig3, mean3 = taf.find_std(offsets[1])
+    sig5, mean5 = taf.find_std(offsets[3])
+    sig7, mean7 = taf.find_std(offsets[5])
+    sigmas = [sig3, sig5, sig7]
+    means = [mean3, mean5, mean7]
+    if background_method is None:
+        bg = 'None_'
+    else:
+        bg = 'fix_'
+    #destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_"+bg+case)
+    destination = os.path.abspath("../plots4presentationIST/det491_Sene1_"+bg+case+plot_type)
+    plot_title = case+'_BG'+bg_method
+    minvalue = -20.0
+    maxvalue = 20.0
+    xlims, ylims = [minvalue, maxvalue], [minvalue, maxvalue]
+    taf.plot_offsets(plot_title, offsets, sigmas, means, star_number, destination,
+                     plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
+    # Do zoom-in
+    if zoom_plot:
+        #destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_zoomin_"+bg+case)
+        destination = os.path.abspath("../plots4presentationIST/det491_Scene1_zoomin_"+bg+case+plot_type)
+        minvalue = -0.50
+        maxvalue = 0.50
+        xlims, ylims = [minvalue, maxvalue], [minvalue, maxvalue]
+        taf.plot_zoomin(plot_title, offsets_list, star_number, destination,
+                        plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
+else:
+    frac_data = tf.get_fracdata(offsets)
+    sig3, mean3, sig5, mean5, sig7, mean7 = taf.get_frac_stdevs(frac_data)
+    sigmas = [sig3, sig5, sig7]
+    means = [mean3, mean5, mean7]
     frac_bgs = ['0.0', '0.1', '0.2', '0.3', '0.4', '0.5' ,'0.6' ,'0.7', '0.8', '0.9', '1.0']
     print ('\n{:<4} {:<20} {:>10}'.format('FrBG', 'Standard_deviation', 'Mean_y-offset'))
     print ('Centroid window sizes:')
     print ('{:<4} {:<6} {:<6} {:<6} {:<6} {:<6} {:<6}'.format('', '3', '5', '7', '3', '5', '7'))
     for fbg, s3, s5, s7, m3, m5, m7 in zip(frac_bgs, sig3, sig5, sig7, mean3, mean5, mean7):
         print('{:<4} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, s3, s5, s7, m3, m5, m7))
-    fig2 = plt.figure(1, figsize=(12, 10))
-    fig2.subplots_adjust(hspace=0.30)
-    ax1 = fig2.add_subplot(311)
-    ax1.set_title(case+"_BGfrac")
-    ax1.set_xlabel('Radial offset in X: Centroid window=3')
-    ax1.set_ylabel('Radial offset in Y: Centroid window=3')
-    ax1.plot(frac00[0], frac00[1], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
-    ax1.plot(frac01[0], frac01[1], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
-    ax1.plot(frac02[0], frac02[1], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
-    ax1.plot(frac03[0], frac03[1], 'go', ms=5, alpha=0.7, label='bg_frac=0.3')
-    ax1.plot(frac04[0], frac04[1], 'ko', ms=8, alpha=0.7, label='bg_frac=0.4')
-    ax1.plot(frac05[0], frac05[1], 'yo', ms=8, alpha=0.7, label='bg_frac=0.5')
-    ax1.plot(frac06[0], frac06[1], 'co', ms=8, alpha=0.7, label='bg_frac=0.6')
-    ax1.plot(frac07[0], frac07[1], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
-    ax1.plot(frac08[0], frac08[1], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
-    ax1.plot(frac09[0], frac09[1], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
-    ax1.plot(frac10[0], frac10[1], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
-    xmin, xmax = ax1.get_xlim()
-    plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
-    ymin, ymax = ax1.get_ylim()
-    plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
-    #textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig3, mean3)
-    #ax1.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
-    # Shrink current axis by 10%
-    box = ax1.get_position()
-    ax1.set_position([box.x0, box.y0, box.width * 0.9, box.height])
-    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box   
-    ax2 = fig2.add_subplot(312)
-    ax2.set_xlabel('Radial offset in X: Centroid window=5')
-    ax2.set_ylabel('Radial offset in Y: Centroid window=5')
-    ax2.plot(frac00[2], frac00[3], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
-    ax2.plot(frac01[2], frac01[3], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
-    ax2.plot(frac02[2], frac02[3], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
-    ax2.plot(frac03[2], frac03[3], 'go', ms=5, alpha=0.7, label='bg_frac=0.3')
-    ax2.plot(frac04[2], frac04[3], 'ko', ms=8, alpha=0.7, label='bg_frac=0.4')
-    ax2.plot(frac05[2], frac05[3], 'yo', ms=8, alpha=0.7, label='bg_frac=0.5')
-    ax2.plot(frac06[2], frac06[3], 'co', ms=8, alpha=0.7, label='bg_frac=0.6')
-    ax2.plot(frac07[2], frac07[3], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
-    ax2.plot(frac08[2], frac08[3], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
-    ax2.plot(frac09[2], frac09[3], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
-    ax2.plot(frac10[2], frac10[3], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
-    xmin, xmax = ax2.get_xlim()
-    plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
-    ymin, ymax = ax2.get_ylim()
-    plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
-    #textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig5, mean5)
-    #ax2.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
-    textinfig = r'BG      $\sigma$3     $\sigma$5     $\sigma$7'
-    ax2.annotate(textinfig, xy=(1.02, 0.90), xycoords='axes fraction' )
-    sigx = 1.02
-    sigy = 0.9
-    for fbg, s3, s5, s7 in zip(frac_bgs, sig3, sig5, sig7):
-        line = ('{:<7} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, s3, s5, s7))
-        sigy -= 0.08
-        ax2.annotate(line, xy=(sigx, sigy), xycoords='axes fraction' )
-    # Shrink current axis by 10%
-    box = ax2.get_position()
-    ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
-    # put legend out of the plot box
-    #ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))            
-    ax3 = fig2.add_subplot(313)
-    ax3.set_xlabel('Radial offset in X: Centroid window=7')
-    ax3.set_ylabel('Radial offset in Y: Centroid window=7')
-    ax3.plot(frac00[4], frac00[5], 'bo', ms=8, alpha=0.7, label='bg_frac=0.0')
-    ax3.plot(frac01[4], frac01[5], 'ro', ms=8, alpha=0.7, label='bg_frac=0.1')
-    ax3.plot(frac02[4], frac02[5], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
-    ax3.plot(frac03[4], frac03[5], 'go', ms=5, alpha=0.7, label='bg_frac=0.3')
-    ax3.plot(frac04[4], frac04[5], 'ko', ms=8, alpha=0.7, label='bg_frac=0.4')
-    ax3.plot(frac05[4], frac05[5], 'yo', ms=8, alpha=0.7, label='bg_frac=0.5')
-    ax3.plot(frac06[4], frac06[5], 'co', ms=8, alpha=0.7, label='bg_frac=0.6')
-    ax3.plot(frac07[4], frac07[5], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
-    ax3.plot(frac08[4], frac08[5], 'r+', ms=8, alpha=0.7, label='bg_frac=0.8')
-    ax3.plot(frac09[4], frac09[5], 'm+', ms=5, alpha=0.7, label='bg_frac=0.9')
-    ax3.plot(frac10[4], frac10[5], 'k+', ms=5, alpha=0.7, label='bg_frac=1.0')
-    xmin, xmax = ax3.get_xlim()
-    plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
-    ymin, ymax = ax3.get_ylim()
-    plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
-    #textinfig = r'$\sigma$ = %0.2f    $\mu$ = %0.2f' % (sig7, mean7)
-    #ax3.annotate(textinfig, xy=(0.75, 0.05), xycoords='axes fraction' )
-    # Shrink current axis by 10%
-    textinfig = r'BG      $\mu$3     $\mu$5     $\mu$7'
-    ax3.annotate(textinfig, xy=(1.02, 0.90), xycoords='axes fraction' )
-    sigx = 1.02
-    sigy = 0.9
-    for fbg, m3, m5, m7 in zip(frac_bgs, mean3, mean5, mean7):
-        line = ('{:<7} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, m3, m5, m7))
-        sigy -= 0.08
-        ax3.annotate(line, xy=(sigx, sigy), xycoords='axes fraction' )
-    box = ax3.get_position()
-    ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
-    if save_plot:
-        destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots/XoffsetVsYoffset_frac_"+case+plot_type)
-        if redos:
-            destination = os.path.abspath("../PFforMaria/detector_"+str(detector)+"_plots_redo/XoffsetVsYoffset_frac"+case+"_redo"+plot_type)
-        fig2.savefig(destination)
-        print ("\n Plot saved: ", destination)
-    if show_plot:
-        plt.show()        
-    plt.close('all')
+    plot_title = case+"_BGfrac"
+    #destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_frac_"+case+plot_type)
+    destination = os.path.abspath("../plots4presentationIST/det491_Sene1_"+str(bg)+case+plot_type)
+    taf.plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, star_number, destination,
+                     save_plot=save_plot, show_plot=show_plot, xlims=None, ylims=None)
+    # Do zoom-in
+    if zoom_plot:
+        #destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_frac__zoomin_"+case+plot_type)
+        destination = os.path.abspath("../plots4presentationIST/det491_Scene1_zoomin_"+str(bg)+case+plot_type)
+        print (destination)
+        print (os.path.isdir("../plots4presentationIST"))
+        minvalue = -0.50
+        maxvalue = 0.50
+        xlims, ylims = [minvalue, maxvalue], [minvalue, maxvalue]
+        taf.plot_zoomin_frac(plot_title, frac_bgs, frac_data, star_number, destination,
+                             save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
 
 # Make the plot of magnitude (in x) versus radial offset distance (in y) for Scene2
 if "scene2" in case:

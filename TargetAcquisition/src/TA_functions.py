@@ -98,7 +98,7 @@ def bg_correction(img, bg_method=None, bg_value=None, bg_frac=None, debug=False)
         return img_bgcorr
 
 
-def centroid2fulldetector(cb_centroid_list, true_center):
+def centroid2fulldetector(cb_centroid_list, true_center, detector, perform_avgcorr=True):
     """
     Transform centroid coordinates into full detector coordinates.
     
@@ -106,6 +106,8 @@ def centroid2fulldetector(cb_centroid_list, true_center):
         cb_centroid_list           -- List, centroid window based centroid determined by TA algorithm in
                                       terms of 32 by 32 pixels for centroid window sizes 3, 5, and 7
         true_center                -- List, actual (true) position of star in terms of full detector
+        detector                   -- integer, either 491 or 492
+        perform_avgcorr            -- True or False, perform average Pierre's correction on measurements
     
     Returns:
         cb_centroid_list_fulldetector  -- List of centroid locations determined with the TA algorithm in
@@ -115,7 +117,7 @@ def centroid2fulldetector(cb_centroid_list, true_center):
         true_center32x32               -- List, true center given in coordinates of 32x32 pix
         differences_true_TA            -- List, difference of true-observed positions
     """
-        
+
     # Get the lower left corner coordinates in terms of full detector. We subtract 16.0 because indexing
     # from centroid function starts with 1
     corrected_x = true_center[0]
@@ -136,6 +138,10 @@ def centroid2fulldetector(cb_centroid_list, true_center):
         cb_centroid_list_fulldetector.append(centroid_fulldetector)
     corr_cb_centroid_list = cb_centroid_list_fulldetector
     
+    # Correct true centers for average value given by Pier
+    if perform_avgcorr:
+        corr_cb_centroid_list = do_Piers_correction(detector, corr_cb_centroid_list)
+
     # Determine difference between center locations
     differences_true_TA = []
     d3_x = true_center[0] - corr_cb_centroid_list[0][0]
@@ -279,7 +285,8 @@ def display_centroids(detector, st, case, psf, corr_true_center_centroid,
     if len(corr_cb_centroid_list) != 1:
         ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='CentroidWin=5')
         ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='CentroidWin=7')
-        ax.plot(corr_true_center_centroid[0], corr_true_center_centroid[1], marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
+        if corr_true_center_centroid != [0.0, 0.0]:   # plot only is center is defined
+            ax.plot(corr_true_center_centroid[0], corr_true_center_centroid[1], marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
     # Shrink current axis by 10%
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
@@ -290,33 +297,35 @@ def display_centroids(detector, st, case, psf, corr_true_center_centroid,
     else:
         plt.close('all')
     if savefile:
-        path4fig = "../PFforMaria/detector_"+str(detector)+"_centroid_figs"
-        if "scene1" in fig_title:
-            if "slow" in fig_title:
-                if "real" in fig_title:
-                    in_dir = "Scene1_slow_real"
-                else:
-                    in_dir = "Scene1_slow_nonoise"
-            elif "rapid" in fig_title:
-                if "real" in fig_title:
-                    in_dir = "Scene1_rapid_real"
-                else:
-                    in_dir = "Scene1_rapid_nonoise"
-        if "scene2" in fig_title:
-            if "slow" in fig_title:
-                if "real" in fig_title:
-                    in_dir = "Scene2_slow_real"
-                else:
-                    in_dir = "Scene2_slow_nonoise"
-            elif "rapid" in fig_title:
-                if "real" in fig_title:
-                    in_dir = "Scene2_rapid_real"
-                else:
-                    in_dir = "Scene2_rapid_nonoise"
         if fig_name is None:
+            # define the path for the simulated data
+            path4fig = "../PFforMaria/detector_"+str(detector)+"_centroid_figs"
+            if "scene1" in fig_title:
+                if "slow" in fig_title:
+                    if "real" in fig_title:
+                        in_dir = "Scene1_slow_real"
+                    else:
+                        in_dir = "Scene1_slow_nonoise"
+                elif "rapid" in fig_title:
+                    if "real" in fig_title:
+                        in_dir = "Scene1_rapid_real"
+                    else:
+                        in_dir = "Scene1_rapid_nonoise"
+            if "scene2" in fig_title:
+                if "slow" in fig_title:
+                    if "real" in fig_title:
+                        in_dir = "Scene2_slow_real"
+                    else:
+                        in_dir = "Scene2_slow_nonoise"
+                elif "rapid" in fig_title:
+                    if "real" in fig_title:
+                        in_dir = "Scene2_rapid_real"
+                    else:
+                        in_dir = "Scene2_rapid_nonoise"
             fig_name = path4fig+in_dir+"/"+fig_title+".jpg"
-        if redos:
-            fig_name = path4fig+"_redo/"+in_dir+"_redo/"+fig_title+"_redo.jpg"
+            if redos:
+                fig_name = path4fig+"_redo/"+in_dir+"_redo/"+fig_title+"_redo.jpg"
+        # if the name is defined then use it
         fig.savefig(fig_name)
         print ("Figure ", fig_name, " was saved!")
     
@@ -468,6 +477,8 @@ def find_centroid(fits_file, bg_corr_info, recursive_centroids_info, display_cen
     if display_master_img:
         m_img = readimage(master_img, backgnd_subtraction_method=None, bg_method=None,
                           bg_value=None, bg_frac=None, debug=False)
+    if true_center == [0.0, 0.0]:
+        true_center32x32 = [0.0, 0.0]
     display_centroids(detector, ff, case, psf, true_center32x32, cb_centroid_list_in32x32pix,
                          show_disp, vlim, savefile=save_centroid_disp, fig_name=fig_name, display_master_img=m_img)
     return x_centroids, y_centroids
@@ -497,6 +508,32 @@ def find_std(arr):
     std = (1.0 / N * sum(diff2meansq_list)) ** 0.5
     #print ('sigma = ', std, '    mean = ', mean)
     return std, mean
+
+
+def get_frac_stdevs(frac_data):
+    """
+    This function obtains the standard deviation and means for centroid winows 3, 5, and 7 in the case
+    of running a fractional background study.
+    Args:
+        frac_data: list of numpy arrays (corresponding to each fractional value)
+
+    Returns:
+        standard deviations and means
+    """
+    sig3, mean3 = [], []
+    sig5, mean5 = [], []
+    sig7, mean7 = [], []
+    for f in frac_data:
+        s3, m3 = find_std(f[1])
+        s5, m5 = find_std(f[3])
+        s7, m7 = find_std(f[5])
+        sig3.append(s3)
+        sig5.append(s5)
+        sig7.append(s7)
+        mean3.append(m3)
+        mean5.append(m5)
+        mean7.append(m7)
+    return sig3, mean3, sig5, mean5, sig7, mean7
 
 
 def get_mindiff(d1, d2, d3):
@@ -599,6 +636,319 @@ def Pier_correction(detector, XandYarr):
         corrected_y = XandYarr[1] + offset_492[1]
     corr_XandYarr = [corrected_x, corrected_y]
     return corr_XandYarr
+
+
+def plot_offsets(plot_title, offsets, sigmas, means, bench_star, destination,
+                 plot_type='.jpg', save_plot=False, show_plot=False, xlims=None, ylims=None):
+    """
+    This function plots the x and y-offsets in pixel space.
+    Args:
+        plot_title  -- string, plot title
+        offsets     -- numpy array of 6 columns corresponding to x and y of centroid windows 3, 5, and 7
+        sigmas      -- list, standard deviations in the y-direction for centroid windows 3, 5, and 7
+        means       -- list, means in the y-direction for centroid windows 3, 5, and 7
+        bench_star  -- list, star numbers being analyzed
+        destination -- string, path to save the figure
+        plot_type   -- string, type of image to be saved (jpg has best resolution)
+        save_plot   -- True or False, save the plot in given destination
+        show_plot   -- True or False, display the plot on screen
+        xlims       -- list, min and max x-axis values for plot
+        ylims       -- list, min and max y-axis values for plot
+
+    Returns:
+        Statement that plot has been saved or nothing.
+    """
+    fig1 = plt.figure(1, figsize=(12, 10))
+    ax1 = fig1.add_subplot(111)
+    plt.title(plot_title)
+    plt.xlabel('Radial offset in X')
+    plt.ylabel('Radial offset in Y')
+    plt.plot(offsets[0], offsets[1], 'b^', ms=8, alpha=0.7, label='Centroid window=3')
+    plt.plot(offsets[2], offsets[1], 'go', ms=8, alpha=0.7, label='Centroid window=5')
+    plt.plot(offsets[4], offsets[1], 'r*', ms=10, alpha=0.7, label='Centroid window=7')
+    if xlims is None:
+        xmin, xmax = ax1.get_xlim()
+    else:
+        xmin, xmax = xlims[0], xlims[1]
+        plt.xlim(xmin, xmax)
+    plt.hlines(0.0, xmin, xmax*2, colors='k', linestyles='dashed')
+    if ylims is None:
+        ymin, ymax = ax1.get_ylim()
+    else:
+        ymin, ymax = ylims[0], ylims[1]
+        plt.ylim(ymin, ymax)
+    plt.vlines(0.0, ymin, ymax*2, colors='k', linestyles='dashed')
+    # Shrink current axis by 10%
+    box = ax1.get_position()
+    ax1.set_position([box.x0, box.y0, box.width * 0.85, box.height])
+    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
+    sig3, sig5, sig7 = sigmas
+    mean3, mean5, mean7 = means
+    textinfig3 = r'$\sigma3$ = %0.2f    $\mu3$ = %0.2f' % (sig3, mean3)
+    textinfig5 = r'$\sigma5$ = %0.2f    $\mu5$ = %0.2f' % (sig5, mean5)
+    textinfig7 = r'$\sigma7$ = %0.2f    $\mu7$ = %0.2f' % (sig7, mean7)
+    ax1.annotate(textinfig3, xy=(1.02, 0.35), xycoords='axes fraction' )
+    ax1.annotate(textinfig5, xy=(1.02, 0.32), xycoords='axes fraction' )
+    ax1.annotate(textinfig7, xy=(1.02, 0.29), xycoords='axes fraction' )
+    for si,xi,yi in zip(bench_star, offsets[0], offsets[1]):
+        if yi>=1.0 or yi<=-1.0 or xi>=1.0 or xi<=-1.0:
+            si = int(si)
+            subxcoord = 5
+            subycoord = 0
+            side = 'left'
+            plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+    if save_plot:
+        fig1.savefig(destination)
+        print ("\n Plot saved: ", destination)
+    if show_plot:
+        plt.show()
+    else:
+        plt.close('all')
+
+
+def plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, bench_star, destination,
+                        save_plot=False, show_plot=False, xlims=None, ylims=None):
+    """
+    This function plots the x and y-offsets in pixel space for fractional background case.
+    Args:
+        plot_title  -- string, plot title
+        frac_bgs    -- list, fractional backgrounds to be plotted
+        frac_data   -- list of lists, each containing x and y of centroid windows 3, 5, and 7
+        sigmas      -- list, standard deviations in the y-direction for centroid windows 3, 5, and 7
+        means       -- list, means in the y-direction for centroid windows 3, 5, and 7
+        bench_star  -- list, star numbers being analyzed
+        destination -- string, path to save the figure
+        save_plot   -- True or False, save the plot in given destination
+        show_plot   -- True or False, display the plot on screen
+        xlims       -- list, min and max x-axis values for plot
+        ylims       -- list, min and max y-axis values for plot
+
+    Returns:
+        Statement that plot has been saved or nothing.
+    """
+    # unfold variables
+    frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = frac_data
+    sig3, sig5, sig7 = sigmas
+    mean3, mean5, mean7 = means
+    # crate the plot for centroid window 3
+    fig2 = plt.figure(1, figsize=(12, 10))
+    fig2.subplots_adjust(hspace=0.30)
+    ax1 = fig2.add_subplot(311)
+    ax1.set_title(plot_title)
+    ax1.set_xlabel('Radial offset in X: Centroid window=3')
+    ax1.set_ylabel('Radial offset in Y: Centroid window=3')
+    ax1.plot(frac00[0], frac00[1], 'bo', ms=6, alpha=0.7, label='bg_frac=0.0')
+    ax1.plot(frac01[0], frac01[1], 'g^', ms=8, alpha=0.7, label='bg_frac=0.1')
+    ax1.plot(frac02[0], frac02[1], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
+    ax1.plot(frac03[0], frac03[1], 'r*', ms=10, alpha=0.7, label='bg_frac=0.3')
+    ax1.plot(frac04[0], frac04[1], 'ks', ms=6, alpha=0.7, label='bg_frac=0.4')
+    ax1.plot(frac05[0], frac05[1], 'y<', ms=8, alpha=0.7, label='bg_frac=0.5')
+    ax1.plot(frac06[0], frac06[1], 'c>', ms=8, alpha=0.7, label='bg_frac=0.6')
+    ax1.plot(frac07[0], frac07[1], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
+    ax1.plot(frac08[0], frac08[1], 'rd', ms=8, alpha=0.7, label='bg_frac=0.8')
+    ax1.plot(frac09[0], frac09[1], 'm*', ms=5, alpha=0.7, label='bg_frac=0.9')
+    ax1.plot(frac10[0], frac10[1], 'kx', ms=5, alpha=0.7, label='bg_frac=1.0')
+    if xlims is None:
+        xmin, xmax = ax1.get_xlim()
+    else:
+        xmin, xmax = xlims[0], xlims[1]
+    plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+    if ylims is None:
+        ymin, ymax = ax1.get_ylim()
+    else:
+        ymin, ymax = ylims[0], ylims[1]
+    plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
+    plt.xlim(xmin, xmax)
+    plt.ylim(ymin, ymax)
+    for si,xi,yi in zip(bench_star, frac00[0], frac00[1]):
+        if yi>=1.0 or yi<=-1.0 or xi>=1.0 or xi<=-1.0:
+            si = int(si)
+            subxcoord = 5
+            subycoord = 0
+            side = 'left'
+            plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+    # Shrink current axis by 10%
+    box = ax1.get_position()
+    ax1.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
+    # crate the plot for centroid window 5
+    ax2 = fig2.add_subplot(312)
+    ax2.set_xlabel('Radial offset in X: Centroid window=5')
+    ax2.set_ylabel('Radial offset in Y: Centroid window=5')
+    ax2.plot(frac00[2], frac00[3], 'bo', ms=6, alpha=0.7, label='bg_frac=0.0')
+    ax2.plot(frac01[2], frac01[3], 'g^', ms=8, alpha=0.7, label='bg_frac=0.1')
+    ax2.plot(frac02[2], frac02[3], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
+    ax2.plot(frac03[2], frac03[3], 'r*', ms=10, alpha=0.7, label='bg_frac=0.3')
+    ax2.plot(frac04[2], frac04[3], 'ks', ms=6, alpha=0.7, label='bg_frac=0.4')
+    ax2.plot(frac05[2], frac05[3], 'y<', ms=8, alpha=0.7, label='bg_frac=0.5')
+    ax2.plot(frac06[2], frac06[3], 'c>', ms=8, alpha=0.7, label='bg_frac=0.6')
+    ax2.plot(frac07[2], frac07[3], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
+    ax2.plot(frac08[2], frac08[3], 'rd', ms=8, alpha=0.7, label='bg_frac=0.8')
+    ax2.plot(frac09[2], frac09[3], 'm*', ms=5, alpha=0.7, label='bg_frac=0.9')
+    ax2.plot(frac10[2], frac10[3], 'kx', ms=5, alpha=0.7, label='bg_frac=1.0')
+    plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+    plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
+    plt.xlim(xmin, xmax)
+    plt.ylim(ymin, ymax)
+    textinfig = r'BG      $\sigma$3     $\sigma$5     $\sigma$7'
+    ax2.annotate(textinfig, xy=(1.02, 0.90), xycoords='axes fraction' )
+    sigx = 1.02
+    sigy = 0.9
+    for fbg, s3, s5, s7 in zip(frac_bgs, sig3, sig5, sig7):
+        line = ('{:<7} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, s3, s5, s7))
+        sigy -= 0.08
+        ax2.annotate(line, xy=(sigx, sigy), xycoords='axes fraction' )
+    for si,xi,yi in zip(bench_star, frac00[0], frac00[1]):
+        if yi>=1.0 or yi<=-1.0 or xi>=1.0 or xi<=-1.0:
+            si = int(si)
+            subxcoord = 5
+            subycoord = 0
+            side = 'left'
+            plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+    # Shrink current axis by 10%
+    box = ax2.get_position()
+    ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    # crate the plot for centroid window 7
+    ax3 = fig2.add_subplot(313)
+    ax3.set_xlabel('Radial offset in X: Centroid window=7')
+    ax3.set_ylabel('Radial offset in Y: Centroid window=7')
+    ax3.plot(frac00[4], frac00[5], 'bo', ms=6, alpha=0.7, label='bg_frac=0.0')
+    ax3.plot(frac01[4], frac01[5], 'g^', ms=8, alpha=0.7, label='bg_frac=0.1')
+    ax3.plot(frac02[4], frac02[5], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
+    ax3.plot(frac03[4], frac03[5], 'r*', ms=10, alpha=0.7, label='bg_frac=0.3')
+    ax3.plot(frac04[4], frac04[5], 'ks', ms=6, alpha=0.7, label='bg_frac=0.4')
+    ax3.plot(frac05[4], frac05[5], 'y<', ms=8, alpha=0.7, label='bg_frac=0.5')
+    ax3.plot(frac06[4], frac06[5], 'c>', ms=8, alpha=0.7, label='bg_frac=0.6')
+    ax3.plot(frac07[4], frac07[5], 'b+', ms=10, alpha=0.7, label='bg_frac=0.7')
+    ax3.plot(frac08[4], frac08[5], 'rd', ms=8, alpha=0.7, label='bg_frac=0.8')
+    ax3.plot(frac09[4], frac09[5], 'm*', ms=5, alpha=0.7, label='bg_frac=0.9')
+    ax3.plot(frac10[4], frac10[5], 'kx', ms=5, alpha=0.7, label='bg_frac=1.0')
+    plt.hlines(0.0, xmin, xmax, colors='k', linestyles='dashed')
+    plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
+    plt.xlim(xmin, xmax)
+    plt.ylim(ymin, ymax)
+    for si,xi,yi in zip(bench_star, frac00[0], frac00[1]):
+        if yi>=1.0 or yi<=-1.0 or xi>=1.0 or xi<=-1.0:
+            si = int(si)
+            subxcoord = 5
+            subycoord = 0
+            side = 'left'
+            plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+    # Shrink current axis by 10%
+    textinfig = r'BG      $\mu$3     $\mu$5     $\mu$7'
+    ax3.annotate(textinfig, xy=(1.02, 0.90), xycoords='axes fraction' )
+    sigx = 1.02
+    sigy = 0.9
+    for fbg, m3, m5, m7 in zip(frac_bgs, mean3, mean5, mean7):
+        line = ('{:<7} {:<6.2f} {:<6.2f} {:<6.2f}'.format(fbg, m3, m5, m7))
+        sigy -= 0.08
+        ax3.annotate(line, xy=(sigx, sigy), xycoords='axes fraction' )
+    box = ax3.get_position()
+    ax3.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    if save_plot:
+        fig2.savefig(destination)
+        print ("\n Plot saved: ", destination)
+    if show_plot:
+        plt.show()
+    else:
+        plt.close('all')
+
+
+def plot_zoomin(plot_title, offsets_list, bench_star, destination,
+                plot_type='.jpg', save_plot=False, show_plot=False, xlims=[-1., 1.], ylims=[-1., 1.]):
+    """
+    This function plots a zoom-in region of the offsets, keeping only 'good' stars.
+    Args:
+        bench_star   -- list, star numbers being analyzed
+        offsets_list -- list 6 columns corresponding to x and y of centroid windows 3, 5, and 7
+        plot_title   -- string, plot title
+        destination  -- string, path to save the figure
+        plot_type    -- string, type of image to be saved (jpg has best resolution)
+        save_plot    -- True or False, save the plot in given destination
+        show_plot    -- True or False, display the plot on screen
+        xlims        -- list, min and max x-axis values for plot
+        ylims        -- list, min and max y-axis values for plot
+
+    Returns:
+        Statement that plot has been saved or nothing.
+
+    """
+    # Copy all stars and offsets in order to remove 'bad' stars
+    good_stars_only = copy.deepcopy(bench_star.tolist())
+    good_offsets_list = copy.deepcopy(offsets_list)
+    for i, s in enumerate(bench_star):
+        if offsets_list[0][i]>=1.1 or offsets_list[0][i]<=-1.1 or offsets_list[1][i]>=1.1 or offsets_list[1][i]<=-1.1:
+            idx2remove = good_stars_only.index(s)
+            # items must be removed from all columns at the same time to avoid removing wrong item
+            good_stars_only.pop(idx2remove)
+            good_offsets_list[0].pop(idx2remove)
+            good_offsets_list[1].pop(idx2remove)
+            good_offsets_list[2].pop(idx2remove)
+            good_offsets_list[3].pop(idx2remove)
+            good_offsets_list[4].pop(idx2remove)
+            good_offsets_list[5].pop(idx2remove)
+    good_offsets = np.array(good_offsets_list)
+    sig3, mean3 = find_std(good_offsets[1])
+    sig5, mean5 = find_std(good_offsets[3])
+    sig7, mean7 = find_std(good_offsets[5])
+    sigmas = [sig3, sig5, sig7]
+    means = [mean3, mean5, mean7]
+    plot_title = plot_title+'_zoomin'
+    plot_offsets(plot_title, good_offsets, sigmas, means, good_offsets_list, destination,
+                 plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
+
+
+def plot_zoomin_frac(plot_title, frac_bgs, frac_data, bench_star, destination,
+                save_plot=False, show_plot=False, xlims=[-1., 1.], ylims=[-1., 1.]):
+    """
+    This function plots zoom-in of the x and y-offsets in pixel space for fractional background case.
+    Args:
+        plot_title  -- string, plot title
+        frac_bgs    -- list, fractional backgrounds to be plotted
+        frac_data   -- list of lists, each containing x and y of centroid windows 3, 5, and 7
+        bench_star  -- list, star numbers being analyzed
+        destination -- string, path to save the figure
+        save_plot   -- True or False, save the plot in given destination
+        show_plot   -- True or False, display the plot on screen
+        xlims       -- list, min and max x-axis values for plot
+        ylims       -- list, min and max y-axis values for plot
+
+    Returns:
+        Statement that plot has been saved or nothing.
+    """
+
+    frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10 = frac_data
+    frac00 = frac00.tolist()
+    frac01 = frac01.tolist()
+    frac02 = frac02.tolist()
+    frac03 = frac03.tolist()
+    frac04 = frac04.tolist()
+    frac05 = frac05.tolist()
+    frac06 = frac06.tolist()
+    frac07 = frac07.tolist()
+    frac08 = frac08.tolist()
+    frac09 = frac09.tolist()
+    frac10 = frac10.tolist()
+    frac_data = [frac00, frac01, frac02, frac03, frac04, frac05, frac06, frac07, frac08, frac09, frac10]
+    # Copy all stars and offsets in order to remove 'bad' stars
+    good_stars_only = copy.deepcopy(bench_star.tolist())
+    idx2remove_list = []
+    for i, s in enumerate(bench_star):
+        if frac03[0][i]>=1.1 or frac03[0][i]<=-1.1 or frac03[1][i]>=1.1 or frac03[1][i]<=-1.1:
+            idx2remove = good_stars_only.index(s)
+            good_stars_only.pop(idx2remove)
+            idx2remove_list.append(idx2remove)
+    for idx in idx2remove_list:
+        for j, _ in enumerate(frac_data):
+            frac_data[j][0].pop(idx)
+            frac_data[j][1].pop(idx)
+    sig3, mean3, sig5, mean5, sig7, mean7 = get_frac_stdevs(frac_data)
+    sigmas = [sig3, sig5, sig7]
+    means = [mean3, mean5, mean7]
+    plot_title = plot_title+'_zoomin'
+    frac_bgs = ['0.0', '0.1', '0.2', '0.3', '0.4', '0.5' ,'0.6' ,'0.7', '0.8', '0.9', '1.0']
+    plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, bench_star, destination,
+                     save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
 
 
 def print_file_lines(output_file, save_text_file, xwidth_list, ff, background2use,
