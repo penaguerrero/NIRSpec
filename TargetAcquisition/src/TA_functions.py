@@ -1834,7 +1834,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     Tstdev_V3_7, Tmean_V3_7 = find_std(T_diffV3_7)
     Tbench_V2, Tbench_V3 = np.array(Tbench_V2_list), np.array(Tbench_V3_list)
     # get the minimum of the differences
-    T_min_diff, T_counter = get_mindiff(T_diffV2_3, T_diffV2_5, T_diffV2_7)
+    T_min_diffV2, T_counterV2 = get_mindiff(T_diffV2_3, T_diffV2_5, T_diffV2_7)
+    T_min_diffV3, T_counterV3 = get_mindiff(T_diffV3_3, T_diffV3_5, T_diffV3_7)
+    T_min_diff, T_counter = [T_min_diffV2, T_min_diffV3], [T_counterV2, T_counterV3]
     # calculate least squares but first convert to MSA center
     T_V2_3, T_V3_3, Tbench_V2, Tbench_V3 = convert2MSAcenter(T_V2_3, T_V3_3, Tbench_V2, Tbench_V3)
     T_V2_5, T_V3_5, _, _ = convert2MSAcenter(T_V2_5, T_V3_5, Tbench_V2, Tbench_V3)
@@ -1898,6 +1900,8 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     Tstdev_V2_3, Tstdev_V3_3, Tstdev_V2_5, Tstdev_V3_5, Tstdev_V2_7, Tstdev_V3_7 = Tstdev_Vs
     Tmean_V2_3, Tmean_V3_3, Tmean_V2_5, Tmean_V3_5, Tmean_V2_7, Tmean_V3_7 = Tmean_Vs
     T_min_diff, T_counter = T_diff_counter
+    T_min_diffV2, T_min_diffV3 = T_min_diff
+    T_counterV2, T_counterV3 = T_counter
     TLSlines2print_3, TLSlines2print_5, TLSlines2print_7 = TLSlines2print
     Tlines2print_3, Tlines2print_5, Tlines2print_7 = Tlines2print
     Tbench_V2_list, Tbench_V3_list = Tbench_Vs_list
@@ -1944,12 +1948,13 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     line3bisAf = "   centroid window 5: {} ".format(Nsig_rej_elements_5)
     line3bisAg = "   centroid window 7: {} ".format(Nsig_rej_elements_7)
     # Print number of repetitions to find best centroid window
-    line3bisB = "\n *** Repetitions Diffs: {}".format(T_counter)
+    line3bisBa = "\n *** Repetitions Diffs V2: {}".format(T_counterV2)
+    line3bisBb = " *** Repetitions Diffs V3: {}".format(T_counterV3)
     line4 = "{:<5} {:<20} {:<40} {:<40} {:<38} {:<28} {:<7}".format(
-                    "Star", "BG_value", "Pos_centroid_win_3", "Pos_centroid_win_5", "Poscentroid_win_7",
+                    "Star", "BG_value", "Pos_centroid_win_3", "Pos_centroid_win_5", "Pos_centroid_win_7",
                     "True_Pos", "MinDiff")
-    line5 = "{:>10} {:>15} {:>17} {:>22} {:>17} {:>22} {:>22} {:>17} {:>17}".format(background_method,
-                    "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3")
+    line5 = "{:>10} {:>15} {:>17} {:>22} {:>17} {:>22} {:>22} {:>17} {:>17} {:>12} {:>3}".format(background_method,
+                    "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3")
     print (line0)
     print (line0bis)
     print (line1)
@@ -1968,7 +1973,8 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     print (line3bisAe)
     print (line3bisAf)
     print (line3bisAg)
-    print (line3bisB)
+    print (line3bisBa)
+    print (line3bisBb)
     print (line4)
     print (line5)
     if save_text_file:
@@ -2013,17 +2019,18 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
         to.write(" Centroid window 7:  \n")
         for line2print in Tlines2print_7:
             to.write(line2print+"\n")
-        to.write(line3bisB+"\n")
+        to.write(line3bisBa+"\n")
+        to.write(line3bisBb+"\n")
         to.write(line4+"\n")
         to.write(line5+"\n")
     j = 0
     for i, _ in enumerate(T_V2_3):
         st = int(stars_sample[j])
-        line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>17}  {:<17}  {:>5}".format(
+        line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>17}  {:<17}  {:>5} {:>3}".format(
                     st, background2use,
                     T_V2_3[i], T_V3_3[i], T_V2_5[i], T_V3_5[i], T_V2_7[i], T_V3_7[i],
                     Tbench_V2_list[i], Tbench_V3_list[i],
-                    T_min_diff[i])
+                    T_min_diffV2[i], T_min_diffV3[i])
         print (line6)
         if save_text_file:
             to.write(line6+"\n")

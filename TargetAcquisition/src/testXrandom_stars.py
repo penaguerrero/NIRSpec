@@ -7,7 +7,8 @@ import time
 import random
 
 # other code
-import TA_functions as TAf 
+import TA_functions as TAf
+import v2v3plots
 
 print("Modules correctly imported! \n")
 
@@ -64,10 +65,10 @@ OUTPUT:
 output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
 save_text_file = False             # Want to save the text file of comparison? True or False
 save_centroid_disp = False         # Save the display with measured and true positions?
-keep_bad_stars = True              # Keep the bad stars in the sample? True or False
+keep_bad_stars = False              # Keep the bad stars in the sample? True or False
 stars_in_sample = 20               # Number of stars in sample
-scene = 2                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
-background_method = "frac"         # Select either 'fractional', 'fixed', or None   
+scene = 1                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
+background_method = 'frac'         # Select either 'fractional', 'fixed', or None
 background2use = 0.3               # Background to use for analysis: None or float
 shutters = "rapid"                 # Shutter velocity, string: "rapid" or "slow"
 noise = "real"                     # Noise level, string: "nonoise" or "real"
@@ -98,11 +99,11 @@ backgnd_subtraction_method = 1     # 1    = Do background subtraction on final i
 #                                    2    = Do background subtraction on 3-2 and 2-1 individually
 #                                    None = Do not subtract background
 
-random_sample = True               # choose a random sample of stars from either detector: True or False
+random_sample = False               # choose a random sample of stars from either detector: True or False
 # control samples to be used when random is set to False
-stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
+#stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
 # OLNY detector 491
-#stars_sample = [101, 105, 108, 109, 111, 113, 114, 133, 136, 147, 150, 157, 158, 161, 181, 184, 185, 186, 194, 199]
+stars_sample = [101, 105, 108, 109, 111, 113, 114, 133, 136, 147, 150, 157, 158, 161, 181, 184, 185, 186, 194, 199]
 #stars_sample = [101, 104, 105, 112, 117, 118, 133, 135, 136, 140, 145, 151, 152, 157, 159, 161, 174, 178, 184, 200]   
 # ONLY detector 492
 #stars_sample = [8, 11, 19, 24, 30, 37, 39, 41, 48, 51, 55, 65, 73, 85, 87, 88, 90, 91, 93, 98]
@@ -486,6 +487,7 @@ if test2perform == "T1":
     Tbench_Vs_list = [T1bench_V2_list, T1bench_V3_list]
     T_Vs = [T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7]
     T_diffVs = [T1_diffV2_3, T1_diffV3_3, T1_diffV2_5, T1_diffV3_5, T1_diffV2_7, T1_diffV3_7]
+    LS_res = [T1LSsigmas_3, T1LSsigmas_5, T1LSsigmas_7, T1LSdeltas_3, T1LSdeltas_5, T1LSdeltas_7]
 
 if test2perform == "T2":
     Tstdev_Vs = [T2stdev_V2_3, T2stdev_V3_3, T2stdev_V2_5, T2stdev_V3_5, T2stdev_V2_7, T2stdev_V3_7]
@@ -496,6 +498,7 @@ if test2perform == "T2":
     Tbench_Vs_list = [T2bench_V2_list, T2bench_V3_list]
     T_Vs = [T2_V2_3, T2_V3_3, T2_V2_5, T2_V3_5, T2_V2_7, T2_V3_7]
     T_diffVs = [T2_diffV2_3, T2_diffV3_3, T2_diffV2_5, T2_diffV3_5, T2_diffV2_7, T2_diffV3_7]
+    LS_res = [T2LSsigmas_3, T2LSsigmas_5, T2LSsigmas_7, T2LSdeltas_3, T2LSdeltas_5, T2LSdeltas_7]
 
 if test2perform == "T3":
     Tstdev_Vs = [T3stdev_V2_3, T3stdev_V3_3, T3stdev_V2_5, T3stdev_V3_5, T3stdev_V2_7, T3stdev_V3_7]
@@ -506,11 +509,20 @@ if test2perform == "T3":
     Tbench_Vs_list = [T3bench_V2_list, T3bench_V3_list]
     T_Vs = [T3_V2_3, T3_V3_3, T3_V2_5, T3_V3_5, T3_V2_7, T3_V3_7]
     T_diffVs = [T3_diffV2_3, T3_diffV3_3, T3_diffV2_5, T3_diffV3_5, T3_diffV2_7, T3_diffV3_7]
+    LS_res = [T3LSsigmas_3, T3LSsigmas_5, T3LSsigmas_7, T3LSdeltas_3, T3LSdeltas_5, T3LSdeltas_7]
 
 
 TAf.printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_Vs, Tmean_Vs, T_diff_counter,
               save_text_file, TLSlines2print, Tlines2print, Tbench_Vs_list, T_Vs, T_diffVs,
               rejected_elementsLS, rejected_eleNsig, background_method, background2use, path4results)
+
+
+# calculate true standard deviation and mean for plot
+#benchSigmaV2, benchMeanV2 = TAf.find_std(np.array(Tbench_Vs_list[0]))
+#benchSigmaV3, benchMeanV3 = TAf.find_std(np.array(Tbench_Vs_list[1]))
+#bench_stat_results = [benchMeanV2, benchSigmaV2, benchMeanV3, benchSigmaV3]
+v2v3plots.make_v2v3plots(case, T_diffVs, LS_res,
+                         save_plot=False, show_plot=True, destination=None)
 
 
 print ("\n Script 'testXrandom_stars.py' finished! Took  %s  seconds to finish. \n" % (time.time() - start_time))
