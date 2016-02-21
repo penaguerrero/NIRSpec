@@ -12,13 +12,14 @@ This script can transform from sky to detector coordinates (backward direction),
 detector to sky (forward direction).
 
 Keyword arguments:
-    transf_direction   -- Direction of transformation, string: forward or backward
-    detector           -- Which detector are we working with, integer: 491 or 492
-    filter_input       -- Filter being used, string: F140X, CLEAR, or F110W
-    x_input            -- Depending on transform direction, float: either X or V2 centroid
-    y_input            -- Depending on transform direction, float: either X or V2 centroid
-    tilt               -- Use tilt: True or False
-    debug            -- Print diagnostics to screen: True or False
+    transf_direction  -- Direction of transformation, string: forward or backward
+    detector          -- Which detector are we working with, integer: 491 or 492
+    filter_input      -- Filter being used, string: F140X, CLEAR, or F110W
+    x_input           -- Depending on transform direction, float: either X or V2 centroid
+    y_input           -- Depending on transform direction, float: either X or V2 centroid
+    tilt              -- Use tilt: True or False
+    arcsecs           -- Units of V2 and V3, either arcsecs (=True) or degrees (=False)
+    debug             -- Print diagnostics to screen: True or False
 
 Output(s):
     x_out = transformed X position
@@ -26,7 +27,7 @@ Output(s):
 
 Example usage:
     import coords_transform as ct
-    x_out, y_out = ct.coords_transf(transf_direction, detector, filter_input, x_input, y_input, tilt, debug)
+    x_out, y_out = ct.coords_transf(transf_direction, detector, filter_input, x_input, y_input, tilt, arcsecs, debug)
 
 
 *** Testing suite of the script at the bottom
@@ -40,11 +41,14 @@ Example usage:
 ###########################################################################################################
 
 
-def coords_transf(transf_direction, detector, filter_input, x_input, y_input, tilt=False, debug=False):
+def coords_transf(transf_direction, detector, filter_input, x_input, y_input, tilt=False, arcsecs=False, debug=False):
     if transf_direction == "forward":
         x_out, y_out = ct_forward(transf_direction, detector, filter_input, x_input, y_input, tilt, debug)
     elif transf_direction == "backward":
         x_out, y_out = ct_backward(transf_direction, detector, filter_input, x_input, y_input, tilt, debug)
+    if arcsecs:
+        x_out = x_out * 3600.
+        y_out = y_out * 3600.
     return x_out, y_out
  
     

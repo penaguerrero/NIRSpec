@@ -37,14 +37,28 @@ Example usage:
 
 """
 
-def ls_fit_iter(niter, xt, yt, x, y):
+def ls_fit_iter(niter, xt, yt, x, y, Nsigma, arcsec=True):
     """
-    Inputs:  niter  = number of max iterations
-             xt     = input measured x-centroid converted to V2
-             yt     = input measured y-centroid converted to V3
-             x      = numpy array of true V2 positions
-             y      = numpy array of true V3 positions
-    """  
+    This funciton finds the standard deviation and mean from all points, then subtracts that mean from
+    each point and compares it with the true values to reject all the points that are Nsigma away. It
+    iterates until no more points are being rejected.
+    Args:
+         niter  = number of max iterations
+         xt     = input measured x-centroid converted to V2
+         yt     = input measured y-centroid converted to V3
+         x      = numpy array of true V2 positions
+         y      = numpy array of true V3 positions
+         Nsigma = sigma limit to reject stars
+         arcsec = True or False, give delta theta in arcsecs?
+    Returns:
+        deltas, sigmas, lines2print, rejected_elements_idx
+        deltas = list of means for x, y, and theta
+        sigmas = list of standard deviations for x, y, and theta
+        lines2print = list of lines to pretty print results on screen and/or in a file
+        rejected_elements_idx = list of the index of the rejected points
+        nit = integer, number of iterations
+    """
+
     # do up to niter iterations of sigma-clipping (first time through is 
     # initial calculation, then up to niter iterations)
     original_elements = len(x)
@@ -89,7 +103,13 @@ def ls_fit_iter(niter, xt, yt, x, y):
 
         # outputs:  delta_x, delta_y, delta_theta, sigma_x, sigma_y, sigma_theta
         line1 = '(least_squares_iterate):  iteration number: {}'.format(nit)
-        line2 = '(least_squares_iterate):  delta_x = {}   delta_y = {}   delta_theta = {}'.format(delta_x, delta_y, delta_theta*(180.0/np.pi)*3600.0)
+        if arcsec:
+            delta_theta = delta_theta * (180.0/np.pi) * 3600.0
+            line2 = '(least_squares_iterate):  delta_x = {}   delta_y = {}   delta_theta = {} arcsec'.format(delta_x, delta_y,
+                                                                                                            delta_theta)
+        else:
+            line2 = '(least_squares_iterate):  delta_x = {}   delta_y = {}   delta_theta = {} radians'.format(delta_x, delta_y,
+                                                                                                             delta_theta)
         deltas = [delta_x, delta_y, delta_theta]
         
         # verify this coding for sigma_xtrue and sigma_ytrue
@@ -119,8 +139,9 @@ def ls_fit_iter(niter, xt, yt, x, y):
         # reject any residuals that are not within 3*sigma in EITHER coordinate
         # (this is slightly more restrictive than doing this for the vector sum, 
         # but easier to implement right now)
-        thres_x = 3.0*sigma_x
-        thres_y = 3.0*sigma_y
+        #Nsigma = 2.0
+        thres_x = Nsigma*sigma_x
+        thres_y = Nsigma*sigma_y
         var_clip = xdiff[(np.where((np.abs(xdiff)<=thres_x) & (np.abs(ydiff)<=thres_y)))]
         xcentroids_new = xt[(np.where((np.abs(xdiff)<=thres_x) & (np.abs(ydiff)<=thres_y)))]
         ycentroids_new = yt[(np.where((np.abs(xdiff)<=thres_x) & (np.abs(ydiff)<=thres_y)))]
@@ -161,7 +182,7 @@ def ls_fit_iter(niter, xt, yt, x, y):
             #print("len(original_true_centroids): ", len(original_true_centroids), "   appending index: ", i)
             #raw_input()
     
-    return deltas, sigmas, lines2print, rejected_elements_idx
+    return deltas, sigmas, lines2print, rejected_elements_idx, nit
     
     # Still do not know how to do delta_theta sigma  -- is this calculation needed?
 
@@ -171,7 +192,7 @@ if __name__ == '__main__':
     # Print diagnostic load message
     print("(least_squares_iterate): Least squares iteration algorithm Version {} loaded!".format(__version__))
 
-    testing = False
+    testing = True
     if testing:
         # Set test values  for arrays
         n = 10            # max number of iterations
@@ -179,13 +200,14 @@ if __name__ == '__main__':
         ytrue = np.array(range(1, 11))  # true y-coordinate of each reference star: from 1 to 10
         xinput = xtrue + 0.02     # measured centroid x-coordinate of each reference star
         yinput = ytrue + 0.01     # measured centroid y-coordinate of each reference star
-        deltas, sigmas, _, _ = ls_fit_iter(n, xinput, yinput, xtrue, ytrue)
+        Nsigma = 3.0
+        deltas, sigmas, _, _, _ = ls_fit_iter(n, xinput, yinput, xtrue, ytrue, Nsigma)
         """
         With these parameters output should be:
             (least_squares_iterate): Least squares iteration algorithm Version 1.0 loaded!
             (least_squares_iterate):  elements_left=10 out of original_elements=10
             (least_squares_iterate):  iteration number: 0
-            (least_squares_iterate):  delta_x = -0.02   delta_y = -0.01   delta_theta = -0.00667878787879
+            (least_squares_iterate):  delta_x = -0.02   delta_y = -0.01   delta_theta = -0.00667878787879 radians
             (least_squares_iterate):  sigma_x = 4.564982887e-15   sigma_y = 3.69348008392e-15   sigma_theta = -999.0
         """
     

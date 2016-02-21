@@ -32,7 +32,7 @@ results are located at the end of this file.
 
 # FUNCTIONS AUXILIARY TO JWST CENTROID ALGORITHM
 
-def bg_correction(img, bg_method=None, bg_value=None, bg_frac=None, debug=False):
+def bg_correction(img, bg_method=None, bg_value=None, bg_frac=None, verbose=True, debug=False):
     """
     Subtract a background value from every pixel in the image, based on
     the background method (None, Fixed, or Fraction):
@@ -68,7 +68,7 @@ def bg_correction(img, bg_method=None, bg_value=None, bg_frac=None, debug=False)
     elif "fix" in bg_method:
         # Check that bg_value is defined
         if bg_value is None:
-            print ("ERROR - Background_method set to 'fixed': bg_value needs to be a float number, got None.")
+            print ("(bg_correction): ERROR - Background_method set to 'fixed': bg_value needs to be a float number, got None.")
             exit()
         master_img_bgcorr = img - bg_value
         return master_img_bgcorr
@@ -76,7 +76,7 @@ def bg_correction(img, bg_method=None, bg_value=None, bg_frac=None, debug=False)
     elif "frac" in bg_method:
         # Check that bg_value is defined
         if bg_frac is None:
-            print ("ERROR - Background_method set to 'fractional': bg_frac needs to be a float number, got None.")
+            print ("(bg_correction): ERROR - Background_method set to 'fractional': bg_frac needs to be a float number, got None.")
             exit()
         # Find the pixel value (bg) that represents that fraction of the population
         img_original = copy.deepcopy(img)
@@ -161,7 +161,7 @@ def centroid2fulldetector(cb_centroid_list, true_center, detector, perform_avgco
     return corr_cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA
 
 
-def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=True):
+def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in):
     """
     This function obtains the differences of the input arrays with the reference or benchmark data.
     Args:
@@ -172,23 +172,19 @@ def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=
         stars       -- list of the star numbers being studied
         V2in        -- numpy array of measured V2s
         V3in        -- numpy array of measured V3s
-        arcsecs     -- True or False (if False results are in degrees)
 
     Returns:
         4 lists: diffV2, diffV3, bench_V2_list, bench_V3_list
         diffV2 = benchmark V2 - measured V2
         diffV3 = benchmark V3 - measured V3
-        bench_V2_list = benchmark V2 converted to arcsecs (if arcsecs=True)
-        bench_V3_list = benchmark V3 converted to arcsecs (if arcsecs=True)
+        bench_V2_list = benchmark V2 converted in same units as input
+        bench_V3_list = benchmark V3 converted in same units as input
     """
 
     # calculate the differences with respect to the benchmark data
-    multiply_by = 1.0          # keep differences in degrees
-    if arcsecs:
-        multiply_by = 3600.0   # to convert from degrees to arcsecs
     if len(stars) == len(bench_stars):   # for the fixed and None background case
-        diffV2 = (benchV2 - V2in) * multiply_by
-        diffV3 = (benchV3 - V3in) * multiply_by
+        diffV2 = benchV2 - V2in
+        diffV3 = benchV3 - V3in
         bench_V2_list = benchV2.tolist()
         bench_V3_list = benchV3.tolist()
     else:                               # for the fractional background case
@@ -197,8 +193,8 @@ def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=
         for i, s in enumerate(stars):
             if s in bench_stars:
                 j = bench_stars.tolist().index(s)
-                dsV2 = (benchV2[j] - V2in[i]) * multiply_by
-                dsV3 = (benchV3[j] - V3in[i]) * multiply_by 
+                dsV2 = benchV2[j] - V2in[i]
+                dsV3 = benchV3[j] - V3in[i]
                 diffV2.append(dsV2)
                 diffV3.append(dsV3)
                 bench_V2_list.append(benchV2[j])
@@ -397,7 +393,7 @@ def do_Piers_correction(detector, cb_centroid_list):
     
     
 def find_centroid(fits_file, bg_corr_info, recursive_centroids_info, display_centroids_info, x_centroids, y_centroids,
-                  fits_names, output_file_path, centroids_info):
+                  fits_names, output_file_path, centroids_info, verbose=True):
     """ This function reads the image, finds the centroid, and displays the result.
     It returns the centroid values.
 
@@ -421,7 +417,7 @@ def find_centroid(fits_file, bg_corr_info, recursive_centroids_info, display_cen
     # unfold information
     backgnd_subtraction_method, background_method, bg_value, bg_frac, debug = bg_corr_info
     xwidth_list, ywidth_list, centroid_win_size, max_iter, threshold, determine_moments, display_master_img, vlim = recursive_centroids_info
-    true_center, output_full_detector, show_centroids = centroids_info
+    true_center, output_full_detector, show_centroids, perform_avgcorr = centroids_info
     case, show_disp, save_centroid_disp = display_centroids_info
     x_centroids3, y_centroids3 = x_centroids[0], y_centroids[0]
     x_centroids5, y_centroids5 = x_centroids[1], y_centroids[1]
@@ -441,16 +437,17 @@ def find_centroid(fits_file, bg_corr_info, recursive_centroids_info, display_cen
     #hdr = fits.getheader(fits_file, 0)
     #print("** HEADER:", hdr)
     master_img = fits.getdata(fits_file, 0)
-    print ('Master image shape: ', np.shape(master_img))
+    if verbose:
+        print ('Master image shape: ', np.shape(master_img))
     # Obtain the combined FITS image that combines all frames into one image AND
     # check if all image is zeros, take the image that still has a max value
     psf = readimage(master_img, backgnd_subtraction_method, bg_method=background_method,
                         bg_value=bg_value, bg_frac=bg_frac, debug=debug)
     cb_centroid_list_in32x32pix = run_recursive_centroids(psf, bg_frac, xwidth_list, ywidth_list,
                                                centroid_win_size, max_iter, threshold,
-                                               determine_moments, debug)
+                                               determine_moments, verbose, debug)
     cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = centroid2fulldetector(cb_centroid_list_in32x32pix,
-                                                                                        true_center)
+                                                                                        true_center, detector, perform_avgcorr)
     if not output_full_detector:
         cb_centroid_list = cb_centroid_list_in32x32pix
     if show_centroids:
@@ -639,7 +636,8 @@ def Pier_correction(detector, XandYarr):
 
 
 def plot_offsets(plot_title, offsets, sigmas, means, bench_star, destination,
-                 plot_type='.jpg', save_plot=False, show_plot=False, xlims=None, ylims=None):
+                 plot_type='.jpg', save_plot=False, show_plot=False, xlims=None, ylims=None,
+                 Nsigma=None):
     """
     This function plots the x and y-offsets in pixel space.
     Args:
@@ -654,6 +652,7 @@ def plot_offsets(plot_title, offsets, sigmas, means, bench_star, destination,
         show_plot   -- True or False, display the plot on screen
         xlims       -- list, min and max x-axis values for plot
         ylims       -- list, min and max y-axis values for plot
+        Nsigma      -- float or integer, number of sigmas to reject
 
     Returns:
         Statement that plot has been saved or nothing.
@@ -661,8 +660,8 @@ def plot_offsets(plot_title, offsets, sigmas, means, bench_star, destination,
     fig1 = plt.figure(1, figsize=(12, 10))
     ax1 = fig1.add_subplot(111)
     plt.title(plot_title)
-    plt.xlabel('Radial offset in X')
-    plt.ylabel('Radial offset in Y')
+    plt.xlabel('Residual offset in X')
+    plt.ylabel('Residual offset in Y')
     plt.plot(offsets[0], offsets[1], 'b^', ms=8, alpha=0.7, label='Centroid window=3')
     plt.plot(offsets[2], offsets[1], 'go', ms=8, alpha=0.7, label='Centroid window=5')
     plt.plot(offsets[4], offsets[1], 'r*', ms=10, alpha=0.7, label='Centroid window=7')
@@ -684,14 +683,20 @@ def plot_offsets(plot_title, offsets, sigmas, means, bench_star, destination,
     ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
     sig3, sig5, sig7 = sigmas
     mean3, mean5, mean7 = means
-    textinfig3 = r'$\sigma3$ = %0.2f    $\mu3$ = %0.2f' % (sig3, mean3)
-    textinfig5 = r'$\sigma5$ = %0.2f    $\mu5$ = %0.2f' % (sig5, mean5)
-    textinfig7 = r'$\sigma7$ = %0.2f    $\mu7$ = %0.2f' % (sig7, mean7)
+    textinfig3 = r'y$\sigma3$ = %0.2f    y$\mu3$ = %0.2f' % (sig3, mean3)
+    textinfig5 = r'y$\sigma5$ = %0.2f    y$\mu5$ = %0.2f' % (sig5, mean5)
+    textinfig7 = r'y$\sigma7$ = %0.2f    y$\mu7$ = %0.2f' % (sig7, mean7)
     ax1.annotate(textinfig3, xy=(1.02, 0.35), xycoords='axes fraction' )
     ax1.annotate(textinfig5, xy=(1.02, 0.32), xycoords='axes fraction' )
     ax1.annotate(textinfig7, xy=(1.02, 0.29), xycoords='axes fraction' )
+    y_reject = [-1.0, 1.0]
+    x_reject = [-1.0, 1.0]
+    if Nsigma is not None:
+        # perform sigma-clipping
+        y_reject = [-Nsigma, Nsigma]
+        x_reject = [-Nsigma, Nsigma]
     for si,xi,yi in zip(bench_star, offsets[0], offsets[1]):
-        if yi>=1.0 or yi<=-1.0 or xi>=1.0 or xi<=-1.0:
+        if yi>=y_reject[1] or yi<=y_reject[0] or xi>=x_reject[1] or xi<=x_reject[0]:
             si = int(si)
             subxcoord = 5
             subycoord = 0
@@ -735,8 +740,8 @@ def plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, bench_star
     fig2.subplots_adjust(hspace=0.30)
     ax1 = fig2.add_subplot(311)
     ax1.set_title(plot_title)
-    ax1.set_xlabel('Radial offset in X: Centroid window=3')
-    ax1.set_ylabel('Radial offset in Y: Centroid window=3')
+    ax1.set_xlabel('Offset in X: Centroid window=3')
+    ax1.set_ylabel('Offset in Y: Centroid window=3')
     ax1.plot(frac00[0], frac00[1], 'bo', ms=6, alpha=0.7, label='bg_frac=0.0')
     ax1.plot(frac01[0], frac01[1], 'g^', ms=8, alpha=0.7, label='bg_frac=0.1')
     ax1.plot(frac02[0], frac02[1], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
@@ -773,8 +778,8 @@ def plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, bench_star
     ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
     # crate the plot for centroid window 5
     ax2 = fig2.add_subplot(312)
-    ax2.set_xlabel('Radial offset in X: Centroid window=5')
-    ax2.set_ylabel('Radial offset in Y: Centroid window=5')
+    ax2.set_xlabel('Offset in X: Centroid window=5')
+    ax2.set_ylabel('Offset in Y: Centroid window=5')
     ax2.plot(frac00[2], frac00[3], 'bo', ms=6, alpha=0.7, label='bg_frac=0.0')
     ax2.plot(frac01[2], frac01[3], 'g^', ms=8, alpha=0.7, label='bg_frac=0.1')
     ax2.plot(frac02[2], frac02[3], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
@@ -790,7 +795,7 @@ def plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, bench_star
     plt.vlines(0.0, ymin, ymax, colors='k', linestyles='dashed')
     plt.xlim(xmin, xmax)
     plt.ylim(ymin, ymax)
-    textinfig = r'BG      $\sigma$3     $\sigma$5     $\sigma$7'
+    textinfig = r'BG      y$\sigma$3     y$\sigma$5     y$\sigma$7'
     ax2.annotate(textinfig, xy=(1.02, 0.90), xycoords='axes fraction' )
     sigx = 1.02
     sigy = 0.9
@@ -810,8 +815,8 @@ def plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, bench_star
     ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     # crate the plot for centroid window 7
     ax3 = fig2.add_subplot(313)
-    ax3.set_xlabel('Radial offset in X: Centroid window=7')
-    ax3.set_ylabel('Radial offset in Y: Centroid window=7')
+    ax3.set_xlabel('Offset in X: Centroid window=7')
+    ax3.set_ylabel('Offset in Y: Centroid window=7')
     ax3.plot(frac00[4], frac00[5], 'bo', ms=6, alpha=0.7, label='bg_frac=0.0')
     ax3.plot(frac01[4], frac01[5], 'g^', ms=8, alpha=0.7, label='bg_frac=0.1')
     ax3.plot(frac02[4], frac02[5], 'mo', ms=8, alpha=0.7, label='bg_frac=0.2')
@@ -835,7 +840,7 @@ def plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, bench_star
             side = 'left'
             plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
     # Shrink current axis by 10%
-    textinfig = r'BG      $\mu$3     $\mu$5     $\mu$7'
+    textinfig = r'BG      y$\mu$3     y$\mu$5     y$\mu$7'
     ax3.annotate(textinfig, xy=(1.02, 0.90), xycoords='axes fraction' )
     sigx = 1.02
     sigy = 0.9
@@ -855,7 +860,8 @@ def plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, bench_star
 
 
 def plot_zoomin(plot_title, offsets_list, bench_star, destination,
-                plot_type='.jpg', save_plot=False, show_plot=False, xlims=[-1., 1.], ylims=[-1., 1.]):
+                plot_type='.jpg', save_plot=False, show_plot=False, xlims=[-1., 1.], ylims=[-1., 1.],
+                Nsigma=None):
     """
     This function plots a zoom-in region of the offsets, keeping only 'good' stars.
     Args:
@@ -874,28 +880,44 @@ def plot_zoomin(plot_title, offsets_list, bench_star, destination,
 
     """
     # Copy all stars and offsets in order to remove 'bad' stars
-    good_stars_only = copy.deepcopy(bench_star.tolist())
-    good_offsets_list = copy.deepcopy(offsets_list)
-    for i, s in enumerate(bench_star):
-        if offsets_list[0][i]>=1.1 or offsets_list[0][i]<=-1.1 or offsets_list[1][i]>=1.1 or offsets_list[1][i]<=-1.1:
-            idx2remove = good_stars_only.index(s)
-            # items must be removed from all columns at the same time to avoid removing wrong item
-            good_stars_only.pop(idx2remove)
-            good_offsets_list[0].pop(idx2remove)
-            good_offsets_list[1].pop(idx2remove)
-            good_offsets_list[2].pop(idx2remove)
-            good_offsets_list[3].pop(idx2remove)
-            good_offsets_list[4].pop(idx2remove)
-            good_offsets_list[5].pop(idx2remove)
-    good_offsets = np.array(good_offsets_list)
-    sig3, mean3 = find_std(good_offsets[1])
-    sig5, mean5 = find_std(good_offsets[3])
-    sig7, mean7 = find_std(good_offsets[5])
+    if Nsigma is not None:
+        Nsigma_results = Nsigma_rejection(Nsigma, np.array(offsets_list[0]), np.array(offsets_list[1]), max_iterations=10)
+        sigma_x3, mean_x3, sig3, mean3, x_new3, y_new3, _, _, _ = Nsigma_results
+        Nsigma_results = Nsigma_rejection(Nsigma, np.array(offsets_list[2]), np.array(offsets_list[3]), max_iterations=10)
+        sigma_x5, mean_x5, sig5, mean5, x_new5, y_new5, _, _, _ = Nsigma_results
+        Nsigma_results = Nsigma_rejection(Nsigma, np.array(offsets_list[4]), np.array(offsets_list[5]), max_iterations=10)
+        sigma_x7, mean_x7, sig7, mean7, x_new7, y_new7, _, _, _ = Nsigma_results
+        good_offsets = [x_new3, y_new3, x_new5, y_new5, x_new7, y_new7]
+        good_stars_only = []
+        for i, xi in enumerate(offsets_list[0]):
+            if xi in x_new3:
+                good_stars_only.append(bench_star[i])
+        xlims, ylims = [-0.15, 0.15], [-0.15, 0.15]
+    else:
+        good_stars_only = copy.deepcopy(bench_star.tolist())
+        good_offsets_list = copy.deepcopy(offsets_list)
+        for i, s in enumerate(bench_star):
+            if offsets_list[0][i]>=1.1 or offsets_list[0][i]<=-1.1 or offsets_list[1][i]>=1.1 or offsets_list[1][i]<=-1.1:
+                idx2remove = good_stars_only.index(s)
+                # items must be removed from all columns at the same time to avoid removing wrong item
+                good_stars_only.pop(idx2remove)
+                good_offsets_list[0].pop(idx2remove)
+                good_offsets_list[1].pop(idx2remove)
+                good_offsets_list[2].pop(idx2remove)
+                good_offsets_list[3].pop(idx2remove)
+                good_offsets_list[4].pop(idx2remove)
+                good_offsets_list[5].pop(idx2remove)
+        good_offsets = np.array(good_offsets_list)
+        sig3, mean3 = find_std(good_offsets[1])
+        sig5, mean5 = find_std(good_offsets[3])
+        sig7, mean7 = find_std(good_offsets[5])
     sigmas = [sig3, sig5, sig7]
     means = [mean3, mean5, mean7]
     plot_title = plot_title+'_zoomin'
-    plot_offsets(plot_title, good_offsets, sigmas, means, good_offsets_list, destination,
-                 plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
+    Nsigma = sig3*Nsigma
+    plot_offsets(plot_title, good_offsets, sigmas, means, good_stars_only, destination,
+                 plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims,
+                 Nsigma=Nsigma)
 
 
 def plot_zoomin_frac(plot_title, frac_bgs, frac_data, bench_star, destination,
@@ -942,6 +964,10 @@ def plot_zoomin_frac(plot_title, frac_bgs, frac_data, bench_star, destination,
         for j, _ in enumerate(frac_data):
             frac_data[j][0].pop(idx)
             frac_data[j][1].pop(idx)
+            frac_data[j][2].pop(idx)
+            frac_data[j][3].pop(idx)
+            frac_data[j][4].pop(idx)
+            frac_data[j][5].pop(idx)
     sig3, mean3, sig5, mean5, sig7, mean7 = get_frac_stdevs(frac_data)
     sigmas = [sig3, sig5, sig7]
     means = [mean3, mean5, mean7]
@@ -952,7 +978,7 @@ def plot_zoomin_frac(plot_title, frac_bgs, frac_data, bench_star, destination,
 
 
 def print_file_lines(output_file, save_text_file, xwidth_list, ff, background2use,
-                     i, x_centroids, y_centroids):
+                     i, x_centroids, y_centroids, verbose=True):
     """ This function prints the info on screen AND in a text file. It expects that the output file
     already exists (it appends information to it). Columns are fits file name, background value used
     and method (None, fixed, or fractional), x and y coordinates for centroid window sizes of 3, 5, and 7
@@ -981,13 +1007,14 @@ def print_file_lines(output_file, save_text_file, xwidth_list, ff, background2us
                                                                x_centroids3[i], y_centroids3[i],
                                                                x_centroids5[i], y_centroids5[i],
                                                                x_centroids7[i], y_centroids7[i])
-    print (line1)
+    if verbose:
+        print (line1)
     if save_text_file:
         f = open(output_file, "a")
         f.write(line1+"\n")
 
 
-def Nsigma_rejection(N, x, y, max_iterations=10):
+def Nsigma_rejection(N, x, y, max_iterations=10, verbose=True):
     """ This function will reject any residuals that are not within N*sigma in EITHER coordinate. 
     Args:
          - x and y must be the numpy arrays of the differences with respect to true values: True-Measured
@@ -1003,7 +1030,8 @@ def Nsigma_rejection(N, x, y, max_iterations=10):
          - niter   = the number of iterations to reach a convergence (no more rejections)
     Usage:
          import TA_functions as taf
-         sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter = taf.Nsigma_rejection(N, x, y, max_iterations=10)
+         Nsigma_results = taf.Nsigma_rejection(N, x, y, max_iterations=10)
+         sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter, lines2print, rejected_elements_idx = Nsigma_results
     """
     N = float(N)
     or_sigma_x, or_mean_x = find_std(x)
@@ -1036,17 +1064,18 @@ def Nsigma_rejection(N, x, y, max_iterations=10):
     line5 = "                             - new sigma and mean in X = {}  {}".format(sigma_x, mean_x)
     line6 = "                             - new sigma and mean in Y {}  {}".format(sigma_y, mean_y)
     lines2print = [line0, line1, line2, line3, line4, line5, line6]
-    print (line0)
-    print (line1)
-    print (line2)
-    print (line3)
-    print (line4)
-    print (line5)
-    print (line6)
+    if verbose:
+        print (line0)
+        print (line1)
+        print (line2)
+        print (line3)
+        print (line4)
+        print (line5)
+        print (line6)
     # find what elements got rejected            
     rejected_elements_idx = []
-    for i, centroid in enumerate(original_diffs):
-        if centroid not in x:
+    for i, diff in enumerate(original_diffs):
+        if diff not in x_new:
             rejected_elements_idx.append(i)
     return sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter, lines2print, rejected_elements_idx
 
@@ -1136,7 +1165,7 @@ def read_positionsfile(positions_file_name, detector=None):
 
 
 def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_size, max_iter,
-                            threshold, determine_moments, debug):   
+                            threshold, determine_moments, verbose, debug):
     """
     This function determines the centroid given that the background is already subtracted.
     Args:
@@ -1148,6 +1177,7 @@ def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_
         max_iter: integer, maximum iteration number for centroiding function
         threshold: float, convergence threshold of accepted difference between checkbox centroid and coarse location
         determine_moments: True or False
+        verbose: True or false, show not all function print statements but some
         debug: True or False
 
     Returns:
@@ -1155,33 +1185,33 @@ def run_recursive_centroids(psf, background, xwidth_list, ywidth_list, checkbox_
     """
 
     # Test checkbox piece
-    print ("Centroid measurement for background of: ", background)
+    if verbose:
+        print ("Centroid measurement for background of: ", background)
     cb_centroid_list = []
     for xwidth, ywidth in zip(xwidth_list, ywidth_list):
-        print ("Testing centroid width: ", checkbox_size)
-        print ("     xwidth = ", xwidth, "  ywidth = ", ywidth)
-        cb_cen, cb_hw = jtl.checkbox_2D(psf, checkbox_size, xwidth, ywidth, debug=debug)
-        print ('Got coarse location for checkbox_size {} \n'.format(checkbox_size))
-        # Checkbox center, in base 1
-        print('Checkbox Output:')
-        print('Checkbox center: [{}, {}]'.format(cb_cen[0], cb_cen[1]))
-        print('Checkbox halfwidths: xhw: {}, yhw: {}'.format(cb_hw[0], cb_hw[1]))
-        print()
+        cb_cen, cb_hw = jtl.checkbox_2D(psf, checkbox_size, xwidth, ywidth, verbose=verbose, debug=debug)
         # Calculate the centroid based on the checkbox region calculated above
-        cb_centroid, cb_sum = jtl.centroid_2D(psf, cb_cen, cb_hw, max_iter=max_iter, threshold=threshold, debug=debug)
+        cb_centroid, cb_sum = jtl.centroid_2D(psf, cb_cen, cb_hw, max_iter=max_iter, threshold=threshold,
+                                              verbose=verbose, debug=debug)
         cb_centroid_list.append(cb_centroid)
-        print('Final sum: ', cb_sum)
-        print('cb_centroid: ', cb_centroid)
-        print()
-        #raw_input()
+        if verbose:
+            print ("Testing centroid width: ", checkbox_size)
+            print ("     xwidth = ", xwidth, "  ywidth = ", ywidth)
+            print ('Got coarse location for checkbox_size {} \n'.format(checkbox_size))
+            print ('Final sum: ', cb_sum)
+            print ('cb_centroid: ', cb_centroid)
     # Find the 2nd and 3rd moments
     if determine_moments:
         x_mom, y_mom = jtl.find2D_higher_moments(psf, cb_centroid, cb_hw, cb_sum)
-        print('Higher moments(2nd, 3rd):')
-        print('x_moments: ', x_mom)
-        print('y moments: ', y_mom)
-        print('---------------------------------------------------------------')
-        print()
+        if verbose:
+            print('Higher moments(2nd, 3rd):')
+            print('x_moments: ', x_mom)
+            print('y moments: ', y_mom)
+            print('---------------------------------------------------------------')
+            # Checkbox center, in base 1
+            print('Checkbox Output:')
+            print('Checkbox center: [{}, {}]'.format(cb_cen[0], cb_cen[1]))
+            print('Checkbox halfwidths: xhw: {}, yhw: {}'.format(cb_hw[0], cb_hw[1]))
     return cb_centroid_list
 
 
@@ -1284,7 +1314,7 @@ def read_TruePosFromFits(path2listfile, list_file1, positions_file1, list_file2,
 
 
 # Extract an image from a multi-ramp integration FITS file
-def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_value=None, bg_frac=None, debug=False):
+def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_value=None, bg_frac=None, verbose=True, debug=False):
     """
     Extract am image from a multi-ramp integration FITS file.
     Currently, JWST NIRSpec FITS images consists of a 3-ramp integration, 
@@ -1307,7 +1337,8 @@ def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_va
 
     # Perform background subtraction if backgnd_subtraction_method=1
     if backgnd_subtraction_method == 2:
-        print ("*  Background subtraction being done on 3-2 and 2-1 individually...")
+        if verbose:
+            print ("*  Background subtraction being done on 3-2 and 2-1 individually...")
         alpha = bg_correction(alpha, bg_method=bg_method, bg_value=bg_value, bg_frac=bg_frac, debug=debug)
         beta = bg_correction(beta, bg_method=bg_method, bg_value=bg_value, bg_frac=bg_frac, debug=debug)
     
@@ -1317,7 +1348,8 @@ def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_va
     
     # Perform background subtraction if backgnd_subtraction_method=1
     if backgnd_subtraction_method == 1:
-        print ("*  Background subtraction being done on image of min between 3-2 and 2-1...")
+        if verbose:
+            print ("*  Background subtraction being done on image of min between 3-2 and 2-1...")
         omega = bg_correction(omega, bg_method=bg_method, bg_value=bg_value, bg_frac=bg_frac, debug=debug)
 
     # Convert negative pixel values to zero
@@ -1338,7 +1370,8 @@ def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_va
             print (j, image[j, :])
     
 
-    print('(readimage): Image processed!')
+    if verbose:
+        print('(readimage): Image processed!')
         
     # Return the extracted image
     return omega
@@ -1359,7 +1392,7 @@ def readimage(master_img, backgnd_subtraction_method=None, bg_method=None, bg_va
 
 
 def TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P1P2data,
-          filter_input, tilt, diffs_in_arcsecs, debug):
+          filter_input, tilt, arcsecs, debug):
     """
     TEST 1: (a) Avg P1 and P2
             (b) transform to V2-V3
@@ -1374,7 +1407,7 @@ def TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
         P1P2data: list of 6 lists with x and y positions 1 and 2 for centroid window sizes 3, 5, and 7
         filter_input: string, exapmple 'F140X'
         tilt: True or False
-        diffs_in_arcsecs: True or False (if False result is degrees)
+        arcsecs: True or False (if False result is degrees)
         debug: True or False (if True functions are very verbose)
 
     Returns:
@@ -1394,19 +1427,19 @@ def TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     avgx7 = (x17+x27)/2.0
     avgy7 = (y17+y27)/2.0
     # Step (b) - transformations to degrees
-    T1_V2_3, T1_V3_3 = ct.coords_transf(transf_direction, detector, filter_input, avgx3, avgy3, tilt, debug)
-    T1_V2_5, T1_V3_5 = ct.coords_transf(transf_direction, detector, filter_input, avgx5, avgy5, tilt, debug)
-    T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, debug)
+    T1_V2_3, T1_V3_3 = ct.coords_transf(transf_direction, detector, filter_input, avgx3, avgy3, tilt, arcsecs, debug)
+    T1_V2_5, T1_V3_5 = ct.coords_transf(transf_direction, detector, filter_input, avgx5, avgy5, tilt, arcsecs, debug)
+    T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, arcsecs, debug)
     # Step (c) - comparison
-    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_5, T1_diffV3_5, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_7, T1_diffV3_7, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3)
+    T1_diffV2_5, T1_diffV3_5, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5)
+    T1_diffV2_7, T1_diffV3_7, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7)
     if debug:
         print ("TEST 1: ")
         print ("transformations: detector (avgx, avgy),  sky (V2, V3),  true (avgV2, avgV3)")
-        print ("            ChBx3: ", avgx3[0], avgy3[0], T1_V2_3[0], T1_V3_3[0], avg_benchV2[0], avg_benchV3[0])
-        print ("            ChBx5: ", avgx5[0], avgy5[0], T1_V2_5[0], T1_V3_5[0], avg_benchV2[0], avg_benchV3[0])
-        print ("            ChBx7: ", avgx7[0], avgy7[0], T1_V2_7[0], T1_V3_7[0], avg_benchV2[0], avg_benchV3[0])
+        print (" Centroid Window 3: ", avgx3[0], avgy3[0], T1_V2_3[0], T1_V3_3[0], avg_benchV2[0], avg_benchV3[0])
+        print (" Centroid Window 5: ", avgx5[0], avgy5[0], T1_V2_5[0], T1_V3_5[0], avg_benchV2[0], avg_benchV3[0])
+        print (" Centroid Window 7: ", avgx7[0], avgy7[0], T1_V2_7[0], T1_V3_7[0], avg_benchV2[0], avg_benchV3[0])
         raw_input(" * press enter to continue... \n")
     # Organize results
     T1_transformations = [T1_V2_3, T1_V3_3, T1_V2_5, T1_V3_5, T1_V2_7, T1_V3_7]
@@ -1415,7 +1448,7 @@ def TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     return T1_transformations, T1_diffs, T1_benchVs_list
 
 def TEST2(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P1P2data,
-          filter_input, tilt, diffs_in_arcsecs, debug):
+          filter_input, tilt, arcsecs, debug):
     """
     TEST 2: (a) Transform individual P1 and P2 to V2-V3
             (b) avg V2-V3 space positions
@@ -1444,12 +1477,12 @@ def TEST2(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     x13, y13, x23, y23, x15, y15, x25, y25, x17, y17, x27, y27 = P1P2data
     avg_benchV2, avg_benchV3 = avg_benchV23
     # Step (a) - transformations
-    T2_V2_13, T2_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, debug)
-    T2_V2_15, T2_V3_15 = ct.coords_transf(transf_direction, detector, filter_input, x15, y15, tilt, debug)
-    T2_V2_17, T2_V3_17 = ct.coords_transf(transf_direction, detector, filter_input, x17, y17, tilt, debug)
-    T2_V2_23, T2_V3_23 = ct.coords_transf(transf_direction, detector, filter_input, x23, y23, tilt, debug)
-    T2_V2_25, T2_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, debug)
-    T2_V2_27, T2_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, debug)
+    T2_V2_13, T2_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, arcsecs, debug)
+    T2_V2_15, T2_V3_15 = ct.coords_transf(transf_direction, detector, filter_input, x15, y15, tilt, arcsecs, debug)
+    T2_V2_17, T2_V3_17 = ct.coords_transf(transf_direction, detector, filter_input, x17, y17, tilt, arcsecs, debug)
+    T2_V2_23, T2_V3_23 = ct.coords_transf(transf_direction, detector, filter_input, x23, y23, tilt, arcsecs, debug)
+    T2_V2_25, T2_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, arcsecs, debug)
+    T2_V2_27, T2_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, arcsecs, debug)
     # Step (b) - averages
     T2_V2_3 = (T2_V2_13 + T2_V2_23)/2.0
     T2_V3_3 = (T2_V3_13 + T2_V3_23)/2.0
@@ -1458,15 +1491,15 @@ def TEST2(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
     T2_V2_7 = (T2_V2_17 + T2_V2_27)/2.0
     T2_V3_7 = (T2_V3_17 + T2_V3_27)/2.0
     # Step (c) - comparison
-    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_5, T2_diffV3_5, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_7, T2_diffV3_7, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3)
+    T2_diffV2_5, T2_diffV3_5, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5)
+    T2_diffV2_7, T2_diffV3_7, _, _ = compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7)
     if debug:
         print ("TEST 2: ")
         print ("transformations: detector P1 and P2 (x, y),  sky (avgV2, avgV3),  true (avgV2, avgV3)")
-        print ("            ChBx3: ", x13[0], y13[0], x23[0], y23[0], T2_V2_3[0], T2_V3_3[0], avg_benchV2[0], avg_benchV3[0])
-        print ("            ChBx5: ", x15[0], y15[0], x25[0], y25[0], T2_V2_5[0], T2_V3_5[0], avg_benchV2[0], avg_benchV3[0])
-        print ("            ChBx7: ", x17[0], y17[0], x27[0], y27[0], T2_V2_7[0], T2_V3_7[0], avg_benchV2[0], avg_benchV3[0])
+        print (" Centroid Window 3: ", x13[0], y13[0], x23[0], y23[0], T2_V2_3[0], T2_V3_3[0], avg_benchV2[0], avg_benchV3[0])
+        print (" Centroid Window 5: ", x15[0], y15[0], x25[0], y25[0], T2_V2_5[0], T2_V3_5[0], avg_benchV2[0], avg_benchV3[0])
+        print (" Centroid Window 7: ", x17[0], y17[0], x27[0], y27[0], T2_V2_7[0], T2_V3_7[0], avg_benchV2[0], avg_benchV3[0])
         raw_input(" * press enter to continue... \n")
     # Organize results
     T2_transformations = [T2_V2_3, T2_V3_3, T2_V2_5, T2_V3_5, T2_V2_7, T2_V3_7]
@@ -1476,7 +1509,7 @@ def TEST2(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P
 
 
 def TEST3(detector, transf_direction, stars, case, bench_starP1, bench_Vs, P1P2data,
-          filter_input, tilt, diffs_in_arcsecs, debug):
+          filter_input, tilt, arcsecs, debug):
     """
     TEST 3: (a) Transform P1 and P2 individually to V2-V3
             (b) compare star by star and position by position
@@ -1491,7 +1524,7 @@ def TEST3(detector, transf_direction, stars, case, bench_starP1, bench_Vs, P1P2d
         P1P2data: list of 6 lists with x and y positions 1 and 2 for centroid window sizes 3, 5, and 7
         filter_input: string, exapmple 'F140X'
         tilt: True or False
-        diffs_in_arcsecs: True or False (if False result is degrees)
+        arcsecs: True or False (if False result is degrees)
         debug: True or False (if True functions are very verbose)
 
     Returns:
@@ -1504,25 +1537,28 @@ def TEST3(detector, transf_direction, stars, case, bench_starP1, bench_Vs, P1P2d
     x13, y13, x23, y23, x15, y15, x25, y25, x17, y17, x27, y27 = P1P2data
     bench_V2P1, bench_V3P1, bench_V2P2, bench_V3P2 = bench_Vs
     # Step (a) - transformations
-    T3_V2_13, T3_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, debug)
-    T3_V2_15, T3_V3_15 = ct.coords_transf(transf_direction, detector, filter_input, x15, y15, tilt, debug)
-    T3_V2_17, T3_V3_17 = ct.coords_transf(transf_direction, detector, filter_input, x17, y17, tilt, debug)
-    T3_V2_23, T3_V3_23 = ct.coords_transf(transf_direction, detector, filter_input, x23, y23, tilt, debug)
-    T3_V2_25, T3_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, debug)
-    T3_V2_27, T3_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, debug)
+    T3_V2_13, T3_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, arcsecs, debug)
+    T3_V2_15, T3_V3_15 = ct.coords_transf(transf_direction, detector, filter_input, x15, y15, tilt, arcsecs, debug)
+    T3_V2_17, T3_V3_17 = ct.coords_transf(transf_direction, detector, filter_input, x17, y17, tilt, arcsecs, debug)
+    T3_V2_23, T3_V3_23 = ct.coords_transf(transf_direction, detector, filter_input, x23, y23, tilt, arcsecs, debug)
+    T3_V2_25, T3_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, arcsecs, debug)
+    T3_V2_27, T3_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, arcsecs, debug)
     # Step (b) - comparison
-    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_15, T3_diffV3_15, _, _ = compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_25, T3_diffV3_25, _, _ = compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_17, T3_diffV3_17, _, _ = compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_27, T3_diffV3_27, _, _ = compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13)
+    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23)
+    T3_diffV2_15, T3_diffV3_15, _, _ = compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15)
+    T3_diffV2_25, T3_diffV3_25, _, _ = compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25)
+    T3_diffV2_17, T3_diffV3_17, _, _ = compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17)
+    T3_diffV2_27, T3_diffV3_27, _, _ = compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27)
     if debug:
         print ("TEST 3: ")
         print ("transformations: detector P1 and P2 (x, y),  sky P1 and P2 (V2, V3),  true P1 and P2 (V2, V3)")
-        print (" Centroid window 3: ", x13[0], y13[0], x23[0], y23[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
-        print (" Centroid window 5: ", x15[0], y15[0], x25[0], y25[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
-        print (" Centroid window 7: ", x17[0], y17[0], x27[0], y27[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print (" Centroid window 3 first: ", x13[0], y13[0], x23[0], y23[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print (" Centroid window 5 first: ", x15[0], y15[0], x25[0], y25[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print (" Centroid window 7 first: ", x17[0], y17[0], x27[0], y27[0], T3_V2_13[0], T3_V3_13[0], T3_V2_23[0], T3_V3_23[0], bench_V2P1[0], bench_V3P1[0], bench_V2P2[0], bench_V3P2[0])
+        print (" Centroid window 3 last: ", x13[-1], y13[-1], x23[-1], y23[-1], T3_V2_13[-1], T3_V3_13[-1], T3_V2_23[-1], T3_V3_23[-1], bench_V2P1[-1], bench_V3P1[-1], bench_V2P2[-1], bench_V3P2[-1])
+        print (" Centroid window 5 last: ", x15[-1], y15[-1], x25[-1], y25[-1], T3_V2_13[-1], T3_V3_13[-1], T3_V2_23[-1], T3_V3_23[-1], bench_V2P1[-1], bench_V3P1[-1], bench_V2P2[-1], bench_V3P2[-1])
+        print (" Centroid window 7 last: ", x17[-1], y17[-1], x27[-1], y27[-1], T3_V2_13[-1], T3_V3_13[-1], T3_V2_23[-1], T3_V3_23[-1], bench_V2P1[-1], bench_V3P1[-1], bench_V2P2[-1], bench_V3P2[-1])
         raw_input(" * press enter to continue... \n")
     # Organize results
     T3_transformationsP1 = [T3_V2_13, T3_V3_13, T3_V2_15, T3_V3_15, T3_V2_17, T3_V3_17]
@@ -1535,7 +1571,7 @@ def TEST3(detector, transf_direction, stars, case, bench_starP1, bench_Vs, P1P2d
     return T3_transformations, T3_diffs, T3_benchVs_list
 
 
-def runTest_and_append_results(test2run, data4test, Vs, diffs, benchVs, filter_input, tilt, diffs_in_arcsecs, debug):
+def runTest_and_append_results(test2run, data4test, Vs, diffs, benchVs, filter_input, tilt, arcsecs, debug):
     """
     This function runs the test for the specified detector and sliced arrays, and appends it to the results.
     Args:
@@ -1548,7 +1584,7 @@ def runTest_and_append_results(test2run, data4test, Vs, diffs, benchVs, filter_i
         benchVs: list of 2 lists, benchmark V2s and V3s
         filter_input: string
         tilt: True or false
-        diffs_in_arcsecs: True or False
+        arcsecs: True or False
         debug: True or False
 
     Returns:
@@ -1563,14 +1599,14 @@ def runTest_and_append_results(test2run, data4test, Vs, diffs, benchVs, filter_i
     T_diffV2_3, T_diffV3_3, T_diffV2_5, T_diffV3_5, T_diffV2_7, T_diffV3_7 = diffs
     Tbench_V2_list, Tbench_V3_list = benchVs
     if test2run == "T1":
-        transformations, diffs, benchVs_list = TEST1(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P1P2data,
-                                                    filter_input, tilt, diffs_in_arcsecs, debug)
+        transformations, diffs, benchVs_list = TEST1(detector, transf_direction, stars, case, bench_starP1,
+                                                     avg_benchV23, P1P2data, filter_input, tilt, arcsecs, debug)
     if test2run == "T2":
-        transformations, diffs, benchVs_list = TEST2(detector, transf_direction, stars, case, bench_starP1, avg_benchV23, P1P2data,
-                                                    filter_input, tilt, diffs_in_arcsecs, debug)
+        transformations, diffs, benchVs_list = TEST2(detector, transf_direction, stars, case, bench_starP1,
+                                                     avg_benchV23, P1P2data, filter_input, tilt, arcsecs, debug)
     if test2run == "T3":
-        transformations, diffs, benchVs_list = TEST3(detector, transf_direction, stars, case, bench_starP1, benchV23, P1P2data,
-                                                    filter_input, tilt, diffs_in_arcsecs, debug)
+        transformations, diffs, benchVs_list = TEST3(detector, transf_direction, stars, case, bench_starP1,
+                                                     benchV23, P1P2data, filter_input, tilt, arcsecs, debug)
     # append appropriate number of arrays
     if test2run == "T1" or test2run == "T2":
         V2_3, V3_3, V2_5, V3_5, V2_7, V3_7 = transformations
@@ -1666,13 +1702,13 @@ def runTest_and_append_results(test2run, data4test, Vs, diffs, benchVs, filter_i
 
 
 def runTEST(test2run, detectors, transf_direction, case, stars, P1P2data, bench_starP1, trueVsP1, trueVsP2,
-          filter_input, tilt, diffs_in_arcsecs, debug):
+          filter_input, tilt, arcsecs, debug):
     """
     This function runs the test for both detectors and returns the results for the star sample.
     Pier_corr is set to False in case it was corrected before.
     Args:
         test2run: string, either 'T1', 'T2', or 'T3'
-        detectors: integer, 491 or 492
+        detectors: list=[491, 492]
         transf_direction: string, 'forward' or 'backward'
         case: string, for example 'Scene2_rapid_real_bgFrac'
         stars: list, the star sample
@@ -1682,7 +1718,7 @@ def runTEST(test2run, detectors, transf_direction, case, stars, P1P2data, bench_
         trueVsP2: list of true V2s and V3s of position 2
         filter_input: string
         tilt: True or false
-        diffs_in_arcsecs: True or False
+        arcsecs: True or False
         debug: True or False
 
     Returns:
@@ -1714,50 +1750,56 @@ def runTEST(test2run, detectors, transf_direction, case, stars, P1P2data, bench_
     diffs = [diffV2_3, diffV3_3, diffV2_5, diffV3_5, diffV2_7, diffV3_7]
     benchVs = [bench_V2_list, bench_V3_list]
     # Find the index at which to change detector
-    change_detector_idx = len(stars)   # just in case all stars are from the same detector
+    change_detector_idx = len(stars)-1   # in case all stars are from 1 detector only
     for st in stars:
-        if st >= 100:
-            if type(stars) is not list:
-                change_detector_idx = stars.tolist().index(st)
-            else:
+        if st <= 100:
+            if isinstance(stars, list):
                 change_detector_idx = stars.index(st)
-            break
+            else:
+                change_detector_idx = stars.tolist().index(st)
+
     # slice arrays according to detector and run test
-    # detector 492
+    # detector 492 =  stars from 1 to 100
     detector = detectors[1]
-    d2x13, d2y13 = x13[:change_detector_idx], y13[:change_detector_idx]
-    d2x23, d2y23 = x23[:change_detector_idx], y23[:change_detector_idx]
-    d2x15, d2y15 = x15[:change_detector_idx], y15[:change_detector_idx]
-    d2x25, d2y25 = x25[:change_detector_idx], y25[:change_detector_idx]
-    d2x17, d2y17 = x17[:change_detector_idx], y17[:change_detector_idx]
-    d2x27, d2y27 = x27[:change_detector_idx], y27[:change_detector_idx]
-    P1P2data = [d2x13, d2y13, d2x23, d2y23, d2x15, d2y15, d2x25, d2y25, d2x17, d2y17, d2x27, d2y27]
-    d2bench_starP1 = bench_starP1[:change_detector_idx]
-    d2bench_V2P1, d2bench_V3P1  = bench_V2P1[:change_detector_idx], bench_V3P1[:change_detector_idx]
-    d2bench_V2P2, d2bench_V3P2  = bench_V2P2[:change_detector_idx], bench_V3P2[:change_detector_idx]
-    d2benchV23 = [d2bench_V2P1, d2bench_V3P1, d2bench_V2P2, d2bench_V3P2]
-    d2stars = stars[:change_detector_idx]
-    data4test = [detector, transf_direction, case, d2stars, P1P2data, d2bench_starP1, d2benchV23]
-    P1P2data, Vs, diffs, benchVs = runTest_and_append_results(test2run, data4test, Vs, diffs, benchVs,
-                                                                filter_input, tilt, diffs_in_arcsecs, debug)
-    # detector 491
+    if stars[change_detector_idx] <= 100:   # in case all stars are from the same detector skip this part
+        d2x13, d2y13 = x13[:change_detector_idx+1], y13[:change_detector_idx+1]
+        d2x23, d2y23 = x23[:change_detector_idx+1], y23[:change_detector_idx+1]
+        d2x15, d2y15 = x15[:change_detector_idx+1], y15[:change_detector_idx+1]
+        d2x25, d2y25 = x25[:change_detector_idx+1], y25[:change_detector_idx+1]
+        d2x17, d2y17 = x17[:change_detector_idx+1], y17[:change_detector_idx+1]
+        d2x27, d2y27 = x27[:change_detector_idx+1], y27[:change_detector_idx+1]
+        P1P2data = [d2x13, d2y13, d2x23, d2y23, d2x15, d2y15, d2x25, d2y25, d2x17, d2y17, d2x27, d2y27]
+        d2bench_starP1 = bench_starP1[:change_detector_idx+1]
+        d2bench_V2P1, d2bench_V3P1  = bench_V2P1[:change_detector_idx+1], bench_V3P1[:change_detector_idx+1]
+        d2bench_V2P2, d2bench_V3P2  = bench_V2P2[:change_detector_idx+1], bench_V3P2[:change_detector_idx+1]
+        d2benchV23 = [d2bench_V2P1, d2bench_V3P1, d2bench_V2P2, d2bench_V3P2]
+        d2stars = stars[:change_detector_idx+1]
+        data4test = [detector, transf_direction, case, d2stars, P1P2data, d2bench_starP1, d2benchV23]
+        P1P2data, Vs, diffs, benchVs = runTest_and_append_results(test2run, data4test, Vs, diffs, benchVs,
+                                                                    filter_input, tilt, arcsecs, debug)
+    # detector 491 = stars from 101 to 200
     detector = detectors[0]
-    if change_detector_idx != len(stars):   # in case all stars are from the same detector skip this part
-        d1x13, d1y13 = x13[change_detector_idx:], y13[change_detector_idx:]
-        d1x23, d1y23 = x23[change_detector_idx:], y23[change_detector_idx:]
-        d1x15, d1y15 = x15[change_detector_idx:], y15[change_detector_idx:]
-        d1x25, d1y25 = x25[change_detector_idx:], y25[change_detector_idx:]
-        d1x17, d1y17 = x17[change_detector_idx:], y17[change_detector_idx:]
-        d1x27, d1y27 = x27[change_detector_idx:], y27[change_detector_idx:]
+    if stars[change_detector_idx] > 100:
+        change_detector_idx491 = 0   # all stars are from detector 491, change_detector_idx is still len(stars)-1
+    else:
+        change_detector_idx491 = change_detector_idx + 1   # did go into for loop and change_detector_idx < len(stars)-1
+    if change_detector_idx491 != len(stars):
+        d1x13, d1y13 = x13[change_detector_idx491:], y13[change_detector_idx491:]
+        d1x23, d1y23 = x23[change_detector_idx491:], y23[change_detector_idx491:]
+        d1x15, d1y15 = x15[change_detector_idx491:], y15[change_detector_idx491:]
+        d1x25, d1y25 = x25[change_detector_idx491:], y25[change_detector_idx491:]
+        d1x17, d1y17 = x17[change_detector_idx491:], y17[change_detector_idx491:]
+        d1x27, d1y27 = x27[change_detector_idx491:], y27[change_detector_idx491:]
         P1P2data = [d1x13, d1y13, d1x23, d1y23, d1x15, d1y15, d1x25, d1y25, d1x17, d1y17, d1x27, d1y27]
-        d1bench_starP1 = bench_starP1[change_detector_idx:]
-        d1bench_V2P1, d1bench_V3P1  = bench_V2P1[change_detector_idx:], bench_V3P1[change_detector_idx:]
-        d1bench_V2P2, d1bench_V3P2  = bench_V2P2[change_detector_idx:], bench_V3P2[change_detector_idx:]
+        d1bench_starP1 = bench_starP1[change_detector_idx491:]
+        d1bench_V2P1, d1bench_V3P1  = bench_V2P1[change_detector_idx491:], bench_V3P1[change_detector_idx491:]
+        d1bench_V2P2, d1bench_V3P2  = bench_V2P2[change_detector_idx491:], bench_V3P2[change_detector_idx491:]
         d1benchV23 = [d1bench_V2P1, d1bench_V3P1, d1bench_V2P2, d1bench_V3P2]
-        d1stars = stars[change_detector_idx:]
+        d1stars = stars[change_detector_idx491:]
         data4test = [detector, transf_direction, case, d1stars, P1P2data, d1bench_starP1, d1benchV23]
         P1P2data, Vs, diffs, benchVs = runTest_and_append_results(test2run, data4test, Vs, diffs, benchVs,
-                                                                  filter_input, tilt, diffs_in_arcsecs, debug)
+                                                                  filter_input, tilt, arcsecs, debug)
+
     resultsTEST = [P1P2data, Vs, diffs, benchVs]
     return resultsTEST
 
@@ -1796,18 +1838,18 @@ def get_rejected_stars(stars_sample, rejected_elements_idx):
     return rejected_elements
 
 
-def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iterations):
+def get_stats(T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iterations, arcsecs):
     """
     This function obtains the standard deviations through regular statistics as well as through
     a sigma clipping algorithm and an iterative least square algorithm. It also obtains the minimum
     differences from centroid window sizes 3, 5, and 7, and returns the counter for each.
     Args:
-        case: string, for example 'Scene2_rapid_real_bgFrac'
         T_transformations: list of sky transformation for centroid window sizes 3, 5, and 7
         T_diffs: list of differences of measured with respect to benchmark sky values
         T_benchVs_list: list of benchmark V2 and V3s
         Nsigma: float or integer, the number of sigmas to reject
         max_iterations: integer, maximum iterations for the Nsigma routine
+        arcsec: True or False, give delta theta in arcsecs?
 
     Returns:
         results_stats: List with standard deviations and means, dictionary, minimum differences from centroid window
@@ -1841,10 +1883,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
     T_V2_3, T_V3_3, Tbench_V2, Tbench_V3 = convert2MSAcenter(T_V2_3, T_V3_3, Tbench_V2, Tbench_V3)
     T_V2_5, T_V3_5, _, _ = convert2MSAcenter(T_V2_5, T_V3_5, Tbench_V2, Tbench_V3)
     T_V2_7, T_V3_7, _, _ = convert2MSAcenter(T_V2_7, T_V3_7, Tbench_V2, Tbench_V3)
-    # to express in arcsecs multiply by 3600.0
-    TLSdeltas_3, TLSsigmas_3, TLSlines2print_3, rejected_elements_3 = lsi.ls_fit_iter(max_iterations, T_V2_3*3600.0, T_V3_3*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
-    TLSdeltas_5, TLSsigmas_5, TLSlines2print_5, rejected_elements_5 = lsi.ls_fit_iter(max_iterations, T_V2_5*3600.0, T_V3_5*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
-    TLSdeltas_7, TLSsigmas_7, TLSlines2print_7, rejected_elements_7 = lsi.ls_fit_iter(max_iterations, T_V2_7*3600.0, T_V3_7*3600.0, Tbench_V2*3600.0, Tbench_V3*3600.0)
+    TLSdeltas_3, TLSsigmas_3, TLSlines2print_3, rejected_elements_3, nit3 = lsi.ls_fit_iter(max_iterations, T_V2_3, T_V3_3, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs)
+    TLSdeltas_5, TLSsigmas_5, TLSlines2print_5, rejected_elements_5, nit5 = lsi.ls_fit_iter(max_iterations, T_V2_5, T_V3_5, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs)
+    TLSdeltas_7, TLSsigmas_7, TLSlines2print_7, rejected_elements_7, nit7 = lsi.ls_fit_iter(max_iterations, T_V2_7, T_V3_7, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs)
     # Do N-sigma rejection
     TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3, rej_elements_3 = Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
     TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5, rej_elements_5 = Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
@@ -1862,8 +1903,9 @@ def get_stats(case, T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iter
                     TsigmaV2_7, TmeanV2_7, TsigmaV3_7, TmeanV3_7, TnewV2_7, TnewV3_7, Tniter_7, Tlines2print_7]
     rejected_elementsLS = [rejected_elements_3, rejected_elements_5, rejected_elements_7]
     rejected_elementsNsig = [rej_elements_3, rej_elements_5, rej_elements_7]
+    iterations = [nit3, nit5, nit7]
     results_stats = [st_devsAndMeans, diff_counter, bench_values, sigmas_deltas, sigma_reject,
-                     rejected_elementsLS, rejected_elementsNsig]
+                     rejected_elementsLS, rejected_elementsNsig, iterations]
     return results_stats
 
 
@@ -1908,27 +1950,27 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     T_V2_3, T_V3_3, T_V2_5, T_V3_5, T_V2_7, T_V3_7 = T_Vs
     #T_diffV2_3, T_diffV3_3, T_diffV2_5, T_diffV3_5, T_diffV2_7, T_diffV3_7 = T_diffVs
     rejected_elements_idx3, rejected_elements_idx5, rejected_elements_idx7 = rejected_elementsLS
-    Nsigrej_elements_idx3, Nsigrej_elements_idx5, Nsigrej_elements_idx7 = rejected_elementsLS
+    Nsigrej_elements_idx3, Nsigrej_elements_idx5, Nsigrej_elements_idx7 = rejected_eleNsig
     # define lines to print
-    line0 = "{}".format("Differences = diffs = True_Positions - Measured_Positions")
+    line0 = "{}".format("# Differences = diffs = True_Positions - Measured_Positions")
     if diffs_in_arcsecs:
-        line0bis = "{}".format("*** diffs are in units of arcsecs")
+        line0bis = "{}".format("# *** In units of arcsecs")
     else:
-        line0bis = "{}".format("*** diffs are in units of degrees")
+        line0bis = "{}".format("# *** In units of degrees")
     if test2perform == "T1":
-        line1 = "{}\n {}".format("Test1: average P1 and P2, transform to V2-V3, calculate differences",
-                                 "  * Standard deviations and means ")
+        line1 = "{}\n {}".format("# Test1: average P1 and P2, transform to V2-V3, calculate differences",
+                                 "#  * Standard deviations and means ")
     if test2perform == "T2":
-        line1 = "{}".format("Test2: P1 P2, average positions in V2-V3, calculate differences")
+        line1 = "{}".format("# Test2: P1 P2, average positions in V2-V3, calculate differences")
     if test2perform == "T3":
-        line1 = "{}".format("Test3: P1 and P2, transform to V2-V3 space individually, calculate differences position to position")
+        line1 = "{}".format("# Test3: P1 and P2, transform to V2-V3 space individually, calculate differences position to position")
     # print regular standard deviations and means
-    line2a = "std_dev_V2_3 = {:<20}    std_dev_V3_3 = {:<20}".format(Tstdev_V2_3, Tstdev_V3_3)
-    line2b = "std_dev_V2_5 = {:<20}    std_dev_V3_5 = {:<20}".format(Tstdev_V2_5, Tstdev_V3_5)
-    line2c = "std_dev_V2_7 = {:<20}    std_dev_V3_7 = {:<20}".format(Tstdev_V2_7, Tstdev_V3_7)
-    line3a = "   mean_V2_3 = {:<22}     mean_V3_3 = {:<22}".format(Tmean_V2_3, Tmean_V3_3)
-    line3b = "   mean_V2_5 = {:<22}     mean_V3_5 = {:<22}".format(Tmean_V2_5, Tmean_V3_5)
-    line3c = "   mean_V2_7 = {:<22}     mean_V3_7 = {:<22}".format(Tmean_V2_7, Tmean_V3_7)
+    line2a = "# std_dev_V2_3 = {:<20}    std_dev_V3_3 = {:<20}".format(Tstdev_V2_3, Tstdev_V3_3)
+    line2b = "# std_dev_V2_5 = {:<20}    std_dev_V3_5 = {:<20}".format(Tstdev_V2_5, Tstdev_V3_5)
+    line2c = "# std_dev_V2_7 = {:<20}    std_dev_V3_7 = {:<20}".format(Tstdev_V2_7, Tstdev_V3_7)
+    line3a = "#    mean_V2_3 = {:<22}     mean_V3_3 = {:<22}".format(Tmean_V2_3, Tmean_V3_3)
+    line3b = "#    mean_V2_5 = {:<22}     mean_V3_5 = {:<22}".format(Tmean_V2_5, Tmean_V3_5)
+    line3c = "#    mean_V2_7 = {:<22}     mean_V3_7 = {:<22}".format(Tmean_V2_7, Tmean_V3_7)
     # Print rejected stars for least squares and N-sigma rejection
     stars_samplex2 = []
     for _ in range(2):
@@ -1940,21 +1982,21 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     Nsig_rej_elements_3 = get_rejected_stars(stars_samplex2, Nsigrej_elements_idx3)
     Nsig_rej_elements_5 = get_rejected_stars(stars_samplex2, Nsigrej_elements_idx5)
     Nsig_rej_elements_7 = get_rejected_stars(stars_samplex2, Nsigrej_elements_idx7)
-    line3bisAa = "- Rejected stars -"
-    line3bisAb = "   centroid window 3: {} ".format(rejected_elements_3)
-    line3bisAc = "   centroid window 5: {} ".format(rejected_elements_5)
-    line3bisAd = "   centroid window 7: {} ".format(rejected_elements_7)
-    line3bisAe = "   centroid window 3: {} ".format(Nsig_rej_elements_3)
-    line3bisAf = "   centroid window 5: {} ".format(Nsig_rej_elements_5)
-    line3bisAg = "   centroid window 7: {} ".format(Nsig_rej_elements_7)
+    line3bisAa = "# - Rejected stars -"
+    line3bisAb = "#    centroid window 3: {} ".format(rejected_elements_3)
+    line3bisAc = "#    centroid window 5: {} ".format(rejected_elements_5)
+    line3bisAd = "#    centroid window 7: {} ".format(rejected_elements_7)
+    line3bisAe = "#    centroid window 3: {} ".format(Nsig_rej_elements_3)
+    line3bisAf = "#    centroid window 5: {} ".format(Nsig_rej_elements_5)
+    line3bisAg = "#    centroid window 7: {} ".format(Nsig_rej_elements_7)
     # Print number of repetitions to find best centroid window
-    line3bisBa = "\n *** Repetitions Diffs V2: {}".format(T_counterV2)
-    line3bisBb = " *** Repetitions Diffs V3: {}".format(T_counterV3)
-    line4 = "{:<5} {:<20} {:<40} {:<40} {:<38} {:<28} {:<7}".format(
+    line3bisBa = "# \n # *** Repetitions Diffs V2: {}".format(T_counterV2)
+    line3bisBb = "#  *** Repetitions Diffs V3: {}".format(T_counterV3)
+    line4 = "# {:<5} {:<20} {:<40} {:<40} {:<38} {:<28} {:<23} {:<15}".format(
                     "Star", "BG_value", "Pos_centroid_win_3", "Pos_centroid_win_5", "Pos_centroid_win_7",
-                    "True_Pos", "MinDiff")
-    line5 = "{:>10} {:>15} {:>17} {:>22} {:>17} {:>22} {:>22} {:>17} {:>17} {:>12} {:>3}".format(background_method,
-                    "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3")
+                    "True_Pos", "MinDiff", "Centroid Win 3 - True")
+    line5 = "# {:>10} {:>15} {:>17} {:>22} {:>17} {:>22} {:>22} {:>17} {:>17} {:>12} {:>3} {:>17} {:>18} ".format(background_method,
+                    "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3")
     print (line0)
     print (line0bis)
     print (line1)
@@ -1965,11 +2007,11 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     print (line3b)
     print (line3c)
     print (line3bisAa)
-    print (" From least square routine: ")
+    print ("#  From least square routine: ")
     print (line3bisAb)
     print (line3bisAc)
     print (line3bisAd)
-    print (" From N-sigma rejection routine: ")
+    print ("#  From N-sigma rejection routine: ")
     print (line3bisAe)
     print (line3bisAf)
     print (line3bisAg)
@@ -1990,35 +2032,35 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
         to.write(line3b+"\n")
         to.write(line3c+"\n")
         # print standard deviations from least squares routine
-        to.write("\n * From least squares routine:  \n")
+        to.write("# \n # * From least squares routine:  \n")
         to.write(line3bisAa+"\n")
         to.write(line3bisAb+"\n")
         to.write(line3bisAc+"\n")
         to.write(line3bisAd+"\n")
-        to.write('       Centroid window 3:  \n')
+        to.write('#        Centroid window 3:  \n')
         for line2print in TLSlines2print_3:
-            to.write(line2print+"\n")
-        to.write('       Centroid window 5:  \n')
+            to.write("# "+line2print+"\n")
+        to.write('#        Centroid window 5:  \n')
         for line2print in TLSlines2print_5:
-            to.write(line2print+"\n")
-        to.write('       Centroid window 7:  \n')
+            to.write("# "+line2print+"\n")
+        to.write('#        Centroid window 7:  \n')
         for line2print in TLSlines2print_7:
-            to.write(line2print+'\n')
+            to.write("# "+line2print+'\n')
         # print standard deviations and means after n-sigma rejection
-        to.write('\n * From N-sigma rejection routine:  \n')
+        to.write('# \n # * From N-sigma rejection routine:  \n')
         to.write(line3bisAa+"\n")
         to.write(line3bisAe+"\n")
         to.write(line3bisAf+"\n")
         to.write(line3bisAg+"\n")
-        to.write(" Centroid window 3:  \n")
+        to.write("#  Centroid window 3:  \n")
         for line2print in Tlines2print_3:
-            to.write(line2print+"\n")
-        to.write(" Centroid window 5:  \n")
+            to.write("# "+line2print+"\n")
+        to.write("#  Centroid window 5:  \n")
         for line2print in Tlines2print_5:
-            to.write(line2print+"\n")
-        to.write(" Centroid window 7:  \n")
+            to.write("# "+line2print+"\n")
+        to.write("#  Centroid window 7:  \n")
         for line2print in Tlines2print_7:
-            to.write(line2print+"\n")
+            to.write("# "+line2print+"\n")
         to.write(line3bisBa+"\n")
         to.write(line3bisBb+"\n")
         to.write(line4+"\n")
@@ -2026,11 +2068,11 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     j = 0
     for i, _ in enumerate(T_V2_3):
         st = int(stars_sample[j])
-        line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>17}  {:<17}  {:>5} {:>3}".format(
+        line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>17}  {:<17}  {:>5} {:>3} {:>23}  {:>19} ".format(
                     st, background2use,
                     T_V2_3[i], T_V3_3[i], T_V2_5[i], T_V3_5[i], T_V2_7[i], T_V3_7[i],
                     Tbench_V2_list[i], Tbench_V3_list[i],
-                    T_min_diffV2[i], T_min_diffV3[i])
+                    T_min_diffV2[i], T_min_diffV3[i], T_V2_3[i]-Tbench_V2_list[i], T_V3_3[i]-Tbench_V3_list[i])
         print (line6)
         if save_text_file:
             to.write(line6+"\n")
@@ -2062,6 +2104,8 @@ def writePixPos(save_text_file, show_centroids, output_file, lines4screenandfile
     """
     line0, line2a, line2b = lines4screenandfile
     x_pixpos, y_pixpos, corr_true_center_centroid, loleftcoords, mag, min_diff_pixposX, min_diff_pixposY = data2write
+    Xtrue, Ytrue = corr_true_center_centroid
+    Xloleft, Yloleft = loleftcoords
     x3, x5, x7 = x_pixpos
     y3, y5, y7 = y_pixpos
     counterX = collections.Counter(min_diff_pixposX)
@@ -2086,8 +2130,8 @@ def writePixPos(save_text_file, show_centroids, output_file, lines4screenandfile
         line3 = "{:<5} {:<10} {:<14} {:<16} {:<14} {:<16} {:<14} {:<18} {:<16} {:<16} {:<10} {:<10} {:<11.2f} {:<2} {:<10}".format(
                                                     st, background2use,
                                                     x3[i], y3[i], x5[i], y5[i], x7[i], y7[i],
-                                                    corr_true_center_centroid[i][0], corr_true_center_centroid[i][1],
-                                                    loleftcoords[i][0], loleftcoords[i][1],
+                                                    Xtrue[i], Ytrue[i],
+                                                    Xloleft[i], Yloleft[i],
                                                     mag[i],
                                                     min_diff_pixposX[i], min_diff_pixposY[i])
         if save_text_file:
@@ -2098,7 +2142,7 @@ def writePixPos(save_text_file, show_centroids, output_file, lines4screenandfile
             print(line3)
 
 
-def remove_bad_stars(stars_sample):
+def remove_bad_stars(stars_sample, verbose):
     """ This function reads the text files of bad stars, compares the sample data, removes
     the bad stars, and returns the sample without bad stars.
     Args:
@@ -2112,7 +2156,8 @@ def remove_bad_stars(stars_sample):
     # read files ad get lists
     scene1_bad_stars = np.loadtxt(scene1_bad_stars_file, comments="#", skiprows=2, unpack=True)
     scene2_bad_stars = np.loadtxt(scene2_bad_stars_file, comments="#", skiprows=2, unpack=True)
-    print ("There are %i bad stars in Scenario 1 and %i bad stars in Scenario 2." % (len(scene1_bad_stars),
+    if verbose:
+        print ("There are %i bad stars in Scenario 1 and %i bad stars in Scenario 2." % (len(scene1_bad_stars),
                                                                                      len(scene2_bad_stars)))
     # compare to stars_sample
     for st_sam in stars_sample:

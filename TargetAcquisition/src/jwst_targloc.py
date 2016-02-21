@@ -16,7 +16,7 @@ __version__ = "2.0"
 
 
 # *************************** checkbox_2D ***************************
-def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
+def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, verbose=True, debug=False):
     """
     Find the course location of an input psf by finding the 
     brightest checkbox.
@@ -74,21 +74,23 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
                     xy_peak = [xpeak, ypeak]
                     xy_peak_list.append(xy_peak)
                     sumpeak_list.append(sumpeak)
-        print('(checkbox_2D): Checkbox not equal to both x/ysize.')
+        if verbose:
+            print('(checkbox_2D): Checkbox not equal to both x/ysize.')
     
     # If the checkbox size is equal to both the X and Y sizes
     if checkbox == xsize and checkbox == ysize:
         xpeak = xsize / 2
         ypeak = ysize / 2
         sumpeak = np.sum(image, axis=None)
-        
-        print('(checkbox_2D): Checkbox equal to x/ysize.')
+        if verbose:
+            print('(checkbox_2D): Checkbox equal to x/ysize.')
         
     # Find the centroid region half-width in x and y
     xhw = (xwidth - 1) / 2
     yhw = (ywidth - 1) / 2
-    if xpeak < xhw or xpeak > xsize - xhw or ypeak < yhw or ypeak > ysize - yhw:
-        print('(checkbox_2D): WARNING - Peak too close to edge of image.')
+    if verbose:
+        if xpeak < xhw or xpeak > xsize - xhw or ypeak < yhw or ypeak > ysize - yhw:
+            print('(checkbox_2D): WARNING - Peak too close to edge of image.')
         
 #    NOTE: Use this section if the input image is a subset of a larger image.
 #          Not currently needed for this analysis
@@ -109,7 +111,8 @@ def checkbox_2D(image, checkbox, xwidth=0, ywidth=0, debug=False):
     checkbox_ctr = np.array((xpeak, ypeak))
     checkbox_hfw = np.array((xhw, yhw))
     
-    print('(checkbox_2D): Checkbox centroid is given in indexing: starting at 1')
+    if verbose:
+        print('(checkbox_2D): Checkbox centroid is given in indexing: starting at 1')
     
     return checkbox_ctr, checkbox_hfw
 # *************************** checkbox_2D ***************************
@@ -205,7 +208,7 @@ def checkbox_1D(image, checkbox, xwidth=0, debug=False):
 
 # *************************** centroid_2D ***************************
 def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshold=0, 
-                debug=False):
+                verbose=True, debug=False):
     """
     Fine location of the target by calculating the centroid for 
     the region centered on the brightest checkbox.
@@ -268,16 +271,20 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
     if lolim_x < 0:
         lolim_x = 0
-        print ('(centroid_2D): WARNING - lower limit in x is out of data, setting to 0.')
+        if verbose:
+            print ('(centroid_2D): WARNING - lower limit in x is out of data, setting to 0.')
     if uplim_x > 32:
         uplim_x = 31
-        print ('(centroid_2D): WARNING - upper limit in x is out of data, setting to 31.')
+        if verbose:
+            print ('(centroid_2D): WARNING - upper limit in x is out of data, setting to 31.')
     if lolim_y < 0:
         lolim_y = 0
-        print ('(centroid_2D): WARNING - lower limit in y is out of data, setting to 0.')
+        if verbose:
+            print ('(centroid_2D): WARNING - lower limit in y is out of data, setting to 0.')
     if uplim_y > 32:
         uplim_y = 31
-        print ('(centroid_2D): WARNING - upper limit in y is out of data, setting to 31.')
+        if verbose:
+            print ('(centroid_2D): WARNING - upper limit in y is out of data, setting to 31.')
 
     for ii in xrange(lolim_x, uplim_x+1):  # the +1 is because python stops the loop at idx=n
         for jj in xrange(lolim_y, uplim_y+1):  # the +1 is because python stops the loop at idx=n
@@ -288,11 +295,13 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
             if xloc >= 32:
                 xloc = 31
                 ii, jj = 31, 31
-                print ('(centroid_2D): WARNING - Upper limit in x is out of data, setting to 31.')
+                if verbose:
+                    print ('(centroid_2D): WARNING - Upper limit in x is out of data, setting to 31.')
             if yloc >= 32:
                 yloc = 31
                 ii, jj = 31, 31
-                print ('(centroid_2D): WARNING - Upper limit in y is out of data, setting to 31.')
+                if verbose:
+                    print ('(centroid_2D): WARNING - Upper limit in y is out of data, setting to 31.')
 
             c_sum = c_sum + image[jj, ii]
             xsum += xloc * image[jj, ii]
@@ -308,8 +317,9 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
         print('(centroid_2D): Init. Sum (before iterations) = ', c_sum)
 
     if c_sum == 0:
-        print('(centroid_2D): WARNING - Dividing by zero: c_sum=0. Not going into the for loop! ')
-        print('               Keeping checkbox center.')
+        if verbose:
+            print('(centroid_2D): WARNING - Dividing by zero: c_sum=0. Not going into the for loop! ')
+            print('               Keeping checkbox center.')
         xcen, ycen = xpeak, ypeak
     else:
         xcen = xsum / c_sum
@@ -321,7 +331,8 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
     old_ycen = copy.deepcopy(ycen)   # Modified by Maria Pena-Guerrero
     num_iter = 0
     
-    print ('(centroid_2D): Maximum iterations = ', max_iter)   # Added by M. Pena-Guerrero
+    if verbose:
+        print ('(centroid_2D): Maximum iterations = ', max_iter)   # Added by M. Pena-Guerrero
     
     for kk in xrange(max_iter +1):  # the +1 is because python stops the loop at idx=n
         num_iter += 1
@@ -376,18 +387,21 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
                 # Make sure that the limits are within the data   - Added by M. Pena-Guerrero
                 if ii >= 32:
                     ii = 31
-                    print ('(centroid_2D): WARNING - X index is out of data, setting to 31.')
+                    if verbose:
+                        print ('(centroid_2D): WARNING - X index is out of data, setting to 31.')
                 if jj >= 32:
                     jj = 31
-                    print ('(centroid_2D): WARNING - Y index is out of data, setting to 31.')
+                    if verbose:
+                        print ('(centroid_2D): WARNING - Y index is out of data, setting to 31.')
 
                 c_sum += image[jj, ii] * weight
                 xsum += xloc * image[jj, ii] * weight
                 ysum += yloc * image[jj, ii] * weight
         
         if c_sum == 0:
-            print('(centroid_2D): WARNING - Still dividing by zero --> c_sum is not being updated!')
-            print('               Keeping checkbox center.')
+            if verbose:
+                print('(centroid_2D): WARNING - Still dividing by zero --> c_sum is not being updated!')
+                print('               Keeping checkbox center.')
             # If the centering box was too small, keep checkbox center
             xcen, ycen = checkbox_center
             break
@@ -424,9 +438,11 @@ def centroid_2D(image, checkbox_center, checkbox_halfwidth, max_iter=0, threshol
         starting_point = 0
     else:
         starting_point = 1
-    print('(centroid_2D): Centroid indexing starts with: ', starting_point)
-    print('(centroid_2D): Centroid = [{}, {}] for num_iter = {}.'.format(centroid[0], centroid[1], num_iter))
-    print('(centroid_2D): Converged? ', convergence_flag)
+
+    if verbose:
+        print('(centroid_2D): Centroid indexing starts with: ', starting_point)
+        print('(centroid_2D): Centroid = [{}, {}] for num_iter = {}.'.format(centroid[0], centroid[1], num_iter))
+        print('(centroid_2D): Converged? ', convergence_flag)
           
     return centroid, c_sum
 # *************************** centroid_2D ***************************

@@ -76,8 +76,8 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 # Set test parameters
 detector = 491                     # Which detector are we working with: 491 or 492
-path_number = 1                   # Select 0 through 4 from paths_list above
-vlim = (1.0,30)                    # sensitivity limits of image, i.e. (0.001, 0.1) 
+path_number = 2                   # Select 0 through 4 from paths_list above
+vlim = (1.,100.)                    # sensitivity limits of image, i.e. (0.001, 0.1)
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
 ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
@@ -91,7 +91,7 @@ background_method = None           # Select either 'fractional', 'fixed', or Non
 redos = True                       # Use the re-do postage stamps?
 debug = False                      # see all debug messages (i.e. values of all calculations)
 determine_moments = False          # Want to determine 2nd and 3rd moments?
-display_master_img = False         # Want to see the combined ramped images for every star?
+display_master_img = True         # Want to see the combined ramped images for every star?
 just_read_text_file = False        # skip the for loop to the plotting part
 centroid_in_full_detector = False  # Give resulting coordinates in terms of full detector: True or False
 show_disp = False                  # Show display of resulting positions: True or False
@@ -105,7 +105,7 @@ perform_avgcorr = True             # Correct for average values given by Pierre?
 single_star = False                # If only want to test one star set to True and type the path for a single star
 # NOTE: for the names of stars, single numbers before the .fits require 8 spaces after quad_star, 
 #       while 2 numbers require 7 spaces.  
-star_file_name = '/postageout_star_      77 quad_       2 quad_star       27.fits'
+star_file_name = '/postageout_star_     103 quad_       3 quad_star        3.fits'
 
 
 ###########################################################################################################
@@ -116,9 +116,13 @@ main_path_infiles = "../PFforMaria/"
 dir2test = main_path_infiles+paths_list[path_number]
 if redos:
     dir2test = main_path_infiles+paths_list[path_number]+"_redo"
-    
+
+# Outputs path for display images
+display_fig_name_path = main_path_infiles+"/centroid_figs"
+
+
 if single_star:
-    single_star_path = dir2test+star_file_name   
+    single_star_path = dir2test+star_file_name
     save_text_file = False
     show_disp = True
     #display_master_img = True   # Want to see the combined ramped images for every star?
@@ -196,6 +200,7 @@ if redos:
 output_file = os.path.join(output_file_path, "TA_testcases_for_"+case+bg_choice+".txt")
 if redos:
     output_file = os.path.join(output_file_path, "TA_testcases_for_"+case+bg_choice+"_redo.txt")
+
 if save_text_file:
     f = open(output_file, "w+")
     f.write(line0+"\n")
@@ -299,21 +304,22 @@ if not just_read_text_file:
                 idx_star = stars_detector.index(st)
                 true_center = [true_x[idx_star], true_y[idx_star]]
                 factor_i = factor[idx_star]
-                
+
                 # Read FITS image 
                 #hdr = fits.getheader(star, 0)
                 #print("** HEADER:", hdr)
                 master_img = fits.getdata(star, 0)
                 print ('Master image shape: ', np.shape(master_img))
+                print(master_img)
                 # Do background correction on each of 3 ramp images
                 if background_method is not None and "frac" in background_method:
                     # If fractional method is selected, loop over backgrounds from 0.0 to 1.0 in increments of 0.1
                     for bg_frac in fractional_background_list:
                         print ("* Using fractional background value of: ", bg_frac)
-                        # Obtain the combined FITS image that combines all frames into one image 
+                        # Obtain the combined FITS image that combines all frames into one image
                         # background subtraction is done here
-                        psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
-                                            bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
+                        psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method,
+                                            bg_value=bg_value, bg_frac=bg_frac, debug=debug)
                         master_img_bgcorr_max = psf.max()
                         '''
                         while master_img_bgcorr_max == 0.0:
@@ -324,20 +330,22 @@ if not just_read_text_file:
                                 bg_frac = 0.0
                                 break
                             print('       *** Setting  NEW  bg_frac = ', bg_frac)
-                            psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
-                                                bg_value=bg_value, bg_frac=bg_frac, debug=debug)                
+                            psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method,
+                                                bg_value=bg_value, bg_frac=bg_frac, debug=debug)
                             master_img_bgcorr_max = psf.max()
                             '''
-                        cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list, 
-                                                                                  ywidth_list, checkbox_size, 
-                                                                                  max_iter, threshold, 
+                        cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list,
+                                                                                  ywidth_list, checkbox_size,
+                                                                                  max_iter, threshold,
                                                                                   determine_moments, debug)
                         # Transform to full detector coordinates in order to compare with real centers
-                        ESA_center = [0,0]
-                        corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector,
-                                                                                                      centroid_in_full_detector,
-                                                                                                      cb_centroid_list_in32x32pix, ESA_center, 
-                                                                                                      true_center, perform_avgcorr=perform_avgcorr)
+                        cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, background, xwidth_list, ywidth_list,
+                                                                       checkbox_size, max_iter, threshold, determine_moments, debug)
+                        corr_cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = taf.centroid2fulldetector(cb_centroid_list_in32x32pix,
+                                                                                                    true_center, detector, perform_avgcorr=perform_avgcorr)
+                        if not centroid_in_full_detector:
+                            cb_centroid_list = cb_centroid_list_in32x32pix
+                            true_center = true_center32x32
                         # Record offsets
                         x3offst.append(differences_true_TA[0][0][0])
                         y3offst.append(differences_true_TA[0][0][1])
@@ -348,24 +356,24 @@ if not just_read_text_file:
 
                         # Write output into text file
                         bg = bg_frac
-                        data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, 
-                                      corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
+                        data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list,
+                                      true_center, loleftcoords, factor_i, differences_true_TA]
                         tf.write2file(data2write, lines4screenandfile)
                 else:
                     # Obtain the combined FITS image that combines all frames into one image AND
                     # check if all image is zeros, take the image that still has a max value
-                    psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method, 
-                                                bg_value=bg_value, bg_frac=bg_frac, debug=debug)                   
-                    cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list, 
-                                                                              ywidth_list, checkbox_size, 
-                                                                              max_iter, threshold, 
-                                                                              determine_moments, debug)
-                    # Transform to full detector coordinates in order to compare with real centers
-                    ESA_center = [0,0]
-                    corr_true_center_centroid, corr_cb_centroid_list, loleftcoords, differences_true_TA = tf.transform2fulldetector(detector, 
-                                                                                                  centroid_in_full_detector,
-                                                                                                  cb_centroid_list_in32x32pix, ESA_center, 
-                                                                                                  true_center, perform_avgcorr=perform_avgcorr)
+                    psf = taf.readimage(master_img, backgnd_subtraction_method, bg_method=background_method,
+                                                bg_value=bg_value, bg_frac=bg_frac, debug=False)
+                    cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, background, xwidth_list, ywidth_list,
+                                                                              checkbox_size, max_iter, threshold,
+                                                                              determine_moments, verbose=True, debug=False)
+                    print ('cb_centroid_list_in32x32pix=',cb_centroid_list_in32x32pix)
+                    #raw_input()
+                    corr_cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = taf.centroid2fulldetector(cb_centroid_list_in32x32pix,
+                                                                                                true_center, detector, perform_avgcorr=perform_avgcorr)
+                    if not centroid_in_full_detector:
+                        cb_centroid_list = cb_centroid_list_in32x32pix
+                        true_center = true_center32x32
                     print ('***** cb_centroid_list = ', cb_centroid_list_in32x32pix)
                     # Record offsets
                     x3offst.append(differences_true_TA[0][0][0])
@@ -376,13 +384,26 @@ if not just_read_text_file:
                     y7offst.append(differences_true_TA[0][2][1])
                     # Write output into text file
                     bg = background
-                    data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, corr_true_center_centroid, loleftcoords, factor_i, differences_true_TA]
-                    tf.write2file(data2write, lines4screenandfile) 
-                
-                tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, cb_centroid_list_in32x32pix, show_disp, 
-                                     vlim, savefile=save_centroid_disp, redos=redos)  
+                    data2write = [save_text_file, output_file, st, bg, corr_cb_centroid_list, true_center, loleftcoords, factor_i, differences_true_TA]
+                    tf.write2file(data2write, lines4screenandfile)
+
+                if bg_choice == "_bgFrac":
+                    path2savefig = display_fig_name_path+"/bg_Fractional/"
+                elif bg_choice == "_bgFixed":
+                    path2savefig = display_fig_name_path+"/bg_Fixed/"
+                elif bg_choice == "_bgNone":
+                    path2savefig = display_fig_name_path+"/bg_None/"
+                display_fig_name = path2savefig+"star_"+str(st)+"_"+case+bg_choice+plot_type
+                # Display the combined FITS image that combines all frames into one image
+                m_img = display_master_img
+                if display_master_img:
+                    m_img = taf.readimage(master_img, backgnd_subtraction_method=None, bg_method=None,
+                                      bg_value=None, bg_frac=None, debug=False)
+                taf.display_centroids(detector, st, case, psf, true_center, cb_centroid_list,
+                                     show_disp, vlim, savefile=save_centroid_disp, fig_name=display_fig_name,
+                                     display_master_img=m_img)
                 if single_star:
-                    tf.display_centroids(detector, st, case, psf, corr_true_center_centroid, corr_cb_centroid_list, show_disp, 
+                    tf.display_centroids(detector, st, case, psf, true_center, corr_cb_centroid_list, show_disp,
                      vlim, savefile=save_centroid_disp, redos=redos)  
                     print ("Recursive test script finished. \n")
                     exit()
@@ -413,8 +434,11 @@ if 'frac' not in bg_method:
     minvalue = -20.0
     maxvalue = 20.0
     xlims, ylims = [minvalue, maxvalue], [minvalue, maxvalue]
+    Nsigma = 2
+    Nsigma_plot = sig3 * Nsigma
     taf.plot_offsets(plot_title, offsets, sigmas, means, star_number, destination,
-                     plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
+                     plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims,
+                     Nsigma=Nsigma)
     # Do zoom-in
     if zoom_plot:
         #destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_zoomin_"+bg+case)
@@ -423,7 +447,8 @@ if 'frac' not in bg_method:
         maxvalue = 0.50
         xlims, ylims = [minvalue, maxvalue], [minvalue, maxvalue]
         taf.plot_zoomin(plot_title, offsets_list, star_number, destination,
-                        plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
+                        plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims,
+                        Nsigma=Nsigma)
 else:
     frac_data = tf.get_fracdata(offsets)
     sig3, mean3, sig5, mean5, sig7, mean7 = taf.get_frac_stdevs(frac_data)

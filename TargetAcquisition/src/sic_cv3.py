@@ -49,7 +49,8 @@ ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
 vlim = (1.0, 30)                   # Sensitivity limits of image, i.e. (0.001, 0.1)
 threshold = 0.3                    # Convergence threshold of accepted difference between checkbox centroid and coarse location
 max_iter = 10                      # Maximum number of iterations for finding coarse location
-debug = False                      # See all debug messages (i.e. values of all calculations)
+verbose = False                    # Show some debug messages (i.e. resulting calculations)
+debug = False                      # See all debug messages (i.e. values of variables and calculations)
 diffs_in_arcsecs = True            # Print the differences in arcsecs? True or False (=degrees) 
 determine_moments = False          # Want to determine 2nd and 3rd moments?
 display_master_img = False         # Want to see the combined ramped images for every star?
@@ -68,6 +69,7 @@ output_file_path = os.path.join(main_path, "results")
 
 # other variables that need to be defined
 true_center = [0.0, 0.0]
+perform_PierCorr = False
 case = "SICtest_CV3"
 
 # start the timer to compute the whole running time
@@ -103,7 +105,7 @@ y_centroids7 = []
 x_centroids = [x_centroids3, x_centroids5, x_centroids7]
 y_centroids = [y_centroids3, y_centroids5, y_centroids7]
 
-centroids_info = [true_center, output_full_detector, show_centroids]
+centroids_info = [true_center, output_full_detector, show_centroids, perform_PierCorr]
 
 # start the loop over the fits files
 for fits_file in dir2test:
@@ -119,11 +121,11 @@ for fits_file in dir2test:
             bg_corr_info = [backgnd_subtraction_method, background_method, bg_value, bgf, debug]
             x_centroids, y_centroids = taf.find_centroid(fits_file, bg_corr_info, recursive_centroids_info,
                                                          display_centroids_info, x_centroids, y_centroids,
-                                                         fits_names, output_file_path, centroids_info)
+                                                         fits_names, output_file_path, centroids_info, verbose)
     else:
         x_centroids, y_centroids = taf.find_centroid(fits_file, bg_corr_info, recursive_centroids_info,
                                                      display_centroids_info, x_centroids, y_centroids,
-                                                     fits_names, output_file_path, centroids_info)
+                                                     fits_names, output_file_path, centroids_info, verbose)
 
 # Write the results in a text file
 output_file = os.path.join(output_file_path, case+bg_choice+".txt")

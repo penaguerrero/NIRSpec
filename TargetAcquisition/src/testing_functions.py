@@ -798,15 +798,12 @@ def read_TruePosFromFits(path2listfile, list_file1, positions_file1, list_file2,
     return benchmark_data, magP1
 
 
-def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=True):
+def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in):
     """ This function obtains the differences of the input arrays with the reference or benchmark data. """
     # calculate the differences with respect to the benchmark data
-    multiply_by = 1.0          # keep differences in degrees
-    if arcsecs:
-        multiply_by = 3600.0   # to convert from degrees to arcsecs
     if len(stars) == len(bench_stars):   # for the fixed and None background case
-        diffV2 = (benchV2 - V2in) * multiply_by
-        diffV3 = (benchV3 - V3in) * multiply_by
+        diffV2 = (benchV2 - V2in)
+        diffV3 = (benchV3 - V3in)
         bench_V2_list = benchV2.tolist()
         bench_V3_list = benchV3.tolist()
     else:                               # for the fractional background case
@@ -815,8 +812,8 @@ def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in, arcsecs=
         for i, s in enumerate(stars):
             if s in bench_stars:
                 j = bench_stars.tolist().index(s)
-                dsV2 = (benchV2[j] - V2in[i]) * multiply_by
-                dsV3 = (benchV3[j] - V3in[i]) * multiply_by 
+                dsV2 = (benchV2[j] - V2in[i])
+                dsV3 = (benchV3[j] - V3in[i])
                 diffV2.append(dsV2)
                 diffV3.append(dsV3)
                 bench_V2_list.append(benchV2[j])

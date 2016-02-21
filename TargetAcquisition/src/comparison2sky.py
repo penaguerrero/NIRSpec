@@ -34,8 +34,8 @@ show_positions = False   # Print positions on file and screen: True or False
 tilt = False             # tilt angle: True or False
 debug = True            # See screen print statements for intermediate answers: True or False 
 save_txt_file = False    # Save text file with resulting transformations: True or False
-diffs_in_arcsecs = True  # Print the differences in arcsecs? True or False (=degrees) 
-single_case = 124       # test only a particular case: integer number of star, else set to None 
+arcsecs = True          # Print the differences in arcsecs? True or False (=degrees)
+single_case = 103       # test only a particular case: integer number of star, else set to None
 # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
 
 #######################################################################################################################
@@ -199,6 +199,8 @@ if bkgd_method == "all":
 else:
     input_files_list = glob(path4inputP1P2+"*"+bkgd_method+"*.txt")
 
+#input_files_list = glob('../resultsXrandomstars/centroid_txt_files/*'+bkgd_method+"*.txt")
+
 # Start TESTS the loop
 for infile in input_files_list:
     # define the case to work with 
@@ -230,12 +232,22 @@ for infile in input_files_list:
         bench_yLP2 = np.array([bench_yLP2[star_idx]])
     #avg_benchX = (bench_xP1 + bench_xP2)/2.0
     #avg_benchY = (bench_yP1 + bench_yP2)/2.0
+    if arcsecs:
+        bench_V2P1 = bench_V2P1 * 3600.
+        bench_V2P2 = bench_V2P2 * 3600.
+        bench_V3P1 = bench_V3P1 * 3600.
+        bench_V3P2 = bench_V3P2 * 3600.
     avg_benchV2 = (bench_V2P1 + bench_V2P2)/2.0
     avg_benchV3 = (bench_V3P1 + bench_V3P2)/2.0
+
         
     # read the measured detector centroids
     data = np.loadtxt(infile, skiprows=2, usecols=(0,1,2,3,4,5,6,7,8,9,10,11,12,13), unpack=True)
     stars, bg_value, x13, y13, x15, y15, x17, y17, x23, y23, x25, y25, x27, y27 = data
+    #data_P1 = np.loadtxt(input_files_list[0], skiprows=5, usecols=(0,1,2,3,4,5,6,7), unpack=True)
+    #stars, bg_value, x13, y13, x15, y15, x17, y17 = data_P1
+    #data_P2 = np.loadtxt(input_files_list[1], skiprows=5, usecols=(0,1,2,3,4,5,6,7), unpack=True)
+    #_, _, x23, y23, x25, y25, x27, y27 = data_P2
     if single_case:
         star_idx = stars.tolist().index(single_case)
         if "frac" in case:
@@ -300,13 +312,13 @@ for infile in input_files_list:
     avgx7 = (x17+x27)/2.0
     avgy7 = (y17+y27)/2.0
     # Step (b) - transformations to degrees
-    T1_V2_3, T1_V3_3 = ct.coords_transf(transf_direction, detector, filter_input, avgx3, avgy3, tilt, debug)
-    T1_V2_5, T1_V3_5 = ct.coords_transf(transf_direction, detector, filter_input, avgx5, avgy5, tilt, debug)
-    T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, debug)
+    T1_V2_3, T1_V3_3 = ct.coords_transf(transf_direction, detector, filter_input, avgx3, avgy3, tilt, arcsecs, debug)
+    T1_V2_5, T1_V3_5 = ct.coords_transf(transf_direction, detector, filter_input, avgx5, avgy5, tilt, arcsecs, debug)
+    T1_V2_7, T1_V3_7 = ct.coords_transf(transf_direction, detector, filter_input, avgx7, avgy7, tilt, arcsecs, debug)
     # Step (c) - comparison
-    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_5, T1_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5, arcsecs=diffs_in_arcsecs)
-    T1_diffV2_7, T1_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7, arcsecs=diffs_in_arcsecs)
+    T1_diffV2_3, T1_diffV3_3, T1bench_V2_list, T1bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_3, T1_V3_3)
+    T1_diffV2_5, T1_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_5, T1_V3_5)
+    T1_diffV2_7, T1_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T1_V2_7, T1_V3_7)
     # get the minimum of the differences
     T1_min_diff, T1_counter = get_mindiff(T1_diffV2_3, T1_diffV2_5, T1_diffV2_7)
     # get the fractional value that has the smaller difference
@@ -325,9 +337,9 @@ for infile in input_files_list:
         T1bench_V2, T1bench_V3 = np.array(T1bench_V2_list), np.array(T1bench_V3_list)
         print ("For TEST 1: ")
         # to express in arcsecs multiply by 3600.0
-        T1LSdeltas_3, T1LSsigmas_3, T1LSlines2print_3 = lsi.ls_fit_iter(max_iterations, T1_V2_3*3600.0, T1_V3_3*3600.0, T1bench_V2*3600.0, T1bench_V3*3600.0)
-        T1LSdeltas_5, T1LSsigmas_5, T1LSlines2print_5 = lsi.ls_fit_iter(max_iterations, T1_V2_5*3600.0, T1_V3_5*3600.0, T1bench_V2*3600.0, T1bench_V3*3600.0)
-        T1LSdeltas_7, T1LSsigmas_7, T1LSlines2print_7 = lsi.ls_fit_iter(max_iterations, T1_V2_7*3600.0, T1_V3_7*3600.0, T1bench_V2*3600.0, T1bench_V3*3600.0)
+        T1LSdeltas_3, T1LSsigmas_3, T1LSlines2print_3 = lsi.ls_fit_iter(max_iterations, T1_V2_3, T1_V3_3, T1bench_V2, T1bench_V3, Nsigma=Nsigma)
+        T1LSdeltas_5, T1LSsigmas_5, T1LSlines2print_5 = lsi.ls_fit_iter(max_iterations, T1_V2_5, T1_V3_5, T1bench_V2, T1bench_V3, Nsigma=Nsigma)
+        T1LSdeltas_7, T1LSsigmas_7, T1LSlines2print_7 = lsi.ls_fit_iter(max_iterations, T1_V2_7, T1_V3_7, T1bench_V2, T1bench_V3, Nsigma=Nsigma)
         # Do N-sigma rejection
         T1sigmaV2_3, T1meanV2_3, T1sigmaV3_3, T1meanV3_3, T1newV2_3, T1newV3_3, T1niter_3, T1lines2print_3 = tf.Nsigma_rejection(Nsigma, T1_diffV2_3, T1_diffV3_3, max_iterations)
         T1sigmaV2_5, T1meanV2_5, T1sigmaV3_5, T1meanV3_5, T1newV2_5, T1newV3_5, T1niter_5, T1lines2print_5 = tf.Nsigma_rejection(Nsigma, T1_diffV2_5, T1_diffV3_5, max_iterations)
@@ -335,12 +347,12 @@ for infile in input_files_list:
     
     # TEST 2: (a) Transform individual P1 and P2 to V2-V3, (b) avg V2-V3 space positions, (c) compare to avg reference positions
     # Step (a) - transformations
-    T2_V2_13, T2_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, debug)
-    T2_V2_15, T2_V3_15 = ct.coords_transf(transf_direction, detector, filter_input, x15, y15, tilt, debug)
-    T2_V2_17, T2_V3_17 = ct.coords_transf(transf_direction, detector, filter_input, x17, y17, tilt, debug)
-    T2_V2_23, T2_V3_23 = ct.coords_transf(transf_direction, detector, filter_input, x23, y23, tilt, debug)
-    T2_V2_25, T2_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, debug)
-    T2_V2_27, T2_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, debug)
+    T2_V2_13, T2_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, arcsecs, debug)
+    T2_V2_15, T2_V3_15 = ct.coords_transf(transf_direction, detector, filter_input, x15, y15, tilt, arcsecs, debug)
+    T2_V2_17, T2_V3_17 = ct.coords_transf(transf_direction, detector, filter_input, x17, y17, tilt, arcsecs, debug)
+    T2_V2_23, T2_V3_23 = ct.coords_transf(transf_direction, detector, filter_input, x23, y23, tilt, arcsecs, debug)
+    T2_V2_25, T2_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, arcsecs, debug)
+    T2_V2_27, T2_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, arcsecs, debug)
     # Step (b) - averages
     T2_V2_3 = (T2_V2_13 + T2_V2_23)/2.0
     T2_V3_3 = (T2_V3_13 + T2_V3_23)/2.0
@@ -349,9 +361,9 @@ for infile in input_files_list:
     T2_V2_7 = (T2_V2_17 + T2_V2_27)/2.0
     T2_V3_7 = (T2_V3_17 + T2_V3_27)/2.0
     # Step (c) - comparison
-    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_5, T2_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5, arcsecs=diffs_in_arcsecs)
-    T2_diffV2_7, T2_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7, arcsecs=diffs_in_arcsecs)
+    T2_diffV2_3, T2_diffV3_3, T2bench_V2_list, T2bench_V3_list = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_3, T2_V3_3)
+    T2_diffV2_5, T2_diffV3_5, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_5, T2_V3_5)
+    T2_diffV2_7, T2_diffV3_7, _, _ = tf.compare2ref(case, bench_starP1, avg_benchV2, avg_benchV3, stars, T2_V2_7, T2_V3_7)
     # get the minimum of the differences
     T2_min_diff, T2_counter = get_mindiff(T2_diffV2_3, T2_diffV2_5, T2_diffV2_7)
     # get the fractional value that has the smaller difference
@@ -369,9 +381,9 @@ for infile in input_files_list:
         T2stdev_V3_7, T2mean_V3_7 = tf.find_std(T2_diffV3_7)
         T2bench_V2, T2bench_V3 = np.array(T2bench_V2_list), np.array(T2bench_V3_list)
         print ("For TEST 2: ")
-        T2LSdeltas_3, T2LSsigmas_3, T2LSlines2print_3 = lsi.ls_fit_iter(max_iterations, T2_V2_3*3600.0, T2_V3_3*3600.0, T2bench_V2*3600.0, T2bench_V3*3600.0)
-        T2LSdeltas_5, T2LSsigmas_5, T2LSlines2print_5 = lsi.ls_fit_iter(max_iterations, T2_V2_5*3600.0, T2_V3_5*3600.0, T2bench_V2*3600.0, T2bench_V3*3600.0)
-        T2LSdeltas_7, T2LSsigmas_7, T2LSlines2print_7 = lsi.ls_fit_iter(max_iterations, T2_V2_7*3600.0, T2_V3_7*3600.0, T2bench_V2*3600.0, T2bench_V3*3600.0)
+        T2LSdeltas_3, T2LSsigmas_3, T2LSlines2print_3 = lsi.ls_fit_iter(max_iterations, T2_V2_3, T2_V3_3, T2bench_V2, T2bench_V3, Nsigma=Nsigma)
+        T2LSdeltas_5, T2LSsigmas_5, T2LSlines2print_5 = lsi.ls_fit_iter(max_iterations, T2_V2_5, T2_V3_5, T2bench_V2, T2bench_V3, Nsigma=Nsigma)
+        T2LSdeltas_7, T2LSsigmas_7, T2LSlines2print_7 = lsi.ls_fit_iter(max_iterations, T2_V2_7, T2_V3_7, T2bench_V2, T2bench_V3, Nsigma=Nsigma)
         # Do N-sigma rejection
         T2sigmaV2_3, T2meanV2_3, T2sigmaV3_3, T2meanV3_3, T2newV2_3, T2newV3_3, T2niter_3, T2lines2print_3 = tf.Nsigma_rejection(Nsigma, T2_diffV2_3, T2_diffV3_3, max_iterations)
         T2sigmaV2_5, T2meanV2_5, T2sigmaV3_5, T2meanV3_5, T2newV2_5, T2newV3_5, T2niter_5, T2lines2print_5 = tf.Nsigma_rejection(Nsigma, T2_diffV2_5, T2_diffV3_5, max_iterations)
@@ -379,19 +391,19 @@ for infile in input_files_list:
     
     # TEST 3: (a) Transform P1 and P2 individually to V2-V3 (b) compare star by star and position by position
     # Step (a) - transformations
-    T3_V2_13, T3_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, debug)
-    T3_V2_15, T3_V3_15 = ct.coords_transf(transf_direction, detector, filter_input, x15, y15, tilt, debug)
-    T3_V2_17, T3_V3_17 = ct.coords_transf(transf_direction, detector, filter_input, x17, y17, tilt, debug)
-    T3_V2_23, T3_V3_23 = ct.coords_transf(transf_direction, detector, filter_input, x23, y23, tilt, debug)
-    T3_V2_25, T3_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, debug)
-    T3_V2_27, T3_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, debug)
+    T3_V2_13, T3_V3_13 = ct.coords_transf(transf_direction, detector, filter_input, x13, y13, tilt, arcsecs, debug)
+    T3_V2_15, T3_V3_15 = ct.coords_transf(transf_direction, detector, filter_input, x15, y15, tilt, arcsecs, debug)
+    T3_V2_17, T3_V3_17 = ct.coords_transf(transf_direction, detector, filter_input, x17, y17, tilt, arcsecs, debug)
+    T3_V2_23, T3_V3_23 = ct.coords_transf(transf_direction, detector, filter_input, x23, y23, tilt, arcsecs, debug)
+    T3_V2_25, T3_V3_25 = ct.coords_transf(transf_direction, detector, filter_input, x25, y25, tilt, arcsecs, debug)
+    T3_V2_27, T3_V3_27 = ct.coords_transf(transf_direction, detector, filter_input, x27, y27, tilt, arcsecs, debug)
     # Step (b) - comparison
-    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_15, T3_diffV3_15, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_25, T3_diffV3_25, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_17, T3_diffV3_17, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17, arcsecs=diffs_in_arcsecs)
-    T3_diffV2_27, T3_diffV3_27, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27, arcsecs=diffs_in_arcsecs)
+    T3_diffV2_13, T3_diffV3_13, T3bench_V2_listP1, T3bench_V3_listP1 = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_13, T3_V3_13)
+    T3_diffV2_23, T3_diffV3_23, T3bench_V2_listP2, T3bench_V3_listP2 = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_23, T3_V3_23)
+    T3_diffV2_15, T3_diffV3_15, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_15, T3_V3_15)
+    T3_diffV2_25, T3_diffV3_25, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_25, T3_V3_25)
+    T3_diffV2_17, T3_diffV3_17, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P1, bench_V3P1, stars, T3_V2_17, T3_V3_17)
+    T3_diffV2_27, T3_diffV3_27, _, _ = tf.compare2ref(case, bench_starP1, bench_V2P2, bench_V3P2, stars, T3_V2_27, T3_V3_27)
     # get the minimum of the differences
     T3_min_diff1, T3_counter1 = get_mindiff(T3_diffV2_13, T3_diffV2_15, T3_diffV2_17)
     T3_min_diff2, T3_counter2 = get_mindiff(T3_diffV2_23, T3_diffV2_25, T3_diffV2_27)
@@ -420,12 +432,12 @@ for infile in input_files_list:
         T3bench_V2P1, T3bench_V3P1 = np.array(T3bench_V2_listP1), np.array(T3bench_V3_listP1)
         T3bench_V2P2, T3bench_V3P2 = np.array(T3bench_V2_listP2), np.array(T3bench_V3_listP2)
         print ("For TEST 3: ")
-        T3LSdeltas_13, T3LSsigmas_13, T3LSlines2print_13 = lsi.ls_fit_iter(max_iterations, T3_V2_13*3600.0, T3_V3_13*3600.0, T3bench_V2P1*3600.0, T3bench_V3P1*3600.0)
-        T3LSdeltas_15, T3LSsigmas_15, T3LSlines2print_15 = lsi.ls_fit_iter(max_iterations, T3_V2_15*3600.0, T3_V3_15*3600.0, T3bench_V2P1*3600.0, T3bench_V3P1*3600.0)
-        T3LSdeltas_17, T3LSsigmas_17, T3LSlines2print_17 = lsi.ls_fit_iter(max_iterations, T3_V2_17*3600.0, T3_V3_17*3600.0, T3bench_V2P1*3600.0, T3bench_V3P1*3600.0)
-        T3LSdeltas_23, T3LSsigmas_23, T3LSlines2print_23 = lsi.ls_fit_iter(max_iterations, T3_V2_23*3600.0, T3_V3_23*3600.0, T3bench_V2P2*3600.0, T3bench_V3P2*3600.0)
-        T3LSdeltas_25, T3LSsigmas_25, T3LSlines2print_25 = lsi.ls_fit_iter(max_iterations, T3_V2_25*3600.0, T3_V3_25*3600.0, T3bench_V2P2*3600.0, T3bench_V3P2*3600.0)
-        T3LSdeltas_27, T3LSsigmas_27, T3LSlines2print_27 = lsi.ls_fit_iter(max_iterations, T3_V2_27*3600.0, T3_V3_27*3600.0, T3bench_V2P2*3600.0, T3bench_V3P2*3600.0)
+        T3LSdeltas_13, T3LSsigmas_13, T3LSlines2print_13 = lsi.ls_fit_iter(max_iterations, T3_V2_13, T3_V3_13, T3bench_V2P1, T3bench_V3P1, Nsigma=Nsigma)
+        T3LSdeltas_15, T3LSsigmas_15, T3LSlines2print_15 = lsi.ls_fit_iter(max_iterations, T3_V2_15, T3_V3_15, T3bench_V2P1, T3bench_V3P1, Nsigma=Nsigma)
+        T3LSdeltas_17, T3LSsigmas_17, T3LSlines2print_17 = lsi.ls_fit_iter(max_iterations, T3_V2_17, T3_V3_17, T3bench_V2P1, T3bench_V3P1, Nsigma=Nsigma)
+        T3LSdeltas_23, T3LSsigmas_23, T3LSlines2print_23 = lsi.ls_fit_iter(max_iterations, T3_V2_23, T3_V3_23, T3bench_V2P2, T3bench_V3P2, Nsigma=Nsigma)
+        T3LSdeltas_25, T3LSsigmas_25, T3LSlines2print_25 = lsi.ls_fit_iter(max_iterations, T3_V2_25, T3_V3_25, T3bench_V2P2, T3bench_V3P2, Nsigma=Nsigma)
+        T3LSdeltas_27, T3LSsigmas_27, T3LSlines2print_27 = lsi.ls_fit_iter(max_iterations, T3_V2_27, T3_V3_27, T3bench_V2P2, T3bench_V3P2, Nsigma=Nsigma)
         # Do N-sigma rejection
         T3sigmaV2_13, T3meanV2_13, T3sigmaV3_13, T3meanV3_13, T3newV2_13, T3newV3_13, T3niter_13, T3lines2print_13 = tf.Nsigma_rejection(Nsigma, T3_diffV2_13, T3_diffV3_13, max_iterations)
         T3sigmaV2_15, T3meanV2_15, T3sigmaV3_15, T3meanV3_15, T3newV2_15, T3newV3_15, T3niter_15, T3lines2print_15 = tf.Nsigma_rejection(Nsigma, T3_diffV2_15, T3_diffV3_15, max_iterations)
@@ -455,10 +467,10 @@ for infile in input_files_list:
     # Print results to screen and save into a text file if told so
     # Text file 1
     line0 = "{}".format("Differences = diffs = True_Positions - Measured_Positions")
-    if diffs_in_arcsecs:
-        line0bis = "{}".format("*** diffs are in units of arcsecs")
+    if arcsecs:
+        line0bis = "{}".format("***  units are arcsecs")
     else:
-        line0bis = "{}".format("*** diffs are in units of degrees")
+        line0bis = "{}".format("***  units are degrees")
     line1 = "{}\n {}".format("Test1: average P1 and P2, transform to V2-V3, calculate differences",
                              "  * Standard deviations and means ")
     if not single_case:    
@@ -579,10 +591,10 @@ for infile in input_files_list:
 
     # Text file 2
     line0 = "{}".format("Differences = True_Positions - Measured_Positions")
-    if diffs_in_arcsecs:
-        line0bis = "{}".format("*** diffs are in units of arcsecs")
+    if arcsecs:
+        line0bis = "{}".format("***  units are arcsecs")
     else:
-        line0bis = "{}".format("*** diffs are in units of degrees")
+        line0bis = "{}".format("***  units are degrees")
     line1 = "{}".format("Test2: P1 P2, average positions in V2-V3, calculate differences")
     if not single_case:    
         line2a = "std_dev_V2_3 = {:<20}   std_dev_V3_3 = {:<20}".format(T2stdev_V2_3, T2stdev_V3_3)
@@ -700,10 +712,10 @@ for infile in input_files_list:
 
     # Text file 3
     line0 = "{}".format("Differences = True_Positions - Measured_Positions")
-    if diffs_in_arcsecs:
-        line0bis = "{}".format("*** diffs are in units of arcsecs")
+    if arcsecs:
+        line0bis = "{}".format("***  units are arcsecs")
     else:
-        line0bis = "{}".format("*** diffs are in units of degrees")
+        line0bis = "{}".format("***  units are degrees")
     line1 = "{}".format("Test3: P1 and P2, transform to V2-V3 space individually, calculate differences position to position")
     if not single_case:    
         line2a = "std_dev_V2_P1_3 = {:<20}    std_dev_V3_P1_3 = {:<20}".format(T3stdev_V2_13, T3stdev_V3_13)
