@@ -803,6 +803,7 @@ if __name__ == '__main__':
     else:
         list_test2perform = [test2perform]
     for test2perform in list_test2perform:
+        do_plots = False
         print ('Starting analysis for TEST %s ...' % (test2perform))
         # Compact variables
         primary_params1 = [output_full_detector, save_text_file, save_centroid_disp, keep_bad_stars, stars_in_sample, scene]
