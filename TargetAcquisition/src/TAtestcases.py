@@ -75,23 +75,26 @@ paths_list = [path_scene1_slow, path_scene1_slow_nonoise, path_scene1_rapid, pat
 
 
 # Set test parameters
+Nsigma = None                         # Value of sigma to reject stars: integer or float
 detector = 491                     # Which detector are we working with: 491 or 492
 path_number = 2                   # Select 0 through 4 from paths_list above
-vlim = (1.,100.)                    # sensitivity limits of image, i.e. (0.001, 0.1)
+vlim = (1, 100)                    # sensitivity limits of image, i.e. (0.001, 0.1)
 checkbox_size = 3                  # Real checkbox size
 xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
 ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
 max_iter = 50
-threshold = 1e-5
+threshold = 0.01
 backgnd_subtraction_method = 1     # 1    = Do background subtraction on final image (after subtracting 3-2 and 2-1), 
 #                                           before converting negative values into zeros
 #                                    2    = Do background subtraction on 3-2 and 2-1 individually
 #                                    None = Do not subtract background
-background_method = None           # Select either 'fractional', 'fixed', or None
+background_method = 'frac'         # Select either 'fractional', 'fixed', or None
+background2use = 0.3               # Background to use for analysis: string='all' or float
+keep_bad_stars = False             # Keep the bad stars in the sample? True or False
 redos = True                       # Use the re-do postage stamps?
 debug = False                      # see all debug messages (i.e. values of all calculations)
 determine_moments = False          # Want to determine 2nd and 3rd moments?
-display_master_img = True         # Want to see the combined ramped images for every star?
+display_master_img = False         # Want to see the combined ramped images for every star?
 just_read_text_file = False        # skip the for loop to the plotting part
 centroid_in_full_detector = False  # Give resulting coordinates in terms of full detector: True or False
 show_disp = False                  # Show display of resulting positions: True or False
@@ -138,12 +141,19 @@ bg_frac, bg_value = None, None   # for the None case
 bg_choice = "_bgNone"
 background = 0.0
 if background_method is not None and "frac" in background_method:
-    fractional_background_list = [x*0.1 for x in range(11)]
+    if isinstance(background2use, float):
+        fractional_background_list = [background2use]
+        background2use = None
+    else:
+        fractional_background_list = [x*0.1 for x in range(11)]
     bg_choice = "_bgFrac"
 elif background_method is not None and "fix" in background_method:
-    bg_value = 0.0
+    bg_value = 0.0#background2use
+    background2use = None
     bg_choice = "_bgFixed"
     background = bg_value
+elif background_method is None:
+    background2use = None
 
 # Set the name for the output file
 if path_number == 0:
@@ -280,6 +290,7 @@ elif detector == 492:
 # offset lists
 x3offst, x5offst, x7offst = [], [], []
 y3offst, y5offst, y7offst = [], [], []
+studied_stars = []
 
 # Start the loop in the given directory
 if not just_read_text_file:
@@ -298,7 +309,16 @@ if not just_read_text_file:
                 star_exists = os.path.isfile(star)
                 if not star_exists:
                     print ("The file: ", star, "\n    does NOT exist. Exiting the script.")
-                    exit() 
+                    exit()
+
+                # Check if the star is bad and skip it if it is (if keep_bad_stars=False)
+                if not keep_bad_stars:
+                    stars_sample = [st]
+                    new_st = taf.remove_bad_stars(stars_sample, verbose=False)
+                    if len(new_st) == 0:
+                        continue
+                # append the star number to the list of studied stars
+                studied_stars.append(st)
                 
                 # Obtain real star position
                 idx_star = stars_detector.index(st)
@@ -310,7 +330,6 @@ if not just_read_text_file:
                 #print("** HEADER:", hdr)
                 master_img = fits.getdata(star, 0)
                 print ('Master image shape: ', np.shape(master_img))
-                print(master_img)
                 # Do background correction on each of 3 ramp images
                 if background_method is not None and "frac" in background_method:
                     # If fractional method is selected, loop over backgrounds from 0.0 to 1.0 in increments of 0.1
@@ -337,10 +356,12 @@ if not just_read_text_file:
                         cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, bg_frac, xwidth_list,
                                                                                   ywidth_list, checkbox_size,
                                                                                   max_iter, threshold,
-                                                                                  determine_moments, debug)
+                                                                                  determine_moments,
+                                                                                  verbose=False, debug=debug)
                         # Transform to full detector coordinates in order to compare with real centers
                         cb_centroid_list_in32x32pix = taf.run_recursive_centroids(psf, background, xwidth_list, ywidth_list,
-                                                                       checkbox_size, max_iter, threshold, determine_moments, debug)
+                                                                       checkbox_size, max_iter, threshold, determine_moments,
+                                                                       verbose=False, debug=debug)
                         corr_cb_centroid_list, loleftcoords, true_center32x32, differences_true_TA = taf.centroid2fulldetector(cb_centroid_list_in32x32pix,
                                                                                                     true_center, detector, perform_avgcorr=perform_avgcorr)
                         if not centroid_in_full_detector:
@@ -418,12 +439,15 @@ else:
     offsets = np.array(offsets_list)
 
 # Plots if case is not fractional
-if 'frac' not in bg_method:
-    sig3, mean3 = taf.find_std(offsets[1])
-    sig5, mean5 = taf.find_std(offsets[3])
-    sig7, mean7 = taf.find_std(offsets[5])
-    sigmas = [sig3, sig5, sig7]
-    means = [mean3, mean5, mean7]
+if background2use is None: #'frac' not in bg_method:
+    sigx3, meanx3 = taf.find_std(offsets[0])
+    sigx5, meanx5 = taf.find_std(offsets[2])
+    sigx7, meanx7 = taf.find_std(offsets[4])
+    sigy3, meany3 = taf.find_std(offsets[1])
+    sigy5, meany5 = taf.find_std(offsets[3])
+    sigy7, meany7 = taf.find_std(offsets[5])
+    sigmas = [sigx3, sigx5, sigx7, sigy3, sigy5, sigy7]
+    means = [meanx3, meanx5, meanx7, meany3, meany5, meany7]
     if background_method is None:
         bg = 'None_'
     else:
@@ -434,19 +458,23 @@ if 'frac' not in bg_method:
     minvalue = -20.0
     maxvalue = 20.0
     xlims, ylims = [minvalue, maxvalue], [minvalue, maxvalue]
-    Nsigma = 2
-    Nsigma_plot = sig3 * Nsigma
-    taf.plot_offsets(plot_title, offsets, sigmas, means, star_number, destination,
+    Nsigma_plot = Nsigma
+    if Nsigma is not None:
+        Nsigma_plot = sigy3 * Nsigma
+        destination = os.path.abspath("../plots4presentationIST/det491_Sene1_Nsigma"+repr(Nsigma)+'_'+bg+case+plot_type)
+    taf.plot_offsets(plot_title, offsets, sigmas, means, studied_stars, destination,
                      plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims,
-                     Nsigma=Nsigma)
+                     Nsigma=Nsigma_plot)
     # Do zoom-in
     if zoom_plot:
         #destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_zoomin_"+bg+case)
         destination = os.path.abspath("../plots4presentationIST/det491_Scene1_zoomin_"+bg+case+plot_type)
-        minvalue = -0.50
-        maxvalue = 0.50
+        minvalue, maxvalue = -0.50, 0.50
+        if Nsigma is not None:
+            destination = os.path.abspath("../plots4presentationIST/det491_Scene1_zoomin_Nsigma"+repr(Nsigma)+'_'+bg+case+plot_type)
+            minvalue, maxvalue = -0.12, 0.12
         xlims, ylims = [minvalue, maxvalue], [minvalue, maxvalue]
-        taf.plot_zoomin(plot_title, offsets_list, star_number, destination,
+        taf.plot_zoomin(plot_title, offsets_list, studied_stars, destination,
                         plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims,
                         Nsigma=Nsigma)
 else:
@@ -463,7 +491,7 @@ else:
     plot_title = case+"_BGfrac"
     #destination = os.path.abspath(main_path_outfiles+"/plots/XoffsetVsYoffset_frac_"+case+plot_type)
     destination = os.path.abspath("../plots4presentationIST/det491_Sene1_"+str(bg)+case+plot_type)
-    taf.plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, star_number, destination,
+    taf.plot_offsets_frac(plot_title, frac_bgs, frac_data, sigmas, means, studied_stars, destination,
                      save_plot=save_plot, show_plot=show_plot, xlims=None, ylims=None)
     # Do zoom-in
     if zoom_plot:
@@ -474,7 +502,7 @@ else:
         minvalue = -0.50
         maxvalue = 0.50
         xlims, ylims = [minvalue, maxvalue], [minvalue, maxvalue]
-        taf.plot_zoomin_frac(plot_title, frac_bgs, frac_data, star_number, destination,
+        taf.plot_zoomin_frac(plot_title, frac_bgs, frac_data, studied_stars, destination,
                              save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims)
 
 # Make the plot of magnitude (in x) versus radial offset distance (in y) for Scene2

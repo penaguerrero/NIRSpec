@@ -6,8 +6,6 @@ import time
 import string
 
 # other code
-import TA_functions as TAf
-import v2v3plots
 import testXrandom_stars as tx
 
 print("Modules correctly imported! \n")
@@ -53,12 +51,12 @@ NOTES:
 
 ### FUNCTIONS
 
-def get_pixpositions(bg_choice, stars_sample):
+def get_pixpositions(scenario, stars_sample):
     '''
     This function reads pixel positions from text files in Xrandomstars/centroid_txt_files/*All.txt
 
     Args:
-        bkgd_method: None or string, method for background subtraction
+        scenario: string, e.g. Scene1_rapid_real_bgFrac0.3_thres3
         stars_sample: list, stars to be studied
 
     Returns:
@@ -66,7 +64,7 @@ def get_pixpositions(bg_choice, stars_sample):
                         P1P2data = [x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27]
     '''
     # get pixel space data
-    input_files_list = glob('../resultsXrandomstars/centroid_txt_files/*'+bg_choice+"*_ALL.txt")
+    input_files_list = glob('../resultsXrandomstars/centroid_txt_files/*'+scenario+'*_ALL.txt')
     print ('\n Reading samples from:', input_files_list)
     data_P1 = np.loadtxt(input_files_list[0], skiprows=5, usecols=(0,1,2,3,4,5,6,7), unpack=True)
     stars, bg_value, x13, y13, x15, y15, x17, y17 = data_P1
@@ -238,21 +236,25 @@ if __name__ == '__main__':
 
     # INITIAL CONDITIONS
 
-    Nktimes = 5000                     # Integer number to repeat the entire analysis
+    Nktimes = 5000                    # Integer number to repeat the entire analysis
     random_sample = False              # choose a random sample of stars from either detector: True or False
-    save_Nktimes_text_files = False    # Want to save the text file of comparison? True or False
+    save_Nktimes_text_files = True    # Want to save the text file with star samples used for later comparison? True or False
     show_onscreen_results = False      # Want to show on-screen resulting V2s, V3s and statistics? True or False
     output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
-    keep_bad_stars = False              # Keep the bad stars in the sample? True or False
-    detector = 491                     # Detector to analyze: 491, 491 or 'both'
-    stars_in_sample = 20               # Number of stars in sample
+    keep_bad_stars = False             # Keep the bad stars in the sample? True or False
+    keep_ugly_stars = True            # Keep the ugly stars (one position measured wrong)? True or False
+    perform_abs_threshold = True      # Perform abs_threshold routine (True) or only perform least squares routine (False)
+    detector = 'both'                     # Detector to analyze: 491, 491 or 'both'
+    stars_in_sample = 8               # Number of stars in sample
     scene = 1                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
     background_method = 'frac'         # Select either 'fractional', 'fixed', or None
     background2use = 0.3               # Background to use for analysis: None or float
     shutters = "rapid"                 # Shutter velocity, string: "rapid" or "slow"
     noise = "real"                     # Noise level, string: "nonoise" or "real"
     filter_input = "F140X"             # Filter, string: for now only test case is "F140X"
-    Nsigma = 2                         # N-sigma rejection of bad stars: integer or float
+    Nsigma = 2.5                         # N-sigma rejection of bad stars: integer or float
+    abs_threshold = 0.32               # threshold to reject points after each iteration of least squares routine, default=0.32
+    min_elements = 8                   # minimum number of elements in the absolute threshold least squares routine, default=4
     max_iters_Nsig = 10                # Max number of iterations for N-sigma function: integer
 
 
@@ -262,7 +264,7 @@ if __name__ == '__main__':
     xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
     ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
     vlim = (1, 100)                    # Sensitivity limits of image, i.e. (0.001, 0.1)
-    threshold = 0.3                    # Convergence threshold of accepted difference between checkbox centroid and coarse location
+    threshold = 0.01                   # Convergence threshold of accepted difference between checkbox centroid and coarse location
     max_iter = 10                      # Maximum number of iterations for finding coarse location
     verbose = False                    # Show some debug messages (i.e. resulting calculations)
     debug = False                      # See all debug messages (i.e. values of all calculations)
@@ -292,6 +294,16 @@ if __name__ == '__main__':
 
     # start the timer to compute the whole running time
     start_time = time.time()
+
+    # make sure that bad stars are gone if ugly stars are to be gone as well
+    if not keep_ugly_stars:
+        keep_bad_stars = False
+
+    # Set variable as it appears defined in function
+    if perform_abs_threshold:
+        just_least_sqares = False  # Only perform least squares routine = True, perform abs_threshold routine = False
+    else:
+        just_least_sqares = True
 
     # tests to perform
     list_of_tests2perform = ['T1', 'T2', 'T3']
@@ -324,8 +336,21 @@ if __name__ == '__main__':
         case += repr(background2use)
 
     # start the text file to save the samples
-    path_results_text_files = os.path.abspath('../resultsXrandomstars/')
-    samples_txtfile = os.path.join(path_results_text_files, 'samples_used.txt')
+    star_sample_dir = 'good_and_uglies/'+repr(stars_in_sample)+'_star_sample'
+    if not keep_bad_stars and not keep_ugly_stars:
+        star_sample_dir = 'only_good_stars/'+repr(stars_in_sample)+'_star_sample'
+    if perform_abs_threshold and min_elements==4:
+        star_sample_dir += '/abs_threshold'
+    elif perform_abs_threshold and min_elements!=4:
+        star_sample_dir += '/diff_min_elements_abs_threshold'
+    elif not perform_abs_threshold and min_elements!=4:
+        print ('***** You are running the code with  min_elements =', min_elements, ' and No absolute threshold... aborting.')
+        exit()
+    path_results_text_files = os.path.abspath('../resultsXrandomstars/'+star_sample_dir)
+    detector_str = repr(detector)
+    if not isinstance(detector, int):
+        detector_str = '2Dets'
+    samples_txtfile = os.path.join(path_results_text_files, detector_str+'samples_used.txt')
     if save_Nktimes_text_files:
         if random_sample:   # only create a new file when random is set to True
             fhdr = '{:<20} {:<10}'.format('# Star Sample', 'Stars in sample')
@@ -334,6 +359,16 @@ if __name__ == '__main__':
             f.close()
 
     # start the text files to save the Test results
+    bg = bg_choice+repr(background2use)
+    str_thres = string.replace(repr(threshold), '0.', '')
+    thres = 'thres'+str_thres
+    scenario = "Scene"+str(scene)+"_"+shutters+"_"+noise+bg+'_'+thres
+    case = case+'_'+thres
+    if min_elements != 4:
+        case += '_minele'+repr(min_elements)
+    #print ('case = ', case)
+    #print ('scenario =', scenario)
+    #raw_input()
     if save_Nktimes_text_files:
         txt1 = os.path.join(path_results_text_files, 'TEST1results')
         txt2 = os.path.join(path_results_text_files, 'TEST2results')
@@ -356,9 +391,13 @@ if __name__ == '__main__':
     for n in range(Nktimes):
         # Select the sample of stars to study
         if random_sample:
-            stars_sample = tx.select_random_stars(stars_in_sample, stars_detectors, keep_bad_stars, verbose)
+            verbose = True
+            stars_sample = tx.select_random_stars(scene, stars_in_sample, stars_detectors, keep_bad_stars,
+                                                  keep_ugly_stars, verbose)
         else:
             stars_sample = get_sample_numberN(counter, samples)
+        # Tell me how many sets you have ran
+        print ('\n Set  # {}  of a total of  {}.\n'.format(counter+1, Nktimes))
         print ('stars_sample =', stars_sample)
 
         # Get benchmark (true) information
@@ -377,13 +416,13 @@ if __name__ == '__main__':
         # loop over the tests to be performed
         for test2perform in list_of_tests2perform:
             # get the pixel positions
-            P1P2data = get_pixpositions(bg_choice, stars_sample)
+            P1P2data = get_pixpositions(scenario, stars_sample)
 
             # Create group of primary and secondary parameters
             primary_params1 = [output_full_detector, save_text_file, save_centroid_disp,
-                               keep_bad_stars, stars_in_sample, scene]
+                               keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample, scene]
             primary_params2 = [background_method, background2use, shutters, noise, filter_input,
-                               test2perform, Nsigma, max_iters_Nsig]
+                               test2perform, Nsigma, max_iters_Nsig, abs_threshold, min_elements]
             primary_params = [primary_params1, primary_params2]
 
             secondary_params1 = [checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter,
@@ -394,11 +433,12 @@ if __name__ == '__main__':
             # Run transformations for specific test
             print ('\n Transforming into V2 and V3, and running TEST...')
             path4results = ''   # we are not saving individual Test results so path does not matter
-            case, Tbench_Vs_list, T_Vs, T_diffVs, LS_res, LS_info = tx.transformAndRunTest(stars_sample,
+            case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info = tx.transformAndRunTest(stars_sample,
                                                                                 show_onscreen_results,
                                                                                 path4results, detector, primary_params,
                                                                                 secondary_params, bg_choice, P1P2data,
-                                                                                bench_star, benchmark_V2V3_sampleP1P2)
+                                                                                bench_star, benchmark_V2V3_sampleP1P2,
+                                                                                plot_v2v3pos=False)
             # unfold variables
             T3LSsigmas_3, T3LSsigmas_5, T3LSsigmas_7, T3LSdeltas_3, T3LSdeltas_5, T3LSdeltas_7 = LS_res
             iterations, rejected_elementsLS = LS_info
@@ -411,10 +451,16 @@ if __name__ == '__main__':
                 printTESTfile(test2perform, textfiles357[1], T3LSsigmas_5, T3LSdeltas_5, nit5, rejel5)   # centroid window 5
                 printTESTfile(test2perform, textfiles357[2], T3LSsigmas_7, T3LSdeltas_7, nit7, rejel7)   # centroid window 7
 
-        # Tell me how many sets you have ran
-        print ('\n Set  # {}  of a total of  {}.\n'.format(counter+1, Nktimes))
+                # Tell me how many sets you have ran
+        print ('\n')
         counter += 1
 
 
     print ("\n Script 'XrandStarsNktimes_v2.py' finished! Took  %s  minutes to finish. \n" % ((time.time() - start_time)/60.))
+    print ("    Main parameters used: ")
+    print ("        stars_in_sample = ", stars_in_sample)
+    print ("        perform_abs_threshold = ", perform_abs_threshold)
+    print ("        Nsigma = ", Nsigma)
+    print ("        detector = ", detector)
+    print ("        threshold = ", threshold)
 

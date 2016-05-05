@@ -204,7 +204,7 @@ def compare2ref(case, bench_stars, benchV2, benchV3, stars, V2in, V3in):
     return diffV2, diffV3, bench_V2_list, bench_V3_list
 
 
-def convert2MSAcenter(xin, yin, xtin, ytin):
+def convert2MSAcenter(xin, yin, xtin, ytin, arcsec):
     """
     This function is a python translation of Tonys IDL equivalent function. It converts the
     measured coordinates of each star into the frame relative to the center of the MSA.
@@ -220,10 +220,17 @@ def convert2MSAcenter(xin, yin, xtin, ytin):
     # Center coordinates of NIRSpec V2, V3
     x0_XAN = 376.769       # V2 in arcsec
     y0_YAN = -428.453      # V3 in arcsec
-    # measured V2 V3 in arcsec
-    x0 = x0_XAN/3600.      # conversion of V2 to XAN in degrees
-    y0_YANd = y0_YAN/3600. # intermediate conversion: V3 arcsec to V3 degrees=-0.119015
-    y0 = -y0_YANd -0.13    # convert V3 degrees to YAN=+0.249015
+
+    # measured V2 V3 in degrees
+    if arcsec:
+        x0 = x0_XAN            # conversion of V2 to XAN in degrees
+        y0_YANd = y0_YAN       # intermediate conversion: V3 arcsec to V3 degrees=-0.119015
+        y0 = -y0_YANd -468.0   # convert V3 degrees to YAN=+0.249015
+    else:
+        x0 = x0_XAN/3600.      # conversion of V2 to XAN in degrees
+        y0_YANd = y0_YAN/3600. # intermediate conversion: V3 arcsec to V3 degrees=-0.119015
+        y0 = -y0_YANd -0.13    # convert V3 degrees to YAN=+0.249015
+
     # convert inputs to MSA center
     x = xin - x0
     y = yin - y0
@@ -267,22 +274,25 @@ def display_centroids(detector, st, case, psf, corr_true_center_centroid,
         ax.set_title(fig_title+"_original")
         ax.autoscale(enable=False, axis='both')
         ax.imshow(display_master_img, cmap='gray', interpolation='nearest')
-        ax.set_ylim(1.0, np.shape(display_master_img)[0])
-        ax.set_xlim(1.0, np.shape(display_master_img)[1])
+        ax.set_ylim(0.0, np.shape(display_master_img)[0])
+        ax.set_xlim(0.0, np.shape(display_master_img)[1])
         ax.imshow(display_master_img, cmap='gray', interpolation='nearest', vmin=vlims[0], vmax=vlims[1])
     # Add plot of measured centroids
     fig, ax = plt.subplots(figsize=(8, 8))
     ax.set_title(fig_title)
     ax.autoscale(enable=False, axis='both')
     ax.imshow(psf, cmap='gray', interpolation='nearest')
-    ax.set_ylim(1.0, np.shape(psf)[0])
-    ax.set_xlim(1.0, np.shape(psf)[1])
-    ax.plot(corr_cb_centroid_list[0][0], corr_cb_centroid_list[0][1], marker='*', ms=20, mec='black', mfc='blue', ls='', label='CentroidWin=3')
+    ax.set_ylim(-1.0, np.shape(psf)[0])
+    ax.set_xlim(-1.0, np.shape(psf)[1])
+    # the -1.0 in all the measurements and true positions is to bring back numbers to python index
+    ax.plot(corr_cb_centroid_list[0][0]-1.0, corr_cb_centroid_list[0][1]-1.0, marker='^', ms=12, mec='cyan', mfc='blue', ls='', label='CentroidWin=3')
+    plt.vlines(15.0, 0.0, 31.5, colors='y', linestyles='dashed')
+    plt.hlines(15.0, 0.0, 31.5, colors='y', linestyles='dashed')
     if len(corr_cb_centroid_list) != 1:
-        ax.plot(corr_cb_centroid_list[1][0], corr_cb_centroid_list[1][1], marker='*', ms=17, mec='black', mfc='green', ls='', label='CentroidWin=5')
-        ax.plot(corr_cb_centroid_list[2][0], corr_cb_centroid_list[2][1], marker='*', ms=15, mec='black', mfc='red', ls='', label='CentroidWin=7')
+        ax.plot(corr_cb_centroid_list[1][0]-1.0, corr_cb_centroid_list[1][1]-1.0, marker='o', ms=10, mec='black', mfc='green', ls='', label='CentroidWin=5')
+        ax.plot(corr_cb_centroid_list[2][0]-1.0, corr_cb_centroid_list[2][1]-1.0, marker='*', ms=12, mec='black', mfc='red', ls='', label='CentroidWin=7')
         if corr_true_center_centroid != [0.0, 0.0]:   # plot only is center is defined
-            ax.plot(corr_true_center_centroid[0], corr_true_center_centroid[1], marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
+            ax.plot(corr_true_center_centroid[0]-1.0, corr_true_center_centroid[1]-1.0, marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
     # Shrink current axis by 10%
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
@@ -660,11 +670,11 @@ def plot_offsets(plot_title, offsets, sigmas, means, bench_star, destination,
     fig1 = plt.figure(1, figsize=(12, 10))
     ax1 = fig1.add_subplot(111)
     plt.title(plot_title)
-    plt.xlabel('Residual offset in X')
-    plt.ylabel('Residual offset in Y')
+    plt.xlabel('Residual offset in X [pixels]')
+    plt.ylabel('Residual offset in Y [pixels]')
     plt.plot(offsets[0], offsets[1], 'b^', ms=8, alpha=0.7, label='Centroid window=3')
-    plt.plot(offsets[2], offsets[1], 'go', ms=8, alpha=0.7, label='Centroid window=5')
-    plt.plot(offsets[4], offsets[1], 'r*', ms=10, alpha=0.7, label='Centroid window=7')
+    plt.plot(offsets[2], offsets[3], 'go', ms=8, alpha=0.7, label='Centroid window=5')
+    plt.plot(offsets[4], offsets[5], 'r*', ms=10, alpha=0.7, label='Centroid window=7')
     if xlims is None:
         xmin, xmax = ax1.get_xlim()
     else:
@@ -681,14 +691,20 @@ def plot_offsets(plot_title, offsets, sigmas, means, bench_star, destination,
     box = ax1.get_position()
     ax1.set_position([box.x0, box.y0, box.width * 0.85, box.height])
     ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
-    sig3, sig5, sig7 = sigmas
-    mean3, mean5, mean7 = means
-    textinfig3 = r'y$\sigma3$ = %0.2f    y$\mu3$ = %0.2f' % (sig3, mean3)
-    textinfig5 = r'y$\sigma5$ = %0.2f    y$\mu5$ = %0.2f' % (sig5, mean5)
-    textinfig7 = r'y$\sigma7$ = %0.2f    y$\mu7$ = %0.2f' % (sig7, mean7)
-    ax1.annotate(textinfig3, xy=(1.02, 0.35), xycoords='axes fraction' )
-    ax1.annotate(textinfig5, xy=(1.02, 0.32), xycoords='axes fraction' )
-    ax1.annotate(textinfig7, xy=(1.02, 0.29), xycoords='axes fraction' )
+    sigx3, sigx5, sigx7, sigy3, sigy5, sigy7 = sigmas
+    meanx3, meanx5, meanx7, meany3, meany5, meany7 = means
+    textinfig3x = r'x$\sigma3$ = %0.2f    x$\mu3$ = %0.2f' % (sigx3, meanx3)
+    textinfig5x = r'x$\sigma5$ = %0.2f    x$\mu5$ = %0.2f' % (sigx5, meanx5)
+    textinfig7x = r'x$\sigma7$ = %0.2f    x$\mu7$ = %0.2f' % (sigx7, meanx7)
+    textinfig3y = r'y$\sigma3$ = %0.2f    y$\mu3$ = %0.2f' % (sigy3, meany3)
+    textinfig5y = r'y$\sigma5$ = %0.2f    y$\mu5$ = %0.2f' % (sigy5, meany5)
+    textinfig7y = r'y$\sigma7$ = %0.2f    y$\mu7$ = %0.2f' % (sigy7, meany7)
+    ax1.annotate(textinfig3x, xy=(1.02, 0.35), xycoords='axes fraction' )
+    ax1.annotate(textinfig5x, xy=(1.02, 0.32), xycoords='axes fraction' )
+    ax1.annotate(textinfig7x, xy=(1.02, 0.29), xycoords='axes fraction' )
+    ax1.annotate(textinfig3y, xy=(1.02, 0.24), xycoords='axes fraction' )
+    ax1.annotate(textinfig5y, xy=(1.02, 0.21), xycoords='axes fraction' )
+    ax1.annotate(textinfig7y, xy=(1.02, 0.18), xycoords='axes fraction' )
     y_reject = [-1.0, 1.0]
     x_reject = [-1.0, 1.0]
     if Nsigma is not None:
@@ -882,19 +898,20 @@ def plot_zoomin(plot_title, offsets_list, bench_star, destination,
     # Copy all stars and offsets in order to remove 'bad' stars
     if Nsigma is not None:
         Nsigma_results = Nsigma_rejection(Nsigma, np.array(offsets_list[0]), np.array(offsets_list[1]), max_iterations=10)
-        sigma_x3, mean_x3, sig3, mean3, x_new3, y_new3, _, _, _ = Nsigma_results
+        sigx3, meanx3, sigy3, meany3, x_new3, y_new3, _, _, _ = Nsigma_results
         Nsigma_results = Nsigma_rejection(Nsigma, np.array(offsets_list[2]), np.array(offsets_list[3]), max_iterations=10)
-        sigma_x5, mean_x5, sig5, mean5, x_new5, y_new5, _, _, _ = Nsigma_results
+        sigx5, meanx5, sigy5, meany5, x_new5, y_new5, _, _, _ = Nsigma_results
         Nsigma_results = Nsigma_rejection(Nsigma, np.array(offsets_list[4]), np.array(offsets_list[5]), max_iterations=10)
-        sigma_x7, mean_x7, sig7, mean7, x_new7, y_new7, _, _, _ = Nsigma_results
+        sigx7, meanx7, sigy7, meany7, x_new7, y_new7, _, _, _ = Nsigma_results
         good_offsets = [x_new3, y_new3, x_new5, y_new5, x_new7, y_new7]
         good_stars_only = []
         for i, xi in enumerate(offsets_list[0]):
             if xi in x_new3:
                 good_stars_only.append(bench_star[i])
-        xlims, ylims = [-0.15, 0.15], [-0.15, 0.15]
+        #xlims, ylims = [-0.15, 0.15], [-0.15, 0.15]
+        Nsigma = sigy3*Nsigma
     else:
-        good_stars_only = copy.deepcopy(bench_star.tolist())
+        good_stars_only = copy.deepcopy(bench_star)
         good_offsets_list = copy.deepcopy(offsets_list)
         for i, s in enumerate(bench_star):
             if offsets_list[0][i]>=1.1 or offsets_list[0][i]<=-1.1 or offsets_list[1][i]>=1.1 or offsets_list[1][i]<=-1.1:
@@ -908,13 +925,15 @@ def plot_zoomin(plot_title, offsets_list, bench_star, destination,
                 good_offsets_list[4].pop(idx2remove)
                 good_offsets_list[5].pop(idx2remove)
         good_offsets = np.array(good_offsets_list)
-        sig3, mean3 = find_std(good_offsets[1])
-        sig5, mean5 = find_std(good_offsets[3])
-        sig7, mean7 = find_std(good_offsets[5])
-    sigmas = [sig3, sig5, sig7]
-    means = [mean3, mean5, mean7]
+        sigx3, meanx3 = find_std(good_offsets[0])
+        sigx5, meanx5 = find_std(good_offsets[2])
+        sigx7, meanx7 = find_std(good_offsets[4])
+        sigy3, meany3 = find_std(good_offsets[1])
+        sigy5, meany5 = find_std(good_offsets[3])
+        sigy7, meany7 = find_std(good_offsets[5])
+    sigmas = [sigx3, sigx5, sigx7, sigy3, sigy5, sigy7]
+    means = [meanx3, meanx5, meanx7, meany3, meany5, meany7]
     plot_title = plot_title+'_zoomin'
-    Nsigma = sig3*Nsigma
     plot_offsets(plot_title, good_offsets, sigmas, means, good_stars_only, destination,
                  plot_type='.jpg', save_plot=save_plot, show_plot=show_plot, xlims=xlims, ylims=ylims,
                  Nsigma=Nsigma)
@@ -1080,7 +1099,7 @@ def Nsigma_rejection(N, x, y, max_iterations=10, verbose=True):
     return sigma_x, mean_x, sigma_y, mean_y, x_new, y_new, niter, lines2print, rejected_elements_idx
 
 
-def read_listfile(list_file_name, detector=None, background_method=None):    
+def read_listfile(list_file_name, detector=None, background_method=None):
     """
     This function reads the fits table that contains the flux and converts to magnitude for the
     simulated stars.
@@ -1838,7 +1857,8 @@ def get_rejected_stars(stars_sample, rejected_elements_idx):
     return rejected_elements
 
 
-def get_stats(T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iterations, arcsecs):
+def get_stats(T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iterations, arcsecs, just_least_sqares,
+              abs_threshold=0.32, min_elements=4):
     """
     This function obtains the standard deviations through regular statistics as well as through
     a sigma clipping algorithm and an iterative least square algorithm. It also obtains the minimum
@@ -1850,6 +1870,8 @@ def get_stats(T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iterations
         Nsigma: float or integer, the number of sigmas to reject
         max_iterations: integer, maximum iterations for the Nsigma routine
         arcsec: True or False, give delta theta in arcsecs?
+        just_least_sqares: Only perform least squares routine = True, perform abs_threshold routine = False
+        abs_threshold = 0.32 arcsec
 
     Returns:
         results_stats: List with standard deviations and means, dictionary, minimum differences from centroid window
@@ -1867,6 +1889,11 @@ def get_stats(T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iterations
     T_diffV2_5, T_diffV3_5 = np.array(T_diffV2_5), np.array(T_diffV3_5)
     T_diffV2_7, T_diffV3_7 = np.array(T_diffV2_7), np.array(T_diffV3_7)
     Tbench_V2_list, Tbench_V3_list = T_benchVs_list
+    Tbench_V2, Tbench_V3 = np.array(Tbench_V2_list), np.array(Tbench_V3_list)
+    # calculate least squares but first convert to MSA center
+    T_V2_3, T_V3_3, Tbench_V2, Tbench_V3 = convert2MSAcenter(T_V2_3, T_V3_3, Tbench_V2, Tbench_V3, arcsec=arcsecs)
+    T_V2_5, T_V3_5, _, _ = convert2MSAcenter(T_V2_5, T_V3_5, Tbench_V2, Tbench_V3, arcsec=arcsecs)
+    T_V2_7, T_V3_7, _, _ = convert2MSAcenter(T_V2_7, T_V3_7, Tbench_V2, Tbench_V3, arcsec=arcsecs)
     # calculate standard deviations and means
     Tstdev_V2_3, Tmean_V2_3 = find_std(T_diffV2_3)
     Tstdev_V2_5, Tmean_V2_5 = find_std(T_diffV2_5)
@@ -1874,18 +1901,33 @@ def get_stats(T_transformations, T_diffs, T_benchVs_list, Nsigma, max_iterations
     Tstdev_V3_3, Tmean_V3_3 = find_std(T_diffV3_3)
     Tstdev_V3_5, Tmean_V3_5 = find_std(T_diffV3_5)
     Tstdev_V3_7, Tmean_V3_7 = find_std(T_diffV3_7)
-    Tbench_V2, Tbench_V3 = np.array(Tbench_V2_list), np.array(Tbench_V3_list)
     # get the minimum of the differences
     T_min_diffV2, T_counterV2 = get_mindiff(T_diffV2_3, T_diffV2_5, T_diffV2_7)
     T_min_diffV3, T_counterV3 = get_mindiff(T_diffV3_3, T_diffV3_5, T_diffV3_7)
     T_min_diff, T_counter = [T_min_diffV2, T_min_diffV3], [T_counterV2, T_counterV3]
-    # calculate least squares but first convert to MSA center
-    T_V2_3, T_V3_3, Tbench_V2, Tbench_V3 = convert2MSAcenter(T_V2_3, T_V3_3, Tbench_V2, Tbench_V3)
-    T_V2_5, T_V3_5, _, _ = convert2MSAcenter(T_V2_5, T_V3_5, Tbench_V2, Tbench_V3)
-    T_V2_7, T_V3_7, _, _ = convert2MSAcenter(T_V2_7, T_V3_7, Tbench_V2, Tbench_V3)
+    '''
     TLSdeltas_3, TLSsigmas_3, TLSlines2print_3, rejected_elements_3, nit3 = lsi.ls_fit_iter(max_iterations, T_V2_3, T_V3_3, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs)
     TLSdeltas_5, TLSsigmas_5, TLSlines2print_5, rejected_elements_5, nit5 = lsi.ls_fit_iter(max_iterations, T_V2_5, T_V3_5, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs)
     TLSdeltas_7, TLSsigmas_7, TLSlines2print_7, rejected_elements_7, nit7 = lsi.ls_fit_iter(max_iterations, T_V2_7, T_V3_7, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs)
+    '''
+    import abs_threshold_rejection as atr
+    max_iters = 100
+    TLSdeltas_3, TLSsigmas_3, TLSlines2print_3, rejected_elements_3, nit3, new_centroids, new_trues = atr.abs_threshold_rejection(abs_threshold,
+                  max_iters, T_V2_3, T_V3_3, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs,
+                  just_least_sqares=just_least_sqares, min_elements=min_elements)
+    #T_V2_3, T_V3_3 = new_centroids[0], new_centroids[1]
+    #Tbench_V2, Tbench_V3 = new_trues[0], new_trues[1]
+    TLSdeltas_5, TLSsigmas_5, TLSlines2print_5, rejected_elements_5, nit5, new_centroids, new_trues = atr.abs_threshold_rejection(abs_threshold,
+                  max_iters, T_V2_5, T_V3_5, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs,
+                  just_least_sqares=just_least_sqares, min_elements=min_elements)
+    #T_V2_5, T_V3_5 = new_centroids[0], new_centroids[1]
+    #Tbench_V2, Tbench_V3 = new_trues[0], new_trues[1]
+    TLSdeltas_7, TLSsigmas_7, TLSlines2print_7, rejected_elements_7, nit7, new_centroids, new_trues = atr.abs_threshold_rejection(abs_threshold,
+                  max_iters, T_V2_7, T_V3_7, Tbench_V2, Tbench_V3, Nsigma, arcsec=arcsecs,
+                  just_least_sqares=just_least_sqares, min_elements=min_elements)
+    #T_V2_7, T_V3_7 = new_centroids[0], new_centroids[1]
+    #Tbench_V2, Tbench_V3 = new_trues[0], new_trues[1]
+
     # Do N-sigma rejection
     TsigmaV2_3, TmeanV2_3, TsigmaV3_3, TmeanV3_3, TnewV2_3, TnewV3_3, Tniter_3, Tlines2print_3, rej_elements_3 = Nsigma_rejection(Nsigma, T_diffV2_3, T_diffV3_3, max_iterations)
     TsigmaV2_5, TmeanV2_5, TsigmaV3_5, TmeanV3_5, TnewV2_5, TnewV3_5, Tniter_5, Tlines2print_5, rej_elements_5 = Nsigma_rejection(Nsigma, T_diffV2_5, T_diffV3_5, max_iterations)
@@ -2142,27 +2184,62 @@ def writePixPos(save_text_file, show_centroids, output_file, lines4screenandfile
             print(line3)
 
 
-def remove_bad_stars(stars_sample, verbose):
+def remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose):
     """ This function reads the text files of bad stars, compares the sample data, removes
     the bad stars, and returns the sample without bad stars.
     Args:
+        scene = integer, scenario or scene to be studied
         stars_sample = list of stars to be studied
+        keep_ugly_stars = boolean, want to keep ugly stars in the sample
+        verbose = boolean
     Returns:
         stars_sample = list of stars with the 'bad stars' removed.
+    """
+    bad_stars, ugly_stars = read_bad_stars(scene, verbose)
+    # compare to stars_sample and get rid of appropriate stars
+    new_sample = []
+    for st_sam in stars_sample:
+        if keep_ugly_stars:   # then only reject the bad stars
+            if st_sam in bad_stars:
+                continue
+            else:
+                new_sample.append(st_sam)   # append only good and ugly stars
+                #print ('star', st_sam, ' is good or ugly')
+        else:
+            if st_sam in bad_stars or st_sam in ugly_stars:   # reject both bad and ugly stars
+                continue
+            else:
+                new_sample.append(st_sam)
+                #print ('star', st_sam,' is good')
+    return new_sample
+
+
+def read_bad_stars(scene, verbose):
+    """ This function reads the text files of bad stars.
+    Args:
+        scene = integer, scenario or scene to be studied
+        verbose = boolean
+    Returns:
+        bad_stars = list of stars of the 'bad' stars
+        ugly_stars = list of stars of the 'ugly' stars
     """
     # paths to files
     scene1_bad_stars_file = os.path.abspath("../bad_stars/scene1_bad_stars.txt")
     scene2_bad_stars_file = os.path.abspath("../bad_stars/scene2_bad_stars.txt")
     # read files ad get lists
-    scene1_bad_stars = np.loadtxt(scene1_bad_stars_file, comments="#", skiprows=2, unpack=True)
-    scene2_bad_stars = np.loadtxt(scene2_bad_stars_file, comments="#", skiprows=2, unpack=True)
+    if scene == 1:
+        badanduglies, uglies = np.loadtxt(scene1_bad_stars_file, comments="#", skiprows=3, unpack=True)
+    else:
+        badanduglies, uglies = np.loadtxt(scene2_bad_stars_file, comments="#", skiprows=2, unpack=True)
+    bad_stars, ugly_stars = [], []
+    for s, u in zip(badanduglies, uglies):
+        if u == 0:
+            bad_stars.append(s)
+        else:
+            ugly_stars.append(s)
     if verbose:
-        print ("There are %i bad stars in Scenario 1 and %i bad stars in Scenario 2." % (len(scene1_bad_stars),
-                                                                                     len(scene2_bad_stars)))
-    # compare to stars_sample
-    for st_sam in stars_sample:
-        if st_sam in scene1_bad_stars or st_sam in scene2_bad_stars:
-            stars_sample.pop()
-    return stars_sample
+        print ("There are %i bad stars and %i ugly stars in Scenario %i." % (len(bad_stars),
+                                                                            len(ugly_stars), scene))
+    return bad_stars, ugly_stars
 
 

@@ -10,6 +10,7 @@ import random
 # other code
 import TA_functions as TAf
 import parse_rejected_stars as prs
+import v2v3plots as vp
 
 print("Modules correctly imported! \n")
 
@@ -64,7 +65,8 @@ OUTPUT:
 
 def runXrandomstars(show_onscreen_results, stars_detectors, primary_params, secondary_params,
                     backgnd_subtraction_method, detector,
-                    stars_in_sample, random_sample, stars_sample):
+                    stars_in_sample, random_sample, stars_sample,
+                    show_pixpos_and_v23_plots=True):
     '''
     This function runs the full TA algorithm AND converts to sky for X random stars and performs the given test.
 
@@ -100,17 +102,19 @@ def runXrandomstars(show_onscreen_results, stars_detectors, primary_params, seco
                                                                                          detector, background2use,
                                                                                          scene, shutters, noise,
                                                                                          stars_in_sample, random_sample,
-                                                                                         secondary_params, stars_sample)
+                                                                                         secondary_params, stars_sample,
+                                                                                         plot_pixpos=show_pixpos_and_v23_plots)
     print ('\n Transforming into V2 and V3, and running TEST...')
-    case, Tbench_Vs_list, T_Vs, T_diffVs, LS_res, LS_info = transformAndRunTest(stars_sample, show_onscreen_results,
+    case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info = transformAndRunTest(stars_sample,
+                                                                       show_onscreen_results,
                                                                        path4results, detector, primary_params,
                                                                        secondary_params, bg_choice, P1P2data,
-                                                                       bench_starP1, benchmark_V2V3_sampleP1P2)
-    return case, Tbench_Vs_list, T_Vs, T_diffVs, LS_res, LS_info
+                                                                       bench_starP1, benchmark_V2V3_sampleP1P2,
+                                                                       plot_v2v3pos=show_pixpos_and_v23_plots)
+    return case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info
 
 
-
-def select_random_stars(stars_in_sample, stars_detectors, keep_bad_stars, verbose):
+def select_random_stars(scene, stars_in_sample, stars_detectors, keep_bad_stars, keep_ugly_stars, verbose):
     '''
     This function chooses a random set of stars
     Args:
@@ -120,23 +124,27 @@ def select_random_stars(stars_in_sample, stars_detectors, keep_bad_stars, verbos
 
     Returns:
         stars_sample = list of random stars to be studied
+
     '''
     stars_sample = []
     for i in range(stars_in_sample):
         random_star = random.choice(stars_detectors)
         stars_sample.append(random_star)
+    print ('before while: ', stars_sample)
     # make sure that there are no repetitions
     stars_sample = list(set(stars_sample))
+    if not keep_bad_stars:
+        stars_sample = TAf.remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose)
     while len(stars_sample) != stars_in_sample:
         random_star = random.choice(stars_detectors)
         stars_sample.append(random_star)
         stars_sample = list(set(stars_sample))
         # remove the bad stars
         if not keep_bad_stars:
-            TAf.remove_bad_stars(stars_sample, verbose)
+            stars_sample = TAf.remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose)
     # order the star list from lowest to highest number
     stars_sample.sort(key=lambda xx: xx)
-    print ("stars_sample =", stars_sample)
+    print ("NEW stars_sample =", stars_sample)
     return stars_sample
 
 
@@ -206,7 +214,7 @@ def get_benchV2V3(scene, stars_sample, arcsecs):
 
 def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
                           background2use, scene, shutters, noise, stars_in_sample,
-                          random_sample, secondary_params, stars_sample):
+                          random_sample, secondary_params, stars_sample, plot_pixpos=True):
     '''
     This function runs the full TA algorithm for X random stars and performs the given test.
 
@@ -243,11 +251,20 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
     determine_moments, display_master_img, show_centroids, Pier_corr, tilt = secondary_params2
 
     if random_sample:
-        stars_sample = select_random_stars(stars_in_sample, stars_detectors, keep_bad_stars, verbose)
+        stars_sample = select_random_stars(scene, stars_in_sample, stars_detectors, keep_bad_stars, keep_ugly_stars, verbose)
     else:
         # remove the bad stars
         if not keep_bad_stars:
-            TAf.remove_bad_stars(stars_sample, verbose)
+            print ('sample before removing bad stars: ', stars_sample)
+            # remove the bad stars
+            stars_sample = TAf.remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose)
+            # but keep the sample stars list with length 20
+            while len(stars_sample) != stars_in_sample:
+                random_star = random.choice(stars_detectors)
+                stars_sample.append(random_star)
+                stars_sample = list(set(stars_sample))
+                # remove the bad stars
+                stars_sample = TAf.remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose)
             if verbose:
                 print (" * Removed bad stars, sample has %i stars left." % len(stars_sample))
 
@@ -274,7 +291,13 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
     path4starfiles = "../PFforMaria/"
 
     # Set the case to study according to the selected scene
-    case = repr(detector)+"Scene"+str(scene)+"_"+shutters+"_"+noise+bg_choice+repr(background2use)+'_Nsigma'+repr(Nsigma)
+    str_thres = repr(threshold).replace('0.', '')
+    thres = 'thres'+str_thres
+    if detector == 'both':
+        detectorScene_string = "2DetsScene"+str(scene)
+    else:
+        detectorScene_string = repr(detector)+"Scene"+str(scene)
+    case = detectorScene_string+"_"+shutters+"_"+noise+bg_choice+repr(background2use)+'_'+thres+'_Nsigma'+repr(Nsigma)
 
     detectors = [491, 492]
 
@@ -285,6 +308,7 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
     bench_xP1, bench_yP1, bench_xP2, bench_yP2 = benchP1P2
     bench_xLP1, bench_yLP1, bench_xLP2, bench_yLP2 = LoLeftCornersP1P2
     bench_V2P1, bench_V3P1,   bench_V2P2, bench_V3P2 = benchmark_V2V3_sampleP1P2
+
 
     ### Perform centroid algorithm for stars sample
 
@@ -390,6 +414,25 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
                                           bg_value=None, bg_frac=None, debug=False)
                     TAf.display_centroids(detector, st, case, psf, true_center32x32, cb_centroid_list_in32x32pix,
                                          show_disp, vlim, savefile=save_centroid_disp, fig_name=fig_name, display_master_img=m_img)
+                    if pos == "_Position2":
+                        true_center_fulldetP2 = [bench_xP2[idx_star], bench_yP2[idx_star]]
+                        _, _, true_center32x32P2, _ = TAf.centroid2fulldetector(cb_centroid_list_in32x32pix,
+                                                            true_center_fulldetP2, detector, perform_avgcorr=Pier_corr)
+                        #print ('true_center32x32 P1:', true_center32x32)
+                        #print ('true_center32x32 P2:', true_center32x32P2)
+                        # the following correction is because the postage stamp is centered on position 1 even if the
+                        # the star moved to position 2.
+                        if st <= 100:
+                            true_center32x32P2[0] = true_center32x32P2[0]+1.0
+                            true_center32x32P2[1] = true_center32x32P2[1]+2.0
+                        else:
+                            true_center32x32P2[0] = true_center32x32P2[0]-1.0
+                            true_center32x32P2[1] = true_center32x32P2[1]-2.0
+                        #print ('true_center32x32 P2:', true_center32x32P2)
+                        #print ('cb_centroid_list_in32x32pix:')
+                        #print (cb_centroid_list_in32x32pix)
+                        TAf.display_centroids(detector, st, case, psf, true_center32x32P2, cb_centroid_list_in32x32pix,
+                                             show_disp, vlim, savefile=save_centroid_disp, fig_name=fig_name, display_master_img=m_img)
                     # Find the best centroid window size = minimum difference with true values
                     min_diff, _ = TAf.get_mindiff(differences_true_TA[0][0], differences_true_TA[0][1], differences_true_TA[0][2])
                     # Save output
@@ -465,11 +508,74 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
 
     # compact results for functions
     P1P2data = [x13,y13, x23,y23, x15,y15, x25,y25, x17,y17, x27,y27]
+
+    #plot_pixpos = True
+    if plot_pixpos:
+        # plot of sample residual x and y for positions 1 and 2
+        fig1 = plt.figure(1, figsize=(12, 10))
+        ax1 = fig1.add_subplot(111)
+        #plt.suptitle(plot_title, fontsize=18, y=0.96)
+        plt.title(case)
+        plt.xlabel('X Residuals [Pixels]')
+        plt.ylabel('Y Residuals [Pixels]')
+        arrx, arry = x17-bench_xP1, y17-bench_yP1
+        xP1 = [min(arrx)+min(arrx)*0.5, max(arrx)+max(arrx)*0.5]
+        yP1 = [min(arry)+min(arry)*0.5, max(arry)+max(arry)*0.5]
+        arrx, arry = x27-bench_xP2, y27-bench_yP2
+        xP2 = [min(arrx)+min(arrx)*0.5, max(arrx)+max(arrx)*0.5]
+        yP2 = [min(arry)+min(arry)*0.5, max(arry)+max(arry)*0.5]
+        # determine qhich limit is larger in P1
+        if xP1[1] > yP1[1]:
+            larP1 = xP1[1]
+        else:
+            larP1 = yP1[1]
+        if xP2[1] > yP2[1]:
+            larP2 = xP2[1]
+        else:
+            larP2 = yP2[1]
+        if larP1 > larP2:
+            uplim = larP1
+            lolim = -1 * larP1
+        else:
+            uplim = larP2
+            lolim = -1 * larP2
+        plt.xlim(lolim, uplim)
+        plt.ylim(lolim, uplim)
+        plt.hlines(0.0, lolim, uplim, colors='k', linestyles='dashed')
+        plt.vlines(0.0, lolim, uplim, colors='k', linestyles='dashed')
+        # plot measured positions
+        plt.plot(x13-bench_xP1, y13-bench_yP1, 'b^', ms=10, alpha=0.5, label='CentroidWindow3_P1')
+        plt.plot(x15-bench_xP1, y15-bench_yP1, 'go', ms=10, alpha=0.5, label='CentroidWindow5_P1')
+        plt.plot(x17-bench_xP1, y17-bench_yP1, 'r*', ms=13, alpha=0.5, label='CentroidWindow7_P1')
+        plt.plot(x23-bench_xP2, y23-bench_yP2, 'c^', ms=10, alpha=0.5, label='CentroidWindow3_P2')
+        plt.plot(x25-bench_xP2, y25-bench_yP2, 'yo', ms=10, alpha=0.5, label='CentroidWindow5_P2')
+        plt.plot(x27-bench_xP2, y27-bench_yP2, 'm*', ms=13, alpha=0.5, label='CentroidWindow7_P2')
+        # Shrink current axis by 20%
+        box = ax1.get_position()
+        ax1.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
+        y_reject = [-1.0, 1.0]
+        x_reject = [-1.0, 1.0]
+        for si, xi, yi in zip(stars_sample, x13-bench_xP1, y13-bench_yP1):
+            #if yi >= y_reject[1] or yi <= y_reject[0] or xi >= x_reject[1] or xi <= x_reject[0]:
+            si = int(si)
+            subxcoord = 5
+            subycoord = 0
+            side = 'left'
+            plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+        for si, xi, yi in zip(stars_sample, x23-bench_xP2, y23-bench_yP2):
+            #if yi >= y_reject[1] or yi <= y_reject[0] or xi >= x_reject[1] or xi <= x_reject[0]:
+            si = int(si)
+            subxcoord = 5
+            subycoord = 0
+            side = 'left'
+            plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+        plt.show()
     return bg_choice, P1P2data, bench_starP1, benchmark_V2V3_sampleP1P2
 
 
 def transformAndRunTest(stars_sample, show_onscreen_results, path4results, detector, primary_params, secondary_params,
-                        bg_choice, P1P2data, bench_starP1, benchmark_V2V3_sampleP1P2):
+                        bg_choice, P1P2data, bench_starP1, benchmark_V2V3_sampleP1P2, plot_v2v3pos=True):
     '''
     This function converts to sky for the X random star sample, and performs the given test.
 
@@ -495,8 +601,8 @@ def transformAndRunTest(stars_sample, show_onscreen_results, path4results, detec
 
     # unfold variables
     primary_params1, primary_params2 = primary_params
-    output_full_detector, save_text_file, save_centroid_disp, keep_bad_stars, stars_in_sample, scene = primary_params1
-    background_method, background2use, shutters, noise, filter_input, test2perform, Nsigma, max_iters_Nsig = primary_params2
+    output_full_detector, save_text_file, save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample, scene = primary_params1
+    background_method, background2use, shutters, noise, filter_input, test2perform, Nsigma, max_iters_Nsig, abs_threshold, min_elements = primary_params2
     secondary_params1, secondary_params2 = secondary_params
     checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose, debug, arcsecs = secondary_params1
     determine_moments, display_master_img, show_centroids, Pier_corr, tilt = secondary_params2
@@ -520,7 +626,8 @@ def transformAndRunTest(stars_sample, show_onscreen_results, path4results, detec
         T1_diffV2_3, T1_diffV3_3, T1_diffV2_5, T1_diffV3_5, T1_diffV2_7, T1_diffV3_7 = T1_diffs
         T1bench_V2_list, T1bench_V3_list = T1_benchVs_list
         # Get the statistics
-        results_stats = TAf.get_stats(T1_transformations, T1_diffs, T1_benchVs_list, Nsigma, max_iters_Nsig, arcsecs)
+        results_stats = TAf.get_stats(T1_transformations, T1_diffs, T1_benchVs_list, Nsigma, max_iters_Nsig,
+                                      arcsecs, just_least_sqares, abs_threshold, min_elements)
         # unfold results
         T1_st_devsAndMeans, T1_diff_counter, T1_bench_values, T1_sigmas_deltas, T1_sigma_reject, rejected_elementsLS, rejected_eleNsig, iterations = results_stats
         T1stdev_V2_3, T1mean_V2_3, T1stdev_V2_5, T1mean_V2_5, T1stdev_V2_7, T1mean_V2_7, T1stdev_V3_3, T1mean_V3_3, T1stdev_V3_5, T1mean_V3_5, T1stdev_V3_7, T1mean_V3_7 = T1_st_devsAndMeans
@@ -537,7 +644,8 @@ def transformAndRunTest(stars_sample, show_onscreen_results, path4results, detec
         T2_diffV2_3, T2_diffV3_3, T2_diffV2_5, T2_diffV3_5, T2_diffV2_7, T2_diffV3_7 = T2_diffs
         T2bench_V2_list, T2bench_V3_list = T2_benchVs_list
         # Get the statistics
-        results_stats = TAf.get_stats(T2_transformations, T2_diffs, T2_benchVs_list, Nsigma, max_iters_Nsig, arcsecs)
+        results_stats = TAf.get_stats(T2_transformations, T2_diffs, T2_benchVs_list, Nsigma, max_iters_Nsig,
+                                      arcsecs, just_least_sqares, abs_threshold, min_elements)
         # unfold results
         T2_st_devsAndMeans, T2_diff_counter, T2_bench_values, T2_sigmas_deltas, T2_sigma_reject, rejected_elementsLS, rejected_eleNsig, iterations = results_stats
         T2stdev_V2_3, T2mean_V2_3, T2stdev_V2_5, T2mean_V2_5, T2stdev_V2_7, T2mean_V2_7, T2stdev_V3_3, T2mean_V3_3, T2stdev_V3_5, T2mean_V3_5, T2stdev_V3_7, T2mean_V3_7 = T2_st_devsAndMeans
@@ -594,13 +702,80 @@ def transformAndRunTest(stars_sample, show_onscreen_results, path4results, detec
         T3_transformations = [T3_V2_3, T3_V3_3, T3_V2_5, T3_V3_5, T3_V2_7, T3_V3_7]
         T3_diffs = [T3_diffV2_3, T3_diffV3_3, T3_diffV2_5, T3_diffV3_5, T3_diffV2_7, T3_diffV3_7]
         T3_benchVs_list = [T3bench_V2_list, T3bench_V3_list]
-        results_stats = TAf.get_stats(T3_transformations, T3_diffs, T3_benchVs_list, Nsigma, max_iters_Nsig, arcsecs)
+        results_stats = TAf.get_stats(T3_transformations, T3_diffs, T3_benchVs_list, Nsigma, max_iters_Nsig,
+                                      arcsecs, just_least_sqares, abs_threshold, min_elements)
         # unfold results
         T3_st_devsAndMeans, T3_diff_counter, T3_bench_values, T3_sigmas_deltas, T3_sigma_reject, rejected_elementsLS, rejected_eleNsig, iterations = results_stats
         T3stdev_V2_3, T3mean_V2_3, T3stdev_V2_5, T3mean_V2_5, T3stdev_V2_7, T3mean_V2_7, T3stdev_V3_3, T3mean_V3_3, T3stdev_V3_5, T3mean_V3_5, T3stdev_V3_7, T3mean_V3_7 = T3_st_devsAndMeans
         T3_min_diff, T3_counter = T3_diff_counter
         T3LSdeltas_3, T3LSsigmas_3, T3LSlines2print_3, T3LSdeltas_5, T3LSsigmas_5, T3LSlines2print_5, T3LSdeltas_7, T3LSsigmas_7, T3LSlines2print_7 = T3_sigmas_deltas
         T3sigmaV2_3, T3meanV2_3, T3sigmaV3_3, T3meanV3_3, T3newV2_3, T3newV3_3, T3niter_3, T3lines2print_3, T3sigmaV2_5, T3meanV2_5, T3sigmaV3_5, T3meanV3_5, T3newV2_5, T3newV3_5, T3niter_5, T3lines2print_5, T3sigmaV2_7, T3meanV2_7, T3sigmaV3_7, T3meanV3_7, T3newV2_7, T3newV3_7, T3niter_7, T3lines2print_7 = T3_sigma_reject
+
+        #plot_v2v3pos = True
+        if plot_v2v3pos:
+            # plot of sample residual V2 and V3 for positions 1 and 2 for test 3
+            fig1 = plt.figure(1, figsize=(12, 10))
+            ax1 = fig1.add_subplot(111)
+            #plt.suptitle(plot_title, fontsize=18, y=0.96)
+            plt.title(case)
+            plt.xlabel('V2 Residuals [arcsec]')
+            plt.ylabel('V3 Residuals [arcsec]')
+            #xlims = [-5.0, 5.0]
+            #ylims = [-5.0, 5.0]
+            #plt.xlim(xlims[0], xlims[1])
+            #plt.ylim(ylims[0], ylims[1])
+            #plt.hlines(0.0, xlims[0], xlims[1], colors='k', linestyles='dashed')
+            #plt.vlines(0.0, ylims[0], ylims[1], colors='k', linestyles='dashed')
+            arrx, arry = T3_diffV2_17, T3_diffV3_17
+            xP1 = [min(arrx)+min(arrx)*0.5, max(arrx)+max(arrx)*0.5]
+            yP1 = [min(arry)+min(arry)*0.5, max(arry)+max(arry)*0.5]
+            arrx, arry = T3_diffV2_27, T3_diffV3_27
+            xP2 = [min(arrx)+min(arrx)*0.5, max(arrx)+max(arrx)*0.5]
+            yP2 = [min(arry)+min(arry)*0.5, max(arry)+max(arry)*0.5]
+            # determine qhich limit is larger in P1
+            if xP1[1] > yP1[1]:
+                larP1 = xP1[1]
+            else:
+                larP1 = yP1[1]
+            if xP2[1] > yP2[1]:
+                larP2 = xP2[1]
+            else:
+                larP2 = yP2[1]
+            if larP1 > larP2:
+                uplim = larP1
+                lolim = -1 * larP1
+            else:
+                uplim = larP2
+                lolim = -1 * larP2
+            plt.xlim(lolim, uplim)
+            plt.ylim(lolim, uplim)
+            plt.hlines(0.0, lolim, uplim, colors='k', linestyles='dashed')
+            plt.vlines(0.0, lolim, uplim, colors='k', linestyles='dashed')
+            # plot measured positions
+            plt.plot(T3_diffV2_13, T3_diffV3_13, 'b^', ms=10, alpha=0.5, label='CentroidWindow3_P1')
+            plt.plot(T3_diffV2_15, T3_diffV3_15, 'go', ms=10, alpha=0.5, label='CentroidWindow5_P1')
+            plt.plot(T3_diffV2_17, T3_diffV3_17, 'r*', ms=13, alpha=0.5, label='CentroidWindow7_P1')
+            plt.plot(T3_diffV2_23, T3_diffV3_23, 'c^', ms=10, alpha=0.5, label='CentroidWindow3_P2')
+            plt.plot(T3_diffV2_25, T3_diffV3_25, 'yo', ms=10, alpha=0.5, label='CentroidWindow5_P2')
+            plt.plot(T3_diffV2_27, T3_diffV3_27, 'm*', ms=13, alpha=0.5, label='CentroidWindow7_P2')
+            # Shrink current axis by 20%
+            box = ax1.get_position()
+            ax1.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
+            x_reject, y_reject = [-1.0, 1.0], [-1.0, 1.0]
+            for si, xi, yi in zip(stars_sample, T3_diffV2_13, T3_diffV3_13):
+                #if yi >= y_reject[1] or yi <= y_reject[0] or xi >= x_reject[1] or xi <= x_reject[0]:
+                si = int(si)
+                subxcoord, subycoord = 5, 0
+                side = 'left'
+                plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+            for si, xi, yi in zip(stars_sample, T3_diffV2_23, T3_diffV3_23):
+                #if yi >= y_reject[1] or yi <= y_reject[0] or xi >= x_reject[1] or xi <= x_reject[0]:
+                si = int(si)
+                subxcoord, subycoord = 5, 0
+                side = 'left'
+                plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+            plt.show()
 
     # Print results to screen and save into a text file if told so
     if test2perform == "T1":
@@ -637,81 +812,74 @@ def transformAndRunTest(stars_sample, show_onscreen_results, path4results, detec
         LS_res = [T3LSsigmas_3, T3LSsigmas_5, T3LSsigmas_7, T3LSdeltas_3, T3LSdeltas_5, T3LSdeltas_7]
 
     LS_info = [iterations, rejected_elementsLS]
+
     if show_onscreen_results or save_text_file:
         TAf.printTESTresults(stars_sample, case, test2perform, arcsecs, Tstdev_Vs, Tmean_Vs, T_diff_counter,
                       save_text_file, TLSlines2print, Tlines2print, Tbench_Vs_list, T_Vs, T_diffVs,
                       rejected_elementsLS, rejected_eleNsig, background_method, background2use, path4results)
 
+    TV2_3, TV3_3, Tbench_V2_3, Tbench_V3_3 = rid_rejected_elements(rejected_elementsLS[0],
+                                                                         T_Vs[0], T_Vs[1],
+                                                                         Tbench_Vs_list[0], Tbench_Vs_list[1])
+    TV2_5, TV3_5, Tbench_V2_5, Tbench_V3_5 = rid_rejected_elements(rejected_elementsLS[1],
+                                                                         T_Vs[2], T_Vs[3],
+                                                                         Tbench_Vs_list[0], Tbench_Vs_list[1])
+    TV2_7, TV3_7, Tbench_V2_7, Tbench_V3_7 = rid_rejected_elements(rejected_elementsLS[2],
+                                                                         T_Vs[4], T_Vs[5],
+                                                                         Tbench_Vs_list[0], Tbench_Vs_list[1])
+    TdiffV2_3, TdiffV3_3, _, _ = rid_rejected_elements(rejected_elementsLS[0],
+                                                                         T_diffVs[0], T_diffVs[1],
+                                                                         Tbench_Vs_list[0], Tbench_Vs_list[1])
+    TdiffV2_5, TdiffV3_5, _, _ = rid_rejected_elements(rejected_elementsLS[1],
+                                                                         T_diffVs[2], T_diffVs[3],
+                                                                         Tbench_Vs_list[0], Tbench_Vs_list[1])
+    TdiffV2_7, TdiffV3_7, _, _ = rid_rejected_elements(rejected_elementsLS[2],
+                                                                         T_diffVs[4], T_diffVs[5],
+                                                                         Tbench_Vs_list[0], Tbench_Vs_list[1])
 
-    # calculate true standard deviation and mean for plot
-    #benchSigmaV2, benchMeanV2 = TAf.find_std(np.array(Tbench_Vs_list[0]))
-    #benchSigmaV3, benchMeanV3 = TAf.find_std(np.array(Tbench_Vs_list[1]))
-    #bench_stat_results = [benchMeanV2, benchSigmaV2, benchMeanV3, benchSigmaV3]
-    #v2v3plots.make_v2v3plots(case, T_diffVs, LS_res,
-    #                         save_plot=False, show_plot=False, destination=None)
+    Tbench_Vs = [Tbench_V2_3, Tbench_V3_3, Tbench_V2_5, Tbench_V3_5, Tbench_V2_7, Tbench_V3_7]
+    T_Vs = [TV2_3, TV3_3, TV2_5, TV3_5, TV2_7, TV3_7]
+    T_diffVs = [TdiffV2_3, TdiffV3_3, TdiffV2_5, TdiffV3_5, TdiffV2_7, TdiffV3_7]
+    new_stars_sample = ridstars_LSrejection(stars_sample, LS_info)
 
-    return case, Tbench_Vs_list, T_Vs, T_diffVs, LS_res, LS_info
+    return case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info
 
 
-def make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=None, labels_list=None, xlims=None, ylims=None,
-              print_side_string = None, print_side_values=None,
-              save_plot=False, show_plot=True, destination=None):
-    '''
-    This function creates a plot of the given arrays for the 3 tests.
-    Args:
-        cwincase: string, for example '491Scene1_rapid_real_bgFrac0.3_Nsigma2' (this will be the subtitle)
-        arrx: list of 3 numpy arrays
-        arry: list of 3 numpy arrays
-        xlabel: string, name of x-axis
-        ylabel: string, name of y-axis
-        plot_title: string, title of the plot
-        labels_list: list of 3 strings
-        xlims: list, limits of x-axis
-        ylims: list, limits of y-axis
-        print_side_string: list, strings to print on the side (sigma or mu)
-        print_side_values: list, values to print on the side (standard deviations or means)
-        save_plot: True or False
-        show_plot: True or False
-        destination: path and name of the resulting plot
+def rid_rejected_elements(rejected_elementsLS, TV2, TV3, TrueV2, TrueV3):
+    TV2_cwin, TV3_cwin, TrueV2_cwin, TrueV3_cwin = [], [], [], []
+    for idx, tv in enumerate(TV2):
+        if idx in rejected_elementsLS:
 
-    Returns:
-        Nothing
-    '''
-    fig1 = plt.figure(1, figsize=(12, 10))
-    ax1 = fig1.add_subplot(111)
-    plt.suptitle(plot_title, fontsize=18, y=0.96)
-    plt.title(cwincase)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    if xlims is not None:
-        plt.xlim(xlims[0], xlims[1])
-    if ylims is not None:
-        plt.ylim(ylims[0], ylims[1])
-    plt.hlines(0.0, -1000, 1000, colors='k', linestyles='dashed')
-    plt.vlines(0.0, -1000, 1000, colors='k', linestyles='dashed')
-    plt.plot(arrx[0], arry[0], 'b^', ms=10, alpha=0.5, label=labels_list[0])
-    plt.plot(arrx[1], arry[1], 'go', ms=10, alpha=0.5, label=labels_list[1])
-    plt.plot(arrx[2], arry[2], 'r*', ms=13, alpha=0.5, label=labels_list[2])
-    # Shrink current axis by 10%
-    box = ax1.get_position()
-    ax1.set_position([box.x0, box.y0, box.width * 0.85, box.height])
-    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
-    if print_side_values is not None:
-        textinfig0 = r'{:<13} {:<16}'.format(print_side_string[0], print_side_string[1])
-        textinfig1 = r'{:<11.2f} {:<14.2f}'.format(print_side_values[0], print_side_values[1])
-        textinfig2 = r'{:<11.2f} {:<14.2f}'.format(print_side_values[2], print_side_values[3])
-        textinfig3 = r'{:<11.2f} {:<14.2f}'.format(print_side_values[4], print_side_values[5])
-        ax1.annotate(textinfig0, xy=(1.02, 0.35), xycoords='axes fraction' )
-        ax1.annotate(textinfig1, xy=(1.02, 0.32), xycoords='axes fraction' )
-        ax1.annotate(textinfig2, xy=(1.02, 0.29), xycoords='axes fraction' )
-        ax1.annotate(textinfig3, xy=(1.02, 0.26), xycoords='axes fraction' )
-    if save_plot:
-        fig1.savefig(destination)
-        print ("\n Plot saved: ", destination)
-    if show_plot:
-        plt.show()
-    else:
-        plt.close('all')
+            continue
+        else:
+            TV2_cwin.append(tv)
+            TV3_cwin.append(TV3[idx])
+            TrueV2_cwin.append(TrueV2[idx])
+            TrueV3_cwin.append(TrueV3[idx])
+    return TV2_cwin, TV3_cwin, TrueV2_cwin, TrueV3_cwin
+
+
+def ridstars_LSrejection(stars_sample, LS_info):
+    # unfold variables
+    _, rejected_elementsLS = LS_info
+    #  Create a new list with the elements not rejected by the least squares routine
+    nw_stars_sample3, nw_stars_sample5, nw_stars_sample7 = [], [], []
+    # append to the new lists for centroid window 3
+    for i, st in enumerate(stars_sample):
+        if i not in rejected_elementsLS[0]:
+            nw_stars_sample3.append(st)
+        if i not in rejected_elementsLS[1]:
+            nw_stars_sample5.append(st)
+        if i not in rejected_elementsLS[2]:
+            nw_stars_sample7.append(st)
+    new_stars_sample = [nw_stars_sample3, nw_stars_sample5, nw_stars_sample7]
+    return new_stars_sample
+
+
+def convert2milliarcsec(list2convert):
+    for i, item in enumerate(list2convert):
+        list2convert[i] = item * 1000.0
+    return list2convert
 
 
 #######################################################################################################################
@@ -729,13 +897,16 @@ if __name__ == '__main__':
     #                                    2. Same plot but instead of the mean show all stars in one 20star calculation
     save_plots = False                 # Save the plots? True or False
     show_plots = True                  # Show the plots? True or False
-    detector = 491                     # Integer (491 or 492) OR string, 'both' to select stars from both detectors
+    detector = 'both'                     # Integer (491 or 492) OR string, 'both' to select stars from both detectors
     output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
     show_onscreen_results = True       # Want to show on-screen resulting V2s, V3s and statistics? True or False
+    show_pixpos_and_v23_plots = False  # Show the plots of x-y and v2-v3 residual positions?
     save_text_file = False             # Want to save the text file of comparison? True or False
     save_centroid_disp = False         # Save the display with measured and true positions?
-    keep_bad_stars = True              # Keep the bad stars in the sample? True or False
-    stars_in_sample = 20               # Number of stars in sample
+    keep_bad_stars = False             # Keep the bad stars in the sample (both positions measured wrong)? True or False
+    keep_ugly_stars = False            # Keep the ugly stars (one position measured wrong)? True or False
+    perform_abs_threshold = False       # Perform abs_threshold routine (True) or only perform least squares routine (False)
+    stars_in_sample = 3               # Number of stars in sample
     scene = 1                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
     background_method = 'frac'         # Select either 'fractional', 'fixed', or None
     background2use = 0.3               # Background to use for analysis: None or float
@@ -743,7 +914,9 @@ if __name__ == '__main__':
     noise = "real"                     # Noise level, string: "nonoise" or "real"
     filter_input = "F140X"             # Filter, string: for now only test case is "F140X"
     test2perform = "all"                # Test to perform, string: "all", "T1", "T2", "T3" for test 1, 2, and 3, respectively
-    Nsigma = 2                         # N-sigma rejection of bad stars: integer or float
+    Nsigma = 3                         # N-sigma rejection of bad stars: integer or float
+    abs_threshold = 0.32               # threshold to reject points after each iteration of least squares routine, default=0.32
+    min_elements = 4                   # minimum number of elements in the absolute threshold least squares routine, default=4
     max_iters_Nsig = 10                # Max number of iterations for N-sigma function: integer
 
     # SET SECONDARY PARAMETERS THAT CAN BE ADJUSTED
@@ -751,7 +924,7 @@ if __name__ == '__main__':
     xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
     ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
     vlim = (1, 100)                    # Sensitivity limits of image, i.e. (0.001, 0.1)
-    threshold = 0.3                    # Convergence threshold of accepted difference between checkbox centroid and coarse location
+    threshold = 0.01                   # Convergence threshold of accepted difference between checkbox centroid and coarse location
     max_iter = 10                      # Maximum number of iterations for finding coarse location
     verbose = False                    # Show some debug messages (i.e. resulting calculations)
     debug = False                      # See all debug messages (i.e. values of variables and calculations)
@@ -769,10 +942,41 @@ if __name__ == '__main__':
 
     random_sample = False               # choose a random sample of stars from either detector: True or False
     # control samples to be used when random is set to False
+    #stars_sample = [1, 10, 23, 29, 33, 47, 61, 67, 95, 100, 107, 128, 133, 139, 151, 171, 190, 194, 195, 198]
+    #stars_sample = [9, 20, 32, 48, 65, 69, 82, 83, 93, 98, 99, 107, 111, 126, 128, 136, 172, 176, 196, 198] #all good stars
+    #stars_sample = [3, 26, 32, 38, 46, 48, 51, 65, 75, 84, 92, 96, 121, 122, 132, 133, 160, 174, 186, 194]
+    #stars_sample = [3, 8, 9, 32, 38, 65, 96, 128, 132, 133, 136, 143, 145, 147, 160, 175, 178, 191, 193, 194] #all good stars
+    #stars_sample = [32, 41, 49, 64, 65, 68, 84, 96, 99, 104, 131, 167, 175, 182, 192, 194, 195, 196, 197, 198]# all good
+    #stars_sample = [2, 4, 5, 6, 11, 32, 38, 47, 81, 127, 129, 136, 138, 141, 160, 163, 166, 171, 174, 179] #* all good
+    #stars_sample = [6, 18, 41, 49, 66, 75, 84, 93, 97, 99, 108, 110, 134, 140, 151, 160, 164, 175, 186, 200]# VERY good!
+    #stars_sample = [15, 20, 43, 46, 47, 57, 62, 69, 71, 83, 86, 87, 90, 106, 121, 168, 179, 182, 185, 194]
+    #stars_sample = [4, 42, 44, 69, 76, 96, 97, 99, 102, 114, 116, 128, 129, 130, 132, 142, 167, 176, 193, 194] # good to show bads
+    #stars_sample = [1, 128, 130, 131, 196]
+    #stars_sample = [1, 35, 128, 130, 164]
+    #stars_sample = [3, 4, 8, 32, 139]
+    #stars_sample = [32, 33, 104, 188, 199]
+    #stars_sample = [3, 32, 33, 133, 162]
+    #stars_sample = [16, 22, 29, 50, 108]
+    #stars_sample = [2, 5, 15, 46, 154, 156, 163]
+    #stars_sample = [5, 80, 116, 130, 135]#, 17, 31, 113, 182]
+    #stars_sample = [8, 11, 27, 44, 90]
+    #stars_sample = [12, 21, 32, 54, 77]
+    stars_sample = [22, 90, 108]#, 126, 145]
+    #stars_sample = [101, 110, 121, 133, 200]
+    #stars_sample = [111, 120, 142, 173, 180]
+    #stars_sample = [10, 32, 33, 35, 42, 47, 52, 70, 73, 77, 100, 128, 130, 135, 136, 137, 141, 147, 179, 192] # all good stars *
+    #stars_sample = [8, 33, 37, 38, 44, 50, 51, 54, 63, 98, 99, 109, 114, 127, 138, 139, 162, 163, 171, 186]
+    #stars_sample = [3, 16, 35, 36, 39, 64, 65, 70, 73, 90, 111, 122, 129, 134, 136, 154, 165, 183, 194, 196]
+    #stars_sample = [2, 4, 6, 11, 36, 38, 43, 98, 102, 109, 110, 141, 149, 160, 161, 163, 165, 173, 174, 177]
+    #stars_sample = [5, 7, 8, 12, 33, 37, 40, 101, 108, 109, 111, 151, 159, 162, 166, 167, 169, 170, 175, 187]
+    # bad samples:
     #stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
+    #stars_sample = [8, 9, 20, 21, 39, 40, 46, 54, 58, 76, 78, 87, 88, 121, 134, 146, 150, 167, 179, 180]
     # OLNY detector 491
-    stars_sample = [101, 105, 108, 109, 111, 113, 114, 133, 136, 147, 150, 157, 158, 161, 181, 184, 185, 186, 194, 199]
+    #stars_sample = [101, 105, 108, 109, 111, 113, 114, 133, 136, 147, 150, 157, 158, 161, 181, 184, 185, 186, 194, 199]
     #stars_sample = [101, 104, 105, 112, 117, 118, 133, 135, 136, 140, 145, 151, 152, 157, 159, 161, 174, 178, 184, 200]
+    #stars_sample = [109, 114, 128, 135, 136, 145, 149, 153, 160, 166, 171, 174, 176, 177, 193, 194, 195, 198, 199, 200]
+    #stars_sample = [101, 102, 104, 107, 117, 128, 130, 131, 132, 135, 136, 137, 141, 154, 167, 184, 185, 186, 187, 193]#*
     # ONLY detector 492
     #stars_sample = [8, 11, 19, 24, 30, 37, 39, 41, 48, 51, 55, 65, 73, 85, 87, 88, 90, 91, 93, 98]
     #stars_sample = [2, 4, 8, 10, 11, 22, 25, 28, 33, 37, 54, 64, 68, 76, 80, 89, 96, 97, 99, 100]
@@ -787,8 +991,28 @@ if __name__ == '__main__':
 
     ### CODE
 
+    continue_code = True
+    if not perform_abs_threshold and min_elements!=4:
+        print ('***** You are running the code with  min_elements =', min_elements, ' and No absolute threshold, ')
+        continue_code = raw_input('  Do you wish to continue?  y  [n]')
+        if continue_code == 'y':
+            raw_input('Ok, continuing... but the output files will not have a marker to know the number of minimum '
+                      'elements allowed in the absolute threshold routine.  Press enter')
+        else:
+            exit()
+
     # start the timer to compute the whole running time
     start_time = time.time()
+
+    # make sure that bad stars are gone if ugly stars are to be gone as well
+    if not keep_ugly_stars:
+        keep_bad_stars = False
+
+    # Set variable as it appears defined in function
+    if perform_abs_threshold:
+        just_least_sqares = False  # Only perform least squares routine = True, perform abs_threshold routine = False
+    else:
+        just_least_sqares = True
 
     # Pool of stars to select from
     stars_detectors = range(1, 201)       # default is for both detectors
@@ -800,41 +1024,159 @@ if __name__ == '__main__':
     # Loop over list_test2perform
     if test2perform == "all":
         list_test2perform = ["T1", "T2", "T3"]
+        results_all_tests = []
+        if random_sample:
+            stars_sample = select_random_stars(scene, stars_in_sample, stars_detectors, keep_bad_stars, keep_ugly_stars, verbose)
+            random_sample = False
+        if not keep_bad_stars:
+            # remove the bad stars and use the same sample for the 3 tests
+            stars_sample = TAf.remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose)
+            # but keep the sample stars list with length of desired number of stars
+            while len(stars_sample) != stars_in_sample:
+                random_star = random.choice(stars_detectors)
+                stars_sample.append(random_star)
+                stars_sample = list(set(stars_sample))
+                # remove the bad stars
+                stars_sample = TAf.remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose)
+            keep_bad_stars = True
+
     else:
         list_test2perform = [test2perform]
     for test2perform in list_test2perform:
-        do_plots = False
+        #do_plots = False
         print ('Starting analysis for TEST %s ...' % (test2perform))
         # Compact variables
-        primary_params1 = [output_full_detector, save_text_file, save_centroid_disp, keep_bad_stars, stars_in_sample, scene]
-        primary_params2 = [background_method, background2use, shutters, noise, filter_input, test2perform, Nsigma, max_iters_Nsig]
+        primary_params1 = [output_full_detector, save_text_file, save_centroid_disp, keep_bad_stars, keep_ugly_stars,
+                           just_least_sqares, stars_in_sample, scene]
+        primary_params2 = [background_method, background2use, shutters, noise, filter_input, test2perform, Nsigma,
+                           max_iters_Nsig, abs_threshold, min_elements]
         primary_params = [primary_params1, primary_params2]
         secondary_params1 = [checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose, debug, arcsecs]
         secondary_params2 = [determine_moments, display_master_img, show_centroids, Pier_corr, tilt]
         secondary_params = [secondary_params1, secondary_params2]
         # Get centroids AND sky positions according to Test
-        case, Tbench_Vs_list, T_Vs, T_diffVs, LS_res, LS_info = runXrandomstars(show_onscreen_results, stars_detectors,
-                                                                            primary_params, secondary_params,
-                                                                            backgnd_subtraction_method, detector,
-                                                                            stars_in_sample, random_sample, stars_sample)
+        case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info = runXrandomstars(show_onscreen_results,
+                                                                                stars_detectors,
+                                                                                primary_params, secondary_params,
+                                                                                backgnd_subtraction_method, detector,
+                                                                                stars_in_sample, random_sample,
+                                                                                stars_sample,
+                                                                                show_pixpos_and_v23_plots=show_pixpos_and_v23_plots)
+        results_of_test = [case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info]
+        results_all_tests.append(results_of_test)
         print ('TEST  %s  finished. \n' % (test2perform))
 
     if do_plots:
         print ('Generating plots...')
         # set general path
         gen_path = os.path.abspath('../resultsXrandomstars')
+
         # load the data fom the 3 tests
+        for resTest in results_all_tests:
+            # unfold variables per centroid window results_all_tests[0][5][s][width]
+            case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, _ = resTest
+            nw_stars_sample3, nw_stars_sample5, nw_stars_sample7 = new_stars_sample
+            Tbench_V2_3, Tbench_V3_3, Tbench_V2_5, Tbench_V3_5, Tbench_V2_7, Tbench_V3_7 = Tbench_Vs
+            TV2_3, TV3_3, TV2_5, TV3_5, TV2_7, TV3_7 = T_Vs
+            TdiffV2_3, TdiffV3_3, TdiffV2_5, TdiffV3_5, TdiffV2_7, TdiffV3_7 = T_diffVs
+            TLSsigmas_3, TLSsigmas_5, TLSsigmas_7, TLSdeltas_3, TLSdeltas_5, TLSdeltas_7 = LS_res
+
+            milliarcsec = True
+            if milliarcsec:
+                TdiffV2_3 = convert2milliarcsec(TdiffV2_3)
+                TdiffV3_3 = convert2milliarcsec(TdiffV3_3)
+                TdiffV2_5 = convert2milliarcsec(TdiffV2_5)
+                TdiffV3_5 = convert2milliarcsec(TdiffV3_5)
+                TdiffV2_7 = convert2milliarcsec(TdiffV2_7)
+                TdiffV3_7 = convert2milliarcsec(TdiffV3_7)
+                TLSsigmas_3 = convert2milliarcsec(TLSsigmas_3)
+                TLSsigmas_5 = convert2milliarcsec(TLSsigmas_5)
+                TLSsigmas_7 = convert2milliarcsec(TLSsigmas_7)
+                TLSdeltas_3 = convert2milliarcsec(TLSdeltas_3)
+                TLSdeltas_5 = convert2milliarcsec(TLSdeltas_5)
+                TLSdeltas_7 = convert2milliarcsec(TLSdeltas_7)
+
+        # do the plots -> 2 plots per centroid window
+        for cwin in xwidth_list:
+            cwincase = case+'_CentroidWindow'+repr(cwin)
+
+            # Plot to compare the mean values for the 3 tests -- plot only has 3 points
+            plot_title = r'Residual Mean Values, $\mu$'
+            xlabel = r'$\Delta$V2 [marcsec]'
+            ylabel = r'$\Delta$V3 [marcsec]'
+            destination = os.path.join(gen_path, 'plots/means_Cwin'+repr(cwin)+'.jpg')
+            if cwin == 3:
+                s, d, v = 0, 3, 0
+            if cwin == 5:
+                s, d, v = 1, 4, 2
+            if cwin == 7:
+                s, d, v = 2, 5, 4
+            T1sigmaV2 = results_all_tests[0][5][s][0]   # Test 1 sigma V2 value
+            T2sigmaV2 = results_all_tests[1][5][s][0]   # Test 2
+            T3sigmaV2 = results_all_tests[2][5][s][0]   # Test 3
+            T1sigmaV3 = results_all_tests[0][5][s][1]   # Test 1 sigma V3 value
+            T2sigmaV3 = results_all_tests[1][5][s][1]   # Test 2
+            T3sigmaV3 = results_all_tests[2][5][s][1]   # Test 3
+            T1meanV2 = results_all_tests[0][5][d][0]   # Test 1 mean V2 value
+            T2meanV2 = results_all_tests[1][5][d][0]   # Test 2
+            T3meanV2 = results_all_tests[2][5][d][0]   # Test 3
+            T1meanV3 = results_all_tests[0][5][d][1]   # Test 1 mean V3 value
+            T2meanV3 = results_all_tests[1][5][d][1]   # Test 2
+            T3meanV3 = results_all_tests[2][5][d][1]   # Test 3
+            arrx = [T1meanV2, T2meanV2, T3meanV2]
+            arry = [T1meanV3, T2meanV3, T3meanV3]
+            labels_list = ['Avg in Pixel Space', 'Avg in Sky', 'No Avg']
+            print_side_string = ['V2$\mu$ [marcsec]', 'V3$\mu$ [marcsec]']
+            print_side_values = [T1sigmaV2, T1meanV2, T2sigmaV2, T2meanV2, T3sigmaV2, T3meanV2,
+                                 T1sigmaV3, T1meanV3, T2sigmaV3, T2meanV3, T3sigmaV3, T3meanV3]
+            # determine which one is larger
+            if np.abs(T1meanV2) > np.abs(T1meanV3):
+                largV = np.abs(T1meanV2)+np.abs(T1meanV2)*0.5
+            else:
+                largV = np.abs(T1meanV3)+np.abs(T1meanV3)*0.5
+            xlims, ylims = [-1*largV, largV], [-1*largV, largV]
+            #xlims, ylims = None, None
+            vp.make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=plot_title,
+                      labels_list=labels_list, xlims=xlims, ylims=ylims,
+                      print_side_string=print_side_string, print_side_values=print_side_values,
+                      save_plot=save_plots, show_plot=show_plots, destination=destination)
+
+
+            # Graphical display of the standard deviation
+            plot_title = r'Graphical Display of the Standard Deviation, $\sigma$'
+            destination = os.path.join(gen_path, 'plots/V2V3_Cwin'+repr(cwin)+'.jpg')
+            arrx = [results_all_tests[0][4][v], results_all_tests[1][4][v], results_all_tests[2][4][v]]
+            arry = [results_all_tests[0][4][v+1], results_all_tests[1][4][v+1], results_all_tests[2][4][v+1]]
+            # determine which one is larger
+            maxx = max(np.abs(results_all_tests[2][4][v]))
+            maxy = max(np.abs(results_all_tests[2][4][v+1]))
+            if maxx > maxy:
+                largsig = maxx + maxx*0.5
+            else:
+                largsig = maxy + maxy*0.5
+            xlims, ylims = [-1*largsig, largsig], [-1*largsig, largsig]
+            #xlims, ylims = None, None
+            new_stars_sample = [results_all_tests[0][1][s], results_all_tests[1][1][s], results_all_tests[2][1][s]]
+            vp.make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=plot_title,
+                      labels_list=labels_list, xlims=xlims, ylims=ylims,
+                      print_side_string=print_side_string, print_side_values=print_side_values,
+                      save_plot=save_plots, show_plot=show_plots, destination=destination,
+                      star_sample=new_stars_sample)
+
+
+        '''
         common3files = '_results_'+case+'.txt'
         test_fileT1 = os.path.join(gen_path, 'T1'+common3files)
         test_fileT2 = os.path.join(gen_path, 'T2'+common3files)
         test_fileT3 = os.path.join(gen_path, 'T3'+common3files)
         txt_files = [test_fileT1, test_fileT2, test_fileT3]
-        T1V2_3, T1V3_3, T1V2_5, T1V3_5, T1V2_7, T1V3_7, TrueV2, TrueV3 = np.loadtxt(test_fileT1, comments='#',
+        T1V2_3, T1V3_3, T1V2_5, T1V3_5, T1V2_7, T1V3_7, T1TrueV2, T1TrueV3 = np.loadtxt(test_fileT1, comments='#',
                                                                     usecols=(2,3,4,5,6,7,8,9), unpack=True)
-        T2V2_3, T2V3_3, T2V2_5, T2V3_5, T2V2_7, T2V3_7 = np.loadtxt(test_fileT2, comments='#',
-                                                                    usecols=(2,3,4,5,6,7), unpack=True)
-        T3V2_3, T3V3_3, T3V2_5, T3V3_5, T3V2_7, T3V3_7 = np.loadtxt(test_fileT3, comments='#',
-                                                                    usecols=(2,3,4,5,6,7), unpack=True)
+        T2V2_3, T2V3_3, T2V2_5, T2V3_5, T2V2_7, T2V3_7, T2TrueV2, T2TrueV3 = np.loadtxt(test_fileT2, comments='#',
+                                                                    usecols=(2,3,4,5,6,7,8,9), unpack=True)
+        T3V2_3, T3V3_3, T3V2_5, T3V3_5, T3V2_7, T3V3_7, T3TrueV2, T3TrueV3 = np.loadtxt(test_fileT3, comments='#',
+                                                                    usecols=(2,3,4,5,6,7,8,9), unpack=True)
+        # for test3 we only compare to position 1 because this is how the cutouts were made in order to see the shift
 
         ls_dataTESTS = []
         for i, Tfile in enumerate(txt_files):
@@ -846,61 +1188,66 @@ if __name__ == '__main__':
                                            #  dictionary of one of the text files, to access centroid 5, iterations
                                            #  type: ls_data['5']['iterations']
 
+
         # do the plots -> 2 plots per centroid window
         for cwin in xwidth_list:
             cwincase = case+'_CentroidWindow'+repr(cwin)
+
             # Plot to compare the mean values for the 3 tests -- plot only has 3 points
             plot_title = r'Residual Mean Values, $\mu$'
-            xlabel = r'$\Delta$V2'
-            ylabel = r'$\Delta$V3'
+            xlabel = r'$\Delta$V2 [marcsec]'
+            ylabel = r'$\Delta$V3 [marcsec]'
             destination = os.path.join(gen_path, 'plots/means_Cwin'+repr(cwin)+'.jpg')
-            T1meanV2 = ls_dataTESTS[0][str(cwin)]['delta_x']   # Test 1 mean V2 value
-            T2meanV2 = ls_dataTESTS[1][str(cwin)]['delta_x']   # Test 2
-            T3meanV2 = ls_dataTESTS[2][str(cwin)]['delta_x']   # Test 3
-            T1meanV3 = ls_dataTESTS[0][str(cwin)]['delta_y']   # Test 1 mean V3 value
-            T2meanV3 = ls_dataTESTS[1][str(cwin)]['delta_y']   # Test 2
-            T3meanV3 = ls_dataTESTS[2][str(cwin)]['delta_y']   # Test 3
-            arrx = [T1meanV2, T2meanV2, T3meanV2]
-            arry = [T1meanV3, T2meanV3, T3meanV3]
-            labels_list = ['Avg in Pixel Space', 'Avg in Sky', 'No Avg']
-            print_side_string = ['V2$\mu$', 'V3$\mu$']
-            print_side_values = [T1meanV2, T1meanV3, T2meanV2, T2meanV3, T3meanV2, T3meanV3]
-            xlims = [-0.02, 0.02]
-            ylims = [-0.02, 0.02]
-            make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=plot_title,
-                      labels_list=labels_list, xlims=xlims, ylims=ylims,
-                      print_side_string=print_side_string, print_side_values=print_side_values,
-                      save_plot=save_plots, show_plot=show_plots, destination=destination)
-            # Graphical display of the standard deviation
-            plot_title = r'Graphical Display of the Standard Deviation, $\sigma$'
-            xlabel = 'V2'
-            ylabel = 'V3'
-            destination = os.path.join(gen_path, 'plots/V2V3_Cwin'+repr(cwin)+'.jpg')
-            labels_list = ['Avg in Pixel Space', 'Avg in Sky', 'No Avg']
-            print_side_string = ['V2$\sigma$', 'V3$\sigma$']
-            if cwin == 3:
-                T1V2, T2V2, T3V2 = T1V2_3, T2V2_3, T3V2_3
-                T1V3, T2V3, T3V3 = T1V3_3, T2V3_3, T3V3_3
-            elif cwin == 5:
-                T1V2, T2V2, T3V2 = T1V2_5, T2V2_5, T3V2_5
-                T1V3, T2V3, T3V3 = T1V3_5, T2V3_5, T3V3_5
-            elif cwin == 7:
-                T1V2, T2V2, T3V2 = T1V2_7, T2V2_7, T3V2_7
-                T1V3, T2V3, T3V3 = T1V3_7, T2V3_7, T3V3_7
-            arrx = [T1V2, T2V2, T3V2]
-            arry = [T1V3, T2V3, T3V3]
-            xlims = [-100., 500.]
-            ylims = [-300., 300.]
             T1sigmaV2 = ls_dataTESTS[0][str(cwin)]['sigma_x']   # Test 1 sigma V2 value
             T2sigmaV2 = ls_dataTESTS[1][str(cwin)]['sigma_x']   # Test 2
             T3sigmaV2 = ls_dataTESTS[2][str(cwin)]['sigma_x']   # Test 3
             T1sigmaV3 = ls_dataTESTS[0][str(cwin)]['sigma_y']   # Test 1 sigma V3 value
             T2sigmaV3 = ls_dataTESTS[1][str(cwin)]['sigma_y']   # Test 2
             T3sigmaV3 = ls_dataTESTS[2][str(cwin)]['sigma_y']   # Test 3
-            print_side_values = [T1sigmaV2, T1sigmaV3, T2sigmaV2, T2sigmaV3, T3sigmaV2, T3sigmaV3]
-            make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=plot_title,
+            T1meanV2 = ls_dataTESTS[0][str(cwin)]['delta_x']   # Test 1 mean V2 value
+            T2meanV2 = ls_dataTESTS[1][str(cwin)]['delta_x']   # Test 2
+            T3meanV2 = ls_dataTESTS[2][str(cwin)]['delta_x']   # Test 3
+            T1meanV3 = ls_dataTESTS[0][str(cwin)]['delta_y']   # Test 1 mean V3 value
+            T2meanV3 = ls_dataTESTS[1][str(cwin)]['delta_y']   # Test 2
+            T3meanV3 = ls_dataTESTS[2][str(cwin)]['delta_y']   # Test 3
+            arrx = [T1meanV2*1000.0, T2meanV2*1000.0, T3meanV2*1000.0]
+            arry = [T1meanV3*1000.0, T2meanV3*1000.0, T3meanV3*1000.0]
+            labels_list = ['Avg in Pixel Space', 'Avg in Sky', 'No Avg']
+            print_side_string = ['V2$\mu$ [marcsec]', 'V3$\mu$ [marcsec]']
+            print_side_values = [T1sigmaV2*1000.0, T1sigmaV3*1000.0,
+                                 T2sigmaV2*1000.0, T2sigmaV3*1000.0,
+                                 T3sigmaV2*1000.0, T3sigmaV3*1000.0,
+                                 T1meanV2*1000.0, T1meanV3*1000.0,
+                                 T2meanV2*1000.0, T2meanV3*1000.0,
+                                 T3meanV2*1000.0, T3meanV3*1000.0]
+            xlims = [-5.0, 5.0]
+            ylims = [-5.0, 5.0]
+            vp.make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=plot_title,
                       labels_list=labels_list, xlims=xlims, ylims=ylims,
                       print_side_string=print_side_string, print_side_values=print_side_values,
                       save_plot=save_plots, show_plot=show_plots, destination=destination)
+
+            # Graphical display of the standard deviation
+            plot_title = r'Graphical Display of the Standard Deviation, $\sigma$'
+            destination = os.path.join(gen_path, 'plots/V2V3_Cwin'+repr(cwin)+'.jpg')
+            if cwin == 3:
+                T1V2, T2V2, T3V2 = T1V2_3-T1TrueV2, T2V2_3-T2TrueV2, T3V2_3-T3TrueV2
+                T1V3, T2V3, T3V3 = T1V3_3-T1TrueV3, T2V3_3-T2TrueV3, T3V3_3-T3TrueV3
+            elif cwin == 5:
+                T1V2, T2V2, T3V2 = T1V2_5-T1TrueV2, T2V2_5-T2TrueV2, T3V2_5-T3TrueV2
+                T1V3, T2V3, T3V3 = T1V3_5-T1TrueV3, T2V3_5-T2TrueV3, T3V3_5-T3TrueV3
+            elif cwin == 7:
+                T1V2, T2V2, T3V2 = T1V2_7-T1TrueV2, T2V2_7-T2TrueV2, T3V2_7-T3TrueV2
+                T1V3, T2V3, T3V3 = T1V3_7-T1TrueV3, T2V3_7-T2TrueV3, T3V3_7-T3TrueV3
+            arrx = [T1V2, T2V2, T3V2]
+            arry = [T1V3, T2V3, T3V3]
+            xlims = [-20., 20.]
+            ylims = [-20., 20.]
+            vp.make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=plot_title,
+                      labels_list=labels_list, xlims=xlims, ylims=ylims,
+                      print_side_string=print_side_string, print_side_values=print_side_values,
+                      save_plot=save_plots, show_plot=show_plots, destination=destination,
+                      star_sample=stars_sample)
+            '''
 
     print ("\n Script 'testXrandom_stars.py' finished! Took  %s  seconds to finish. \n" % (time.time() - start_time))

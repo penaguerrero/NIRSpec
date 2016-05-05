@@ -1,24 +1,55 @@
 # Known bad stars of Scene 1 = mag 23
-#Star  Reason 
-12     # hot pixel, Tony=bad shutters
-17     # hot pixel, Tony=no PF data     
-#28    # slightly off for no apparent reason)
-34     # hot pixel
-40     # binary upper left edge
-#55    # Tony=binary lower right
-71     # hot pixel? bad column?
-#72    # slightly off, nearby hot pix
-#75    # star moved? 
-79     # binary right edge x
-#87    # Tony=no apparent reason
-#94    # MSA bar
-103    # binary
-105    # bad columns?
-106    # hot pixel
-120    # binary 
-124    # hot pixel
-#134   # Tony=binary x
-152    # hot pixel
-156    # hot pixel
-170    # hot pixel, Tony=no apparent reason
-188    # Tony=binary x
+# UGLY = stars with one bad measurement (only one good position)
+#Star  Ugly Reason 
+12     0    # hot pixel, Tony=bad shutters
+17     0    # hot pixel, Tony=no PF data     
+28     0    # hot pixel
+34     0    # hot pixel
+40     1    # binary upper left edge UGLY
+42     1    # binary  UGLY
+#55    0    # Tony=binary lower right
+58     1    # no data in position 2   UGLY
+62     0    # hot pixel
+65     1    #hot pixel  UGLY
+68     0    # hot pixel
+71     0    # hot pixel? bad column?
+72     1    # hot pixel  UGLY
+74     0    # hot pixel
+75     1    # hot pixel  UGLY
+77     1    # bad column?  UGLY
+79     0    # binary right edge x
+80     1    # hot pixel  UGLY
+85     0    # hot pixel
+#87    0    # Tony=no apparent reason
+92     0    # hot pixel
+94     1    # hot pixel  UGLY
+96     0    # hot pixel
+103    1    # hot pixel  UGLY
+105    0    # bad columns?
+106    0    # hot pixel
+112    0    # hot pixel
+119    0    # hot pixel    
+120    0    # binary 
+123    0    # hot pixel
+124    0    # hot pixel
+129    0    # hot pixel
+132    0    # hot pixel
+134    0    # Tony=binary x and hot pixel
+143    1    # no star?  UGLY
+151    0    # hot pixel
+152    1    # bad column?  UGLY
+154    0    # hot pixel
+156    0    # hot pixel
+157    0    # binary
+159    0    # hot pixel
+161    1    # hot pixel  UGLY
+163    0    # hot pixel
+169    0    # hot pixel, Tony=no apparent reason
+170    1    # binary UGLY
+171    0    # hot pixel
+174    0    # bad column
+176    0    # hot pixel
+181    0   # binary
+#188   0   # Tony=binary x
+189    0   # hot pixel
+194    0   # hot pixel

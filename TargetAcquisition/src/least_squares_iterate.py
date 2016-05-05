@@ -30,14 +30,14 @@ Output(s):
 
 Example usage:
     import least_squares_iterate as lsi
-    deltas, sigmas, lines2print, rejected_elements_idx = lsi.ls_fit_iter(niter, x_input, y_input, xtrue, ytrue)
+    deltas, sigmas, lines2print, rejected_elements_idx = lsi.ls_fit_iter(niter, x_input, y_input, xtrue, ytrue, Nsigma)
 
 
 *** Testing suite of the script at the bottom
 
 """
 
-def ls_fit_iter(niter, xt, yt, x, y, Nsigma, arcsec=True):
+def ls_fit_iter(niter, xt, yt, x, y, Nsigma, arcsec=True, verbose=True):
     """
     This funciton finds the standard deviation and mean from all points, then subtracts that mean from
     each point and compares it with the true values to reject all the points that are Nsigma away. It
@@ -168,10 +168,11 @@ def ls_fit_iter(niter, xt, yt, x, y, Nsigma, arcsec=True):
             yt = ycentroids_new
             x = x_new
             y = y_new
-    print (line1)
-    print (line2)
-    print (line3)
-    print (line4)
+    if verbose:
+        print (line1)
+        print (line2)
+        print (line3)
+        print (line4)
     lines2print = [line1, line2, line3, line4]
 
     # find what elements got rejected            

@@ -47,8 +47,7 @@ def coords_transf(transf_direction, detector, filter_input, x_input, y_input, ti
     elif transf_direction == "backward":
         x_out, y_out = ct_backward(transf_direction, detector, filter_input, x_input, y_input, tilt, debug)
     if arcsecs:
-        x_out = x_out * 3600.
-        y_out = y_out * 3600.
+        x_out, y_out = x_out*3600.0, y_out * 3600.0
     return x_out, y_out
  
     
