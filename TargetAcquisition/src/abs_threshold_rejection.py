@@ -127,25 +127,17 @@ def ls_fit_iter(niter, x_input, y_input, xtrue, ytrue, Nsigma, arcsec=True, verb
         elements_left = len(xcentroids_new)
         line4 = '(abs_thres_least_squares_iterate):  elements_left={} out of original_elements={}'.format(elements_left, original_elements)
 
-        if len(xcentroids_new) == len(xt):
+        if len(xcentroids_new) == len(xt) or len(xcentroids_new) < min_elements:
             xcentroids_new = xt
             ycentroids_new = yt
             x_new = x
             y_new = y
             break   # exit the loop since no additional rejections on this iteration
         else:
-            # check for number of elements
-            if len(x_new) < min_elements:
-                xcentroids_new = xt
-                ycentroids_new = yt
-                x_new = x
-                y_new = y
-                break
-            else:
-                xt = xcentroids_new
-                yt = ycentroids_new
-                x = x_new
-                y = y_new
+            xt = xcentroids_new
+            yt = ycentroids_new
+            x = x_new
+            y = y_new
 
     if verbose:
         print (line1)
@@ -218,7 +210,8 @@ def LS_and_minelement_check(niter, Nsigma, arcsec, min_elements, verbose, LS_res
                                                                                     centroids[0], centroids[1],
                                                                                     trues[0], trues[1],
                                                                                     Nsigma, arcsec=arcsec,
-                                                                                    verbose=verbose)
+                                                                                    verbose=verbose,
+                                                                                    min_elements=min_elements)
     # keep track of the rejected elements
     for rejel in rejected_elements_idx:
         total_rejected_elements_idx.append(rejel)

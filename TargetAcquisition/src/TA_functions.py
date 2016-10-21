@@ -6,6 +6,7 @@ import copy
 import os
 import collections
 import string
+import matplotlib
 
 # Tommy's code
 import jwst_targloc as jtl
@@ -278,21 +279,27 @@ def display_centroids(detector, st, case, psf, corr_true_center_centroid,
         ax.set_xlim(0.0, np.shape(display_master_img)[1])
         ax.imshow(display_master_img, cmap='gray', interpolation='nearest', vmin=vlims[0], vmax=vlims[1])
     # Add plot of measured centroids
-    fig, ax = plt.subplots(figsize=(8, 8))
+    font = {'family' : 'normal',
+            'weight' : 'normal',
+            'size'   : 12}
+    matplotlib.rc('font', **font)
+    fig, ax = plt.subplots(figsize=(12, 12))
     ax.set_title(fig_title)
     ax.autoscale(enable=False, axis='both')
     ax.imshow(psf, cmap='gray', interpolation='nearest')
     ax.set_ylim(-1.0, np.shape(psf)[0])
     ax.set_xlim(-1.0, np.shape(psf)[1])
+    ax.set_ylabel("Pixel y-position")
+    ax.set_xlabel("Pixel x-position")
     # the -1.0 in all the measurements and true positions is to bring back numbers to python index
-    ax.plot(corr_cb_centroid_list[0][0]-1.0, corr_cb_centroid_list[0][1]-1.0, marker='^', ms=12, mec='cyan', mfc='blue', ls='', label='CentroidWin=3')
+    ax.plot(corr_cb_centroid_list[0][0]-1.0, corr_cb_centroid_list[0][1]-1.0, marker='^', ms=19, mec='cyan', mfc='blue', ls='', label='CentroidWin=3')
     plt.vlines(15.0, 0.0, 31.5, colors='y', linestyles='dashed')
     plt.hlines(15.0, 0.0, 31.5, colors='y', linestyles='dashed')
     if len(corr_cb_centroid_list) != 1:
-        ax.plot(corr_cb_centroid_list[1][0]-1.0, corr_cb_centroid_list[1][1]-1.0, marker='o', ms=10, mec='black', mfc='green', ls='', label='CentroidWin=5')
-        ax.plot(corr_cb_centroid_list[2][0]-1.0, corr_cb_centroid_list[2][1]-1.0, marker='*', ms=12, mec='black', mfc='red', ls='', label='CentroidWin=7')
+        ax.plot(corr_cb_centroid_list[1][0]-1.0, corr_cb_centroid_list[1][1]-1.0, marker='o', ms=17, mec='black', mfc='green', ls='', label='CentroidWin=5')
+        ax.plot(corr_cb_centroid_list[2][0]-1.0, corr_cb_centroid_list[2][1]-1.0, marker='*', ms=19, mec='black', mfc='red', ls='', label='CentroidWin=7')
         if corr_true_center_centroid != [0.0, 0.0]:   # plot only is center is defined
-            ax.plot(corr_true_center_centroid[0]-1.0, corr_true_center_centroid[1]-1.0, marker='o', ms=8, mec='black', mfc='yellow', ls='', label='True Centroid')
+            ax.plot(corr_true_center_centroid[0]-1.0, corr_true_center_centroid[1]-1.0, marker='o', ms=12, mec='black', mfc='yellow', ls='', label='True Centroid')
     # Shrink current axis by 10%
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
@@ -2034,11 +2041,16 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     # Print number of repetitions to find best centroid window
     line3bisBa = "# \n # *** Repetitions Diffs V2: {}".format(T_counterV2)
     line3bisBb = "#  *** Repetitions Diffs V3: {}".format(T_counterV3)
-    line4 = "# {:<5} {:<20} {:<40} {:<40} {:<38} {:<28} {:<23} {:<15}".format(
-                    "Star", "BG_value", "Pos_centroid_win_3", "Pos_centroid_win_5", "Pos_centroid_win_7",
-                    "True_Pos", "MinDiff", "Centroid Win 3 - True")
-    line5 = "# {:>10} {:>15} {:>17} {:>22} {:>17} {:>22} {:>22} {:>17} {:>17} {:>12} {:>3} {:>17} {:>18} ".format(background_method,
-                    "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3")
+    #line4 = "# {:<5} {:<20} {:<40} {:<40} {:<38} {:<28} {:<23} {:<15}".format(
+    #                "Star", "BG_value", "Pos_centroid_win_3", "Pos_centroid_win_5", "Pos_centroid_win_7",
+    #                "True_Pos", "MinDiff", "Centroid Win 3 - True")
+    line4 = "# {:<5} {:<16} {:<38} {:<45} {:<28} {:<23} {:<15}".format(
+                    "Star", "BG_value", "Pos_centroid_win_3", "CorrPos_centroid_win_3",
+                    "True_Pos", "MinDiff", "CorrPosCentroidWin3 - True")
+    #line5 = "# {:>10} {:>15} {:>17} {:>22} {:>17} {:>22} {:>22} {:>17} {:>17} {:>12} {:>3} {:>17} {:>18} ".format(background_method,
+    #                "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3", "V2", "V3")
+    line5 = "# {:>10} {:>15} {:>17} {:>22} {:>17} {:>22} {:>17} {:>12} {:>3} {:>17} {:>18} ".format(background_method,
+                    "V2", "V3", "corrV2", "corrV3", "V2", "V3", "V2", "V3", "offsetV2", "offsetV3")
     print (line0)
     print (line0bis)
     print (line1)
@@ -2110,11 +2122,24 @@ def printTESTresults(stars_sample, case, test2perform, diffs_in_arcsecs, Tstdev_
     j = 0
     for i, _ in enumerate(T_V2_3):
         st = int(stars_sample[j])
-        line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>17}  {:<17}  {:>5} {:>3} {:>23}  {:>19} ".format(
+        # this is WITHOUT adding the mean correction in V2 and V3 due to least squares routine
+        #line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>18}  {:<20} {:>17}  {:<17}  {:>5} {:>3} {:>23}  {:>19} ".format(
+        #            st, background2use,
+        #            T_V2_3[i], T_V3_3[i], T_V2_5[i], T_V3_5[i], T_V2_7[i], T_V3_7[i],
+        #            Tbench_V2_list[i], Tbench_V3_list[i],
+        #            T_min_diffV2[i], T_min_diffV3[i], T_V2_3[i]-Tbench_V2_list[i], T_V3_3[i]-Tbench_V3_list[i])
+        # this is ADDING the mean correction in V2 and V3 due to least squares routine
+        TrueV2_3 = T_V2_3[i]+float(TLSlines2print_3[1].split()[3])
+        TrueV3_3 = T_V3_3[i]+float(TLSlines2print_3[1].split()[6])
+        #TrueV2_5 = T_V2_5[i]+float(TLSlines2print_5[1].split()[3])
+        #TrueV3_5 = T_V3_5[i]+float(TLSlines2print_5[1].split()[6])
+        #TrueV2_7 = T_V2_7[i]+float(TLSlines2print_7[1].split()[3])
+        #TrueV3_7 = T_V3_7[i]+float(TLSlines2print_7[1].split()[6])
+        line6 = "{:<5} {:<5} {:>20}  {:<20} {:>18}  {:<20} {:>17}  {:<17}  {:>5} {:>3} {:>23}  {:>19} ".format(
                     st, background2use,
-                    T_V2_3[i], T_V3_3[i], T_V2_5[i], T_V3_5[i], T_V2_7[i], T_V3_7[i],
+                    T_V2_3[i], T_V3_3[i], TrueV2_3, TrueV3_3,
                     Tbench_V2_list[i], Tbench_V3_list[i],
-                    T_min_diffV2[i], T_min_diffV3[i], T_V2_3[i]-Tbench_V2_list[i], T_V3_3[i]-Tbench_V3_list[i])
+                    T_min_diffV2[i], T_min_diffV3[i], TrueV2_3-Tbench_V2_list[i], TrueV3_3-Tbench_V3_list[i])
         print (line6)
         if save_text_file:
             to.write(line6+"\n")

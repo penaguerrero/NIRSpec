@@ -209,7 +209,7 @@ def theta_plot(case, theta, save_plot=False, show_plot=False, destination=None, 
 
 def make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=None, labels_list=None, xlims=None, ylims=None,
               print_side_string = None, print_side_values=None,
-              save_plot=False, show_plot=True, destination=None, star_sample=None):
+              save_plot=False, show_plot=True, destination=None, star_sample=None, square=True):
     '''
     This function creates a plot of the given arrays for the 3 tests.
     Args:
@@ -246,24 +246,29 @@ def make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=None, labels_list
         ymax = max(y)+max(y)*0.2
         ylims = [-1*ymax, ymax]
     # Compare which one is larger and use that one
-    if xlims[1] > ylims[1]:
-        ylims = xlims
-    else:
-        xlims = ylims
+    if square:
+        if xlims[1] > ylims[1]:
+            ylims = xlims
+        else:
+            xlims = ylims
     plt.xlim(xlims[0], xlims[1])
     plt.ylim(ylims[0], ylims[1])
     plt.hlines(0.0, xlims[0], xlims[1], colors='k', linestyles='dashed')
     plt.vlines(0.0, ylims[0], ylims[1], colors='k', linestyles='dashed')
     plt.plot(arrx[0], arry[0], 'b^', ms=10, alpha=0.5, label=labels_list[0])
-    plt.plot(arrx[1], arry[1], 'go', ms=10, alpha=0.5, label=labels_list[1])
-    plt.plot(arrx[2], arry[2], 'r*', ms=13, alpha=0.5, label=labels_list[2])
+    if len(arrx) != 1:
+        plt.plot(arrx[1], arry[1], 'go', ms=10, alpha=0.5, label=labels_list[1])
+        plt.plot(arrx[2], arry[2], 'r*', ms=13, alpha=0.5, label=labels_list[2])
     if star_sample is not None:
-        stars_sample1, stars_sample2, stars_sample3 = star_sample
-        # double the lenght of the list for test 3 because position 2 after position 1
-        new_star_sample3 = []
-        for position in range(2):
-            for st in stars_sample3:
-                new_star_sample3.append(st)
+        if len(arrx) == 3:
+            stars_sample1, stars_sample2, stars_sample3 = star_sample
+            # double the lenght of the list for test 3 because position 2 after position 1
+            new_star_sample3 = []
+            for position in range(2):
+                for st in stars_sample3:
+                    new_star_sample3.append(st)
+        else:
+            stars_sample1 = star_sample[0]
         x_reject, y_reject = [-0.05, 0.05], [-0.05, 0.05]
         # for test1 and 2
         for si, xi, yi in zip(stars_sample1, arrx[0], arry[0]):
@@ -273,14 +278,28 @@ def make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=None, labels_list
                 subycoord = 0
                 side = 'left'
                 plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
-        # for test3
-        for si, xi, yi in zip(new_star_sample3, arrx[2], arry[2]):
-            if yi >= y_reject[1] or yi <= y_reject[0] or xi >= x_reject[1] or xi <= x_reject[0]:
-                si = int(si)
-                subxcoord = 5
-                subycoord = 0
-                side = 'left'
-                plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+        if len(arrx) == 1:
+            if len(arrx) == 2*len(stars_sample1):   # then we are dealing with TEST3 data
+                new_star_sample3 = []
+                for position in range(2):
+                    for st in stars_sample3:
+                        new_star_sample3.append(st)
+                for si, xi, yi in zip(new_star_sample3, arrx[0], arry[0]):
+                    if yi >= y_reject[1] or yi <= y_reject[0] or xi >= x_reject[1] or xi <= x_reject[0]:
+                        si = int(si)
+                        subxcoord = 5
+                        subycoord = 0
+                        side = 'left'
+                        plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
+        else:
+            # for test3
+            for si, xi, yi in zip(new_star_sample3, arrx[2], arry[2]):
+                if yi >= y_reject[1] or yi <= y_reject[0] or xi >= x_reject[1] or xi <= x_reject[0]:
+                    si = int(si)
+                    subxcoord = 5
+                    subycoord = 0
+                    side = 'left'
+                    plt.annotate('{}'.format(si), xy=(xi,yi), xytext=(subxcoord, subycoord), ha=side, textcoords='offset points')
     # Shrink current axis by 20%
     box = ax1.get_position()
     ax1.set_position([box.x0, box.y0, box.width * 0.8, box.height])
@@ -288,22 +307,34 @@ def make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=None, labels_list
     if print_side_values is not None:
         # standard deviations and means of x-axis for the 3 tests
         textinfig0 = '{:<13}'.format(print_side_string[0])
-        textinfig1 = r'$\sigma(AvgPix)$={:<6.2f} $\mu(AvgPix)$={:<6.2f}'.format(print_side_values[0], print_side_values[1])
-        textinfig2 = r'$\sigma(AvgSky)$={:<6.2f} $\mu(AvgSky)$={:<6.2f}'.format(print_side_values[2], print_side_values[3])
-        textinfig3 = r'$ \sigma(NoAvg)$={:<6.2f}  $\mu(NoAvg)$={:<6.2f}'.format(print_side_values[4], print_side_values[5])
         ax1.annotate(textinfig0, xy=(1.02, 0.58), xycoords='axes fraction' )
-        ax1.annotate(textinfig1, xy=(1.02, 0.55), xycoords='axes fraction' )
-        ax1.annotate(textinfig2, xy=(1.02, 0.52), xycoords='axes fraction' )
-        ax1.annotate(textinfig3, xy=(1.02, 0.49), xycoords='axes fraction' )
         # standard deviations and means of y-axis for the 3 tests
         textinfig0 = r'{:<13}'.format(print_side_string[1])
-        textinfig1 = r'$\sigma(AvgPix)$={:<6.2f} $\mu(AvgPix)$={:<6.2f}'.format(print_side_values[6], print_side_values[7])
-        textinfig2 = r'$\sigma(AvgSky)$={:<6.2f} $\mu(AvgSky)$={:<6.2f}'.format(print_side_values[8], print_side_values[9])
-        textinfig3 = r' $\sigma(NoAvg)$={:<6.2f}  $\mu(NoAvg)$={:<6.2f}'.format(print_side_values[10], print_side_values[11])
         ax1.annotate(textinfig0, xy=(1.02, 0.43), xycoords='axes fraction' )
-        ax1.annotate(textinfig1, xy=(1.02, 0.40), xycoords='axes fraction' )
-        ax1.annotate(textinfig2, xy=(1.02, 0.37), xycoords='axes fraction' )
-        ax1.annotate(textinfig3, xy=(1.02, 0.34), xycoords='axes fraction' )
+        if len(arrx) == 3:
+            #print_side_values = [0 T1sigmaV2, 1 T1meanV2, 2 T2sigmaV2, 3 T2meanV2, 4 T3sigmaV2, 5 T3meanV2,
+            #                     6 T1sigmaV3, 7 T1meanV3, 8 T2sigmaV3, 9 T2meanV3, 10 T3sigmaV3, 11 T3meanV3]
+            # standard deviations and means of x-axis for the 3 tests
+            textinfig1 = r'$\sigma(AvgPix)$={:<6.2f} $\mu(AvgPix)$={:<6.2f}'.format(print_side_values[0], print_side_values[1])
+            textinfig2 = r'$\sigma(AvgSky)$={:<6.2f} $\mu(AvgSky)$={:<6.2f}'.format(print_side_values[2], print_side_values[3])
+            textinfig3 = r'$ \sigma(NoAvg)$={:<6.2f}  $\mu(NoAvg)$={:<6.2f}'.format(print_side_values[4], print_side_values[5])
+            ax1.annotate(textinfig1, xy=(1.02, 0.55), xycoords='axes fraction' )
+            ax1.annotate(textinfig2, xy=(1.02, 0.52), xycoords='axes fraction' )
+            ax1.annotate(textinfig3, xy=(1.02, 0.49), xycoords='axes fraction' )
+            # standard deviations and means of y-axis for the 3 tests
+            textinfig1 = r'$\sigma(AvgPix)$={:<6.2f} $\mu(AvgPix)$={:<6.2f}'.format(print_side_values[6], print_side_values[7])
+            textinfig2 = r'$\sigma(AvgSky)$={:<6.2f} $\mu(AvgSky)$={:<6.2f}'.format(print_side_values[8], print_side_values[9])
+            textinfig3 = r' $\sigma(NoAvg)$={:<6.2f}  $\mu(NoAvg)$={:<6.2f}'.format(print_side_values[10], print_side_values[11])
+            ax1.annotate(textinfig1, xy=(1.02, 0.40), xycoords='axes fraction' )
+            ax1.annotate(textinfig2, xy=(1.02, 0.37), xycoords='axes fraction' )
+            ax1.annotate(textinfig3, xy=(1.02, 0.34), xycoords='axes fraction' )
+        else:
+            # standard deviations and means of x-axis
+            textinfig1 = r'$\sigma$={:<6.2f} $\mu$={:<6.2f}'.format(print_side_values[0], print_side_values[1])
+            ax1.annotate(textinfig1, xy=(1.02, 0.55), xycoords='axes fraction' )
+            # standard deviations and means of y-axis
+            textinfig1 = r'$\sigma$={:<6.2f} $\mu$={:<6.2f}'.format(print_side_values[2], print_side_values[3])
+            ax1.annotate(textinfig1, xy=(1.02, 0.40), xycoords='axes fraction' )
     if save_plot:
         fig1.savefig(destination)
         print ("\n Plot saved: ", destination)
@@ -337,12 +368,12 @@ if __name__ == '__main__':
     #### Set parameters
 
     centroid_windows = [3, 5, 7]
-    min_elements = 8
+    min_elements = 4
     Nsigma2plot = 2.5
-    stars_in_sample = 3
+    stars_in_sample = 5
     case = '2DetsScene1_rapid_real_bgFrac0.3_thres01'
-    save_plot = True
-    show_plot = False
+    save_plot = False
+    show_plot = True
     milliarcsec = True              # arcsec if set to False
     used_abs_threshold = True      # only plot least squares routine results if set to False
     good_and_ugly_stars = True     # only plot good stars if set to False

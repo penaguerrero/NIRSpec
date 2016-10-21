@@ -236,25 +236,25 @@ if __name__ == '__main__':
 
     # INITIAL CONDITIONS
 
-    Nktimes = 5000                    # Integer number to repeat the entire analysis
+    Nktimes = 5000                     # Integer number to repeat the entire analysis
     random_sample = False              # choose a random sample of stars from either detector: True or False
-    save_Nktimes_text_files = True    # Want to save the text file with star samples used for later comparison? True or False
+    save_Nktimes_text_files = False    # Want to save the text file with star samples used for later comparison? True or False
     show_onscreen_results = False      # Want to show on-screen resulting V2s, V3s and statistics? True or False
     output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
     keep_bad_stars = False             # Keep the bad stars in the sample? True or False
-    keep_ugly_stars = True            # Keep the ugly stars (one position measured wrong)? True or False
-    perform_abs_threshold = True      # Perform abs_threshold routine (True) or only perform least squares routine (False)
-    detector = 'both'                     # Detector to analyze: 491, 491 or 'both'
-    stars_in_sample = 8               # Number of stars in sample
+    keep_ugly_stars = True             # Keep the ugly stars (one position measured wrong)? True or False
+    perform_abs_threshold = False       # Perform abs_threshold routine (True) or only perform least squares routine (False)
+    detector = 'both'                  # Detector to analyze: 491, 491 or 'both'
+    stars_in_sample = 20               # Number of stars in sample
     scene = 1                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
     background_method = 'frac'         # Select either 'fractional', 'fixed', or None
     background2use = 0.3               # Background to use for analysis: None or float
     shutters = "rapid"                 # Shutter velocity, string: "rapid" or "slow"
     noise = "real"                     # Noise level, string: "nonoise" or "real"
     filter_input = "F140X"             # Filter, string: for now only test case is "F140X"
-    Nsigma = 2.5                         # N-sigma rejection of bad stars: integer or float
+    Nsigma = 2.5                       # N-sigma rejection of bad stars: integer or float
     abs_threshold = 0.32               # threshold to reject points after each iteration of least squares routine, default=0.32
-    min_elements = 8                   # minimum number of elements in the absolute threshold least squares routine, default=4
+    min_elements = 4                   # minimum number of elements in the absolute threshold least squares routine, default=4
     max_iters_Nsig = 10                # Max number of iterations for N-sigma function: integer
 
 
@@ -281,6 +281,13 @@ if __name__ == '__main__':
     ####################################################################################################################
 
     # by default set these variables to false in order to avoid having Nk text files and/or displays
+    do_plots = False                   # 1. Least squares plot in V2/V3 space showing the true position (0,0)
+    #                                       and the mean of the three calculation cases:  Averaging in pixel space,
+    #                                       averaging on sky, and no averaging : True or False
+    #                                    2. Same plot but instead of the mean show all stars in one 20star calculation
+    save_plots = False                 # Save the plots? True or False
+    show_plots = False                 # Show the plots? True or False
+    show_pixpos_and_v23_plots = False  # Show the plots of x-y and v2-v3 residual positions?
     save_text_file = False             # Want to save the text file of comparison? True or False
     save_centroid_disp = False         # Save the display with measured and true positions?
     display_master_img = False         # Want to see the combined ramped images for every star?
@@ -419,26 +426,26 @@ if __name__ == '__main__':
             P1P2data = get_pixpositions(scenario, stars_sample)
 
             # Create group of primary and secondary parameters
-            primary_params1 = [output_full_detector, save_text_file, save_centroid_disp,
-                               keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample, scene]
-            primary_params2 = [background_method, background2use, shutters, noise, filter_input,
-                               test2perform, Nsigma, max_iters_Nsig, abs_threshold, min_elements]
-            primary_params = [primary_params1, primary_params2]
+            primary_params1 = [do_plots, save_plots, show_plots, detector, output_full_detector, show_onscreen_results,
+                               show_pixpos_and_v23_plots, save_text_file]
+            primary_params2 = [save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample,
+                               scene, background_method, background2use]
+            primary_params3 = [shutters, noise, filter_input, test2perform, Nsigma, abs_threshold, abs_threshold,
+                               min_elements, max_iters_Nsig]
+            primary_params = [primary_params1, primary_params2, primary_params3]
 
-            secondary_params1 = [checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter,
-                                 verbose, debug, arcsecs]
-            secondary_params2 = [determine_moments, display_master_img, show_centroids, Pier_corr, tilt]
-            secondary_params = [secondary_params1, secondary_params2]
-
+            secondary_params1 = [checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose]
+            secondary_params2 = [debug, arcsecs, determine_moments, display_master_img, show_centroids, show_disp]
+            secondary_params3 = [Pier_corr, tilt, backgnd_subtraction_method, random_sample]
+            secondary_params = [secondary_params1, secondary_params2, secondary_params3]
             # Run transformations for specific test
             print ('\n Transforming into V2 and V3, and running TEST...')
             path4results = ''   # we are not saving individual Test results so path does not matter
             case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info = tx.transformAndRunTest(stars_sample,
-                                                                                show_onscreen_results,
-                                                                                path4results, detector, primary_params,
+                                                                                path4results, primary_params,
                                                                                 secondary_params, bg_choice, P1P2data,
                                                                                 bench_star, benchmark_V2V3_sampleP1P2,
-                                                                                plot_v2v3pos=False)
+                                                                                plot_v2v3pos=False, extra_string=None)
             # unfold variables
             T3LSsigmas_3, T3LSsigmas_5, T3LSsigmas_7, T3LSdeltas_3, T3LSdeltas_5, T3LSdeltas_7 = LS_res
             iterations, rejected_elementsLS = LS_info

@@ -6,6 +6,7 @@ import numpy as np
 import os
 import time
 import random
+import copy
 
 # other code
 import TA_functions as TAf
@@ -63,26 +64,15 @@ OUTPUT:
 #######################################################################################################################
 
 
-def runXrandomstars(show_onscreen_results, stars_detectors, primary_params, secondary_params,
-                    backgnd_subtraction_method, detector,
-                    stars_in_sample, random_sample, stars_sample,
-                    show_pixpos_and_v23_plots=True):
+def runXrandomstars(stars_detectors, primary_params, secondary_params, stars_sample,
+                    path4results=None, extra_string=None):
     '''
     This function runs the full TA algorithm AND converts to sky for X random stars and performs the given test.
 
     Args:
-        show_onscreen_results: True or False, show on-screen final results
         stars_detectors: list, pool of stars to select the random from
         primary_params: list, set of parameters specific to the case
         secondary_params: list, set of baseline parameters
-        backgnd_subtraction_method: None or integer, 1 or 2
-                                1    = Do background subtraction on final image (after subtracting 3-2 and 2-1),
-                                        before converting negative values into zeros
-                                2    = Do background subtraction on 3-2 and 2-1 individually
-                                None = Do not subtract background
-        detector: integer, 491 or 492
-        stars_in_sample: integer, number of stars to be studied
-        random_sample: True or False
         stars_sample: list, a list of stars must be provided if random_sample is set to False.
 
     Returns:
@@ -94,23 +84,31 @@ def runXrandomstars(show_onscreen_results, stars_detectors, primary_params, seco
             iterations = list, number of the last iteration of the least squared routine for 3, 5, and 7
     '''
     # Define the paths for results
-    path4results = "../resultsXrandomstars/"
+    if path4results is None:
+        path4results = "../resultsXrandomstars/"
 
     print (' Running TA algorithm to measure centroids...')
-    bg_choice, P1P2data, bench_starP1, benchmark_V2V3_sampleP1P2 = measure_centroidsP1P2(backgnd_subtraction_method,
-                                                                                         stars_detectors,
-                                                                                         detector, background2use,
-                                                                                         scene, shutters, noise,
-                                                                                         stars_in_sample, random_sample,
+
+    # unfold variables
+    primary_params1, primary_params2, primary_params3 = primary_params
+    do_plots, save_plots, show_plots, detector, output_full_detector, show_onscreen_results, show_pixpos_and_v23_plots, save_text_file = primary_params1
+    save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample, scene, background_method, background2use = primary_params2
+    shutters, noise, filter_input, test2perform, Nsigma, abs_threshold, abs_threshold, min_elements, max_iters_Nsig = primary_params3
+    secondary_params1, secondary_params2, secondary_params3 = secondary_params
+    checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose = secondary_params1
+    debug, arcsecs, determine_moments, display_master_img, show_centroids, show_disp = secondary_params2
+    Pier_corr, tilt, backgnd_subtraction_method, random_sample = secondary_params3
+
+    bg_choice, P1P2data, bench_starP1, benchmark_V2V3_sampleP1P2 = measure_centroidsP1P2(stars_detectors, primary_params,
                                                                                          secondary_params, stars_sample,
                                                                                          plot_pixpos=show_pixpos_and_v23_plots)
     print ('\n Transforming into V2 and V3, and running TEST...')
-    case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info = transformAndRunTest(stars_sample,
-                                                                       show_onscreen_results,
-                                                                       path4results, detector, primary_params,
-                                                                       secondary_params, bg_choice, P1P2data,
-                                                                       bench_starP1, benchmark_V2V3_sampleP1P2,
-                                                                       plot_v2v3pos=show_pixpos_and_v23_plots)
+    case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info = transformAndRunTest(stars_sample, path4results,
+                                                                                       primary_params, secondary_params,
+                                                                                       bg_choice, P1P2data, bench_starP1,
+                                                                                       benchmark_V2V3_sampleP1P2,
+                                                                                       plot_v2v3pos=show_pixpos_and_v23_plots,
+                                                                                       extra_string=extra_string)
     return case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info
 
 
@@ -130,7 +128,7 @@ def select_random_stars(scene, stars_in_sample, stars_detectors, keep_bad_stars,
     for i in range(stars_in_sample):
         random_star = random.choice(stars_detectors)
         stars_sample.append(random_star)
-    print ('before while: ', stars_sample)
+    #print ('before while: ', stars_sample)
     # make sure that there are no repetitions
     stars_sample = list(set(stars_sample))
     if not keep_bad_stars:
@@ -212,26 +210,14 @@ def get_benchV2V3(scene, stars_sample, arcsecs):
     return bench_stars, benchP1P2, LoLeftCornersP1P2, benchmark_V2V3_sampleP1P2, magnitudes
 
 
-def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
-                          background2use, scene, shutters, noise, stars_in_sample,
-                          random_sample, secondary_params, stars_sample, plot_pixpos=True):
+def measure_centroidsP1P2(stars_detectors, primary_params, secondary_params, stars_sample,
+                          plot_pixpos=True):
     '''
     This function runs the full TA algorithm for X random stars and performs the given test.
 
     Args:
-        backgnd_subtraction_method: None or integer, 1 or 2
-                                1    = Do background subtraction on final image (after subtracting 3-2 and 2-1),
-                                        before converting negative values into zeros
-                                2    = Do background subtraction on 3-2 and 2-1 individually
-                                None = Do not subtract background
         stars_detectors: list, pool of stars to select the random from
-        detector: integer (491 and 492) or string ('both')
-        background2use: float, value used for fractional or fixed background case
-        scene: integer, 1 or 2
-        shutters: string, 'rapid' or 'slow'
-        noise: string, 'real' or 'nonoise'
-        stars_in_sample: integer, number of stars to be studied
-        random_sample: True or False
+        primary_params: list of baseline parameters
         secondary_params: list, set of baseline parameters
         stars_sample: list, star numbers of the sample
 
@@ -246,9 +232,16 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
 
 
     # unfold variables
-    secondary_params1, secondary_params2 = secondary_params
-    checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose, debug, arcsecs = secondary_params1
-    determine_moments, display_master_img, show_centroids, Pier_corr, tilt = secondary_params2
+    # primary parameters
+    primary_params1, primary_params2, primary_params3 = primary_params
+    do_plots, save_plots, show_plots, detector, output_full_detector, show_onscreen_results, show_pixpos_and_v23_plots, save_text_file = primary_params1
+    save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample, scene, background_method, background2use = primary_params2
+    shutters, noise, filter_input, test2perform, Nsigma, abs_threshold, abs_threshold, min_elements, max_iters_Nsig = primary_params3
+    # secondary parameters
+    secondary_params1, secondary_params2, secondary_params3 = secondary_params
+    checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose = secondary_params1
+    debug, arcsecs, determine_moments, display_master_img, show_centroids, show_disp = secondary_params2
+    Pier_corr, tilt, backgnd_subtraction_method, random_sample = secondary_params3
 
     if random_sample:
         stars_sample = select_random_stars(scene, stars_in_sample, stars_detectors, keep_bad_stars, keep_ugly_stars, verbose)
@@ -333,6 +326,12 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
             f = open(output_file, "w+")
             f.write(line0+"\n")
             f.close()
+        if keep_ugly_stars and not keep_bad_stars:
+            for pos in positions:
+                out_file_gduglies = os.path.join(output_file_path, "centroids_Scene"+repr(scene)+bg_choice+pos+"_GoodAndUglies.txt")
+                f = open(out_file_gduglies, "w+")
+                f.write(line0+"\n")
+                f.close()
 
     # get the star files to run the TA algorithm on
     dir2test_list = TAf.get_raw_star_directory(path4starfiles, scene, shutters, noise)
@@ -470,6 +469,7 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
         output_file = os.path.join(output_file_path, "centroids_Scene"+repr(scene)+bg_choice+position+".txt")
         data2write = [x_pixpos, y_pixpos, true_centers, loleftcoords_list, mag_list, min_diff_pixposX, min_diff_pixposY]
         TAf.writePixPos(save_text_file, show_centroids, output_file, lines4screenandfile, stars_sample, background2use, data2write)
+
     if debug:
         print ("Check that read BENCHMARK values correspond to expected for case: ", case)
         print ("Star, xP1, yP1, V2P1, V3P1, xLP1, yLP1")
@@ -574,14 +574,13 @@ def measure_centroidsP1P2(backgnd_subtraction_method, stars_detectors, detector,
     return bg_choice, P1P2data, bench_starP1, benchmark_V2V3_sampleP1P2
 
 
-def transformAndRunTest(stars_sample, show_onscreen_results, path4results, detector, primary_params, secondary_params,
-                        bg_choice, P1P2data, bench_starP1, benchmark_V2V3_sampleP1P2, plot_v2v3pos=True):
+def transformAndRunTest(stars_sample, path4results, primary_params, secondary_params,
+                        bg_choice, P1P2data, bench_starP1, benchmark_V2V3_sampleP1P2, plot_v2v3pos=True,
+                        extra_string=None):
     '''
     This function converts to sky for the X random star sample, and performs the given test.
 
     Args:
-        show_onscreen_results: True or False, show on-screen final results
-        detector: integer (491 and 492) or string ('both')
         primary_params: list, set of parameters specific to the case
         secondary_params: list, set of generic parameters
         bg_choice: string of the background method used
@@ -600,19 +599,27 @@ def transformAndRunTest(stars_sample, show_onscreen_results, path4results, detec
     '''
 
     # unfold variables
-    primary_params1, primary_params2 = primary_params
-    output_full_detector, save_text_file, save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample, scene = primary_params1
-    background_method, background2use, shutters, noise, filter_input, test2perform, Nsigma, max_iters_Nsig, abs_threshold, min_elements = primary_params2
-    secondary_params1, secondary_params2 = secondary_params
-    checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose, debug, arcsecs = secondary_params1
-    determine_moments, display_master_img, show_centroids, Pier_corr, tilt = secondary_params2
+    primary_params1, primary_params2, primary_params3 = primary_params
+    do_plots, save_plots, show_plots, detector, output_full_detector, show_onscreen_results, show_pixpos_and_v23_plots, save_text_file = primary_params1
+    save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample, scene, background_method, background2use = primary_params2
+    shutters, noise, filter_input, test2perform, Nsigma, abs_threshold, abs_threshold, min_elements, max_iters_Nsig = primary_params3
+    secondary_params1, secondary_params2, secondary_params3 = secondary_params
+    checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose = secondary_params1
+    debug, arcsecs, determine_moments, display_master_img, show_centroids, show_disp = secondary_params2
+    Pier_corr, tilt, backgnd_subtraction_method, random_sample = secondary_params3
     bench_V2P1, bench_V3P1,   bench_V2P2, bench_V3P2 = benchmark_V2V3_sampleP1P2
     trueVsP1 = [bench_V2P1, bench_V3P1]
     trueVsP2 = [bench_V2P2, bench_V3P2]
 
     # transform into sky coordinates
     #case2study = [scene, shutters, noise, bg_choice]
-    case = repr(detector)+"Scene"+str(scene)+"_"+shutters+"_"+noise+bg_choice+repr(background2use)+'_Nsigma'+repr(Nsigma)
+    if type(detector) is not str:
+        det = repr(detector)
+    else:
+        det = '2Dets'
+    case = det+"Scene"+str(scene)+"_"+shutters+"_"+noise+bg_choice+repr(background2use)+'_Nsigma'+repr(Nsigma)
+    if extra_string is not None:
+        case += extra_string
 
     # Now run the tests
     transf_direction = "forward"
@@ -882,137 +889,37 @@ def convert2milliarcsec(list2convert):
     return list2convert
 
 
-#######################################################################################################################
+def run_testXrandom_stars(stars_sample, primary_params, secondary_params, path4results, gen_path, extra_string):
+    '''
+    This is the function that coordinates all other functions within this script. It runs the script.
+    Args:
+        stars_sample: list of stars to analyze
+        primary_params: list of 3 lists containing all variables in the primary parameters section
+        secondary_params: list of 3 lists containing all variables in the secondary parameters section
+        path4results: string of the path to place results
+        gen_path: string of path to put plots and other resulting files
+        extra_string: additional info added to name of text file with final V2 and V3
 
+    Returns:
+        results per window size = resulting V2 and V3, benchmark V2 and V3, the corresponding standard deviations,
+                                the rotation angle, the total number of stars removed as well as the corresponding
+                                star number, and the total number of iterations
+        All of these results are in the following structure:
+        results_of_test = [case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info] --> per TEST
+        results_all_tests = [results_of_test, ...] --> can have only one list if only 1 test was ran
+    '''
 
-### CODE
-
-if __name__ == '__main__':
-
-
-    # SET PRIMARY PARAMETERS
-    do_plots = True                    # 1. Least squares plot in V2/V3 space showing the true position (0,0)
-    #                                       and the mean of the three calculation cases:  Averaging in pixel space,
-    #                                       averaging on sky, and no averaging : True or False
-    #                                    2. Same plot but instead of the mean show all stars in one 20star calculation
-    save_plots = False                 # Save the plots? True or False
-    show_plots = True                  # Show the plots? True or False
-    detector = 'both'                     # Integer (491 or 492) OR string, 'both' to select stars from both detectors
-    output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
-    show_onscreen_results = True       # Want to show on-screen resulting V2s, V3s and statistics? True or False
-    show_pixpos_and_v23_plots = False  # Show the plots of x-y and v2-v3 residual positions?
-    save_text_file = False             # Want to save the text file of comparison? True or False
-    save_centroid_disp = False         # Save the display with measured and true positions?
-    keep_bad_stars = False             # Keep the bad stars in the sample (both positions measured wrong)? True or False
-    keep_ugly_stars = False            # Keep the ugly stars (one position measured wrong)? True or False
-    perform_abs_threshold = False       # Perform abs_threshold routine (True) or only perform least squares routine (False)
-    stars_in_sample = 3               # Number of stars in sample
-    scene = 1                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
-    background_method = 'frac'         # Select either 'fractional', 'fixed', or None
-    background2use = 0.3               # Background to use for analysis: None or float
-    shutters = "rapid"                 # Shutter velocity, string: "rapid" or "slow"
-    noise = "real"                     # Noise level, string: "nonoise" or "real"
-    filter_input = "F140X"             # Filter, string: for now only test case is "F140X"
-    test2perform = "all"                # Test to perform, string: "all", "T1", "T2", "T3" for test 1, 2, and 3, respectively
-    Nsigma = 3                         # N-sigma rejection of bad stars: integer or float
-    abs_threshold = 0.32               # threshold to reject points after each iteration of least squares routine, default=0.32
-    min_elements = 4                   # minimum number of elements in the absolute threshold least squares routine, default=4
-    max_iters_Nsig = 10                # Max number of iterations for N-sigma function: integer
-
-    # SET SECONDARY PARAMETERS THAT CAN BE ADJUSTED
-    checkbox_size = 3                  # Real checkbox size
-    xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
-    ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
-    vlim = (1, 100)                    # Sensitivity limits of image, i.e. (0.001, 0.1)
-    threshold = 0.01                   # Convergence threshold of accepted difference between checkbox centroid and coarse location
-    max_iter = 10                      # Maximum number of iterations for finding coarse location
-    verbose = False                    # Show some debug messages (i.e. resulting calculations)
-    debug = False                      # See all debug messages (i.e. values of variables and calculations)
-    arcsecs = True                     # Final units in arcsecs? True or False (=degrees)
-    determine_moments = False          # Want to determine 2nd and 3rd moments?
-    display_master_img = False         # Want to see the combined ramped images for every star?
-    show_centroids = False             # Print measured centroid on screen: True or False
-    show_disp = False                  # Show display of resulting positions? (will show 2 figs, same but different contrast)
-    Pier_corr = True                   # Include Pier's corrections to measured positions
-    tilt = False                       # Tilt angle: True or False
-    backgnd_subtraction_method = 1     # 1    = Do background subtraction on final image (after subtracting 3-2 and 2-1),
-    #                                           before converting negative values into zeros
-    #                                    2    = Do background subtraction on 3-2 and 2-1 individually
-    #                                    None = Do not subtract background
-
-    random_sample = False               # choose a random sample of stars from either detector: True or False
-    # control samples to be used when random is set to False
-    #stars_sample = [1, 10, 23, 29, 33, 47, 61, 67, 95, 100, 107, 128, 133, 139, 151, 171, 190, 194, 195, 198]
-    #stars_sample = [9, 20, 32, 48, 65, 69, 82, 83, 93, 98, 99, 107, 111, 126, 128, 136, 172, 176, 196, 198] #all good stars
-    #stars_sample = [3, 26, 32, 38, 46, 48, 51, 65, 75, 84, 92, 96, 121, 122, 132, 133, 160, 174, 186, 194]
-    #stars_sample = [3, 8, 9, 32, 38, 65, 96, 128, 132, 133, 136, 143, 145, 147, 160, 175, 178, 191, 193, 194] #all good stars
-    #stars_sample = [32, 41, 49, 64, 65, 68, 84, 96, 99, 104, 131, 167, 175, 182, 192, 194, 195, 196, 197, 198]# all good
-    #stars_sample = [2, 4, 5, 6, 11, 32, 38, 47, 81, 127, 129, 136, 138, 141, 160, 163, 166, 171, 174, 179] #* all good
-    #stars_sample = [6, 18, 41, 49, 66, 75, 84, 93, 97, 99, 108, 110, 134, 140, 151, 160, 164, 175, 186, 200]# VERY good!
-    #stars_sample = [15, 20, 43, 46, 47, 57, 62, 69, 71, 83, 86, 87, 90, 106, 121, 168, 179, 182, 185, 194]
-    #stars_sample = [4, 42, 44, 69, 76, 96, 97, 99, 102, 114, 116, 128, 129, 130, 132, 142, 167, 176, 193, 194] # good to show bads
-    #stars_sample = [1, 128, 130, 131, 196]
-    #stars_sample = [1, 35, 128, 130, 164]
-    #stars_sample = [3, 4, 8, 32, 139]
-    #stars_sample = [32, 33, 104, 188, 199]
-    #stars_sample = [3, 32, 33, 133, 162]
-    #stars_sample = [16, 22, 29, 50, 108]
-    #stars_sample = [2, 5, 15, 46, 154, 156, 163]
-    #stars_sample = [5, 80, 116, 130, 135]#, 17, 31, 113, 182]
-    #stars_sample = [8, 11, 27, 44, 90]
-    #stars_sample = [12, 21, 32, 54, 77]
-    stars_sample = [22, 90, 108]#, 126, 145]
-    #stars_sample = [101, 110, 121, 133, 200]
-    #stars_sample = [111, 120, 142, 173, 180]
-    #stars_sample = [10, 32, 33, 35, 42, 47, 52, 70, 73, 77, 100, 128, 130, 135, 136, 137, 141, 147, 179, 192] # all good stars *
-    #stars_sample = [8, 33, 37, 38, 44, 50, 51, 54, 63, 98, 99, 109, 114, 127, 138, 139, 162, 163, 171, 186]
-    #stars_sample = [3, 16, 35, 36, 39, 64, 65, 70, 73, 90, 111, 122, 129, 134, 136, 154, 165, 183, 194, 196]
-    #stars_sample = [2, 4, 6, 11, 36, 38, 43, 98, 102, 109, 110, 141, 149, 160, 161, 163, 165, 173, 174, 177]
-    #stars_sample = [5, 7, 8, 12, 33, 37, 40, 101, 108, 109, 111, 151, 159, 162, 166, 167, 169, 170, 175, 187]
-    # bad samples:
-    #stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
-    #stars_sample = [8, 9, 20, 21, 39, 40, 46, 54, 58, 76, 78, 87, 88, 121, 134, 146, 150, 167, 179, 180]
-    # OLNY detector 491
-    #stars_sample = [101, 105, 108, 109, 111, 113, 114, 133, 136, 147, 150, 157, 158, 161, 181, 184, 185, 186, 194, 199]
-    #stars_sample = [101, 104, 105, 112, 117, 118, 133, 135, 136, 140, 145, 151, 152, 157, 159, 161, 174, 178, 184, 200]
-    #stars_sample = [109, 114, 128, 135, 136, 145, 149, 153, 160, 166, 171, 174, 176, 177, 193, 194, 195, 198, 199, 200]
-    #stars_sample = [101, 102, 104, 107, 117, 128, 130, 131, 132, 135, 136, 137, 141, 154, 167, 184, 185, 186, 187, 193]#*
-    # ONLY detector 492
-    #stars_sample = [8, 11, 19, 24, 30, 37, 39, 41, 48, 51, 55, 65, 73, 85, 87, 88, 90, 91, 93, 98]
-    #stars_sample = [2, 4, 8, 10, 11, 22, 25, 28, 33, 37, 54, 64, 68, 76, 80, 89, 96, 97, 99, 100]
-    # all stars of one detector or both
-    #stars_sample = [s+1 for s in range(200)]
-    # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
-    #6, 23, 50, 55, 65, 67, 70, 71, 73, 90, 105, 108, 119, 124, 126, 127, 137, 153, 186, 187
-
-
-
-    ######################################################
-
-    ### CODE
-
-    continue_code = True
-    if not perform_abs_threshold and min_elements!=4:
-        print ('***** You are running the code with  min_elements =', min_elements, ' and No absolute threshold, ')
-        continue_code = raw_input('  Do you wish to continue?  y  [n]')
-        if continue_code == 'y':
-            raw_input('Ok, continuing... but the output files will not have a marker to know the number of minimum '
-                      'elements allowed in the absolute threshold routine.  Press enter')
-        else:
-            exit()
-
-    # start the timer to compute the whole running time
-    start_time = time.time()
-
-    # make sure that bad stars are gone if ugly stars are to be gone as well
-    if not keep_ugly_stars:
-        keep_bad_stars = False
-
-    # Set variable as it appears defined in function
-    if perform_abs_threshold:
-        just_least_sqares = False  # Only perform least squares routine = True, perform abs_threshold routine = False
-    else:
-        just_least_sqares = True
+    # Unfold variables
+    # primary parameters
+    primary_params1, primary_params2, primary_params3 = primary_params
+    do_plots, save_plots, show_plots, detector, output_full_detector, show_onscreen_results, show_pixpos_and_v23_plots, save_text_file = primary_params1
+    save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample, scene, background_method, background2use = primary_params2
+    shutters, noise, filter_input, test2perform, Nsigma, abs_threshold, abs_threshold, min_elements, max_iters_Nsig = primary_params3
+    # secondary parameters
+    secondary_params1, secondary_params2, secondary_params3 = secondary_params
+    checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose = secondary_params1
+    debug, arcsecs, determine_moments, display_master_img, show_centroids, show_disp = secondary_params2
+    Pier_corr, tilt, backgnd_subtraction_method, random_sample = secondary_params3
 
     # Pool of stars to select from
     stars_detectors = range(1, 201)       # default is for both detectors
@@ -1022,12 +929,9 @@ if __name__ == '__main__':
         stars_detectors = range(1, 101)   # only detector 492
 
     # Loop over list_test2perform
+    results_all_tests = []
     if test2perform == "all":
         list_test2perform = ["T1", "T2", "T3"]
-        results_all_tests = []
-        if random_sample:
-            stars_sample = select_random_stars(scene, stars_in_sample, stars_detectors, keep_bad_stars, keep_ugly_stars, verbose)
-            random_sample = False
         if not keep_bad_stars:
             # remove the bad stars and use the same sample for the 3 tests
             stars_sample = TAf.remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose)
@@ -1039,37 +943,35 @@ if __name__ == '__main__':
                 # remove the bad stars
                 stars_sample = TAf.remove_bad_stars(scene, stars_sample, keep_ugly_stars, verbose)
             keep_bad_stars = True
-
     else:
         list_test2perform = [test2perform]
     for test2perform in list_test2perform:
-        #do_plots = False
         print ('Starting analysis for TEST %s ...' % (test2perform))
-        # Compact variables
-        primary_params1 = [output_full_detector, save_text_file, save_centroid_disp, keep_bad_stars, keep_ugly_stars,
-                           just_least_sqares, stars_in_sample, scene]
-        primary_params2 = [background_method, background2use, shutters, noise, filter_input, test2perform, Nsigma,
-                           max_iters_Nsig, abs_threshold, min_elements]
-        primary_params = [primary_params1, primary_params2]
-        secondary_params1 = [checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose, debug, arcsecs]
-        secondary_params2 = [determine_moments, display_master_img, show_centroids, Pier_corr, tilt]
-        secondary_params = [secondary_params1, secondary_params2]
+        # RE-compact variables
+        primary_params1 = [do_plots, save_plots, show_plots, detector, output_full_detector, show_onscreen_results,
+                           show_pixpos_and_v23_plots, save_text_file]
+        primary_params2 = [save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample,
+                           scene, background_method, background2use]
+        primary_params3 = [shutters, noise, filter_input, test2perform, Nsigma, abs_threshold, abs_threshold, min_elements,
+                           max_iters_Nsig]
+        primary_params = [primary_params1, primary_params2, primary_params3]
+        secondary_params1 = [checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose]
+        secondary_params2 = [debug, arcsecs, determine_moments, display_master_img, show_centroids, show_disp]
+        secondary_params3 = [Pier_corr, tilt, backgnd_subtraction_method, random_sample]
+        secondary_params = [secondary_params1, secondary_params2, secondary_params3]
         # Get centroids AND sky positions according to Test
-        case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info = runXrandomstars(show_onscreen_results,
-                                                                                stars_detectors,
-                                                                                primary_params, secondary_params,
-                                                                                backgnd_subtraction_method, detector,
-                                                                                stars_in_sample, random_sample,
-                                                                                stars_sample,
-                                                                                show_pixpos_and_v23_plots=show_pixpos_and_v23_plots)
+        case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info = runXrandomstars(stars_detectors,
+                                                                                       primary_params, secondary_params,
+                                                                                       stars_sample,
+                                                                                       path4results=path4results,
+                                                                                       extra_string=extra_string)
         results_of_test = [case, new_stars_sample, Tbench_Vs, T_Vs, T_diffVs, LS_res, LS_info]
         results_all_tests.append(results_of_test)
         print ('TEST  %s  finished. \n' % (test2perform))
 
+
     if do_plots:
         print ('Generating plots...')
-        # set general path
-        gen_path = os.path.abspath('../resultsXrandomstars')
 
         # load the data fom the 3 tests
         for resTest in results_all_tests:
@@ -1111,31 +1013,46 @@ if __name__ == '__main__':
                 s, d, v = 1, 4, 2
             if cwin == 7:
                 s, d, v = 2, 5, 4
-            T1sigmaV2 = results_all_tests[0][5][s][0]   # Test 1 sigma V2 value
-            T2sigmaV2 = results_all_tests[1][5][s][0]   # Test 2
-            T3sigmaV2 = results_all_tests[2][5][s][0]   # Test 3
-            T1sigmaV3 = results_all_tests[0][5][s][1]   # Test 1 sigma V3 value
-            T2sigmaV3 = results_all_tests[1][5][s][1]   # Test 2
-            T3sigmaV3 = results_all_tests[2][5][s][1]   # Test 3
-            T1meanV2 = results_all_tests[0][5][d][0]   # Test 1 mean V2 value
-            T2meanV2 = results_all_tests[1][5][d][0]   # Test 2
-            T3meanV2 = results_all_tests[2][5][d][0]   # Test 3
-            T1meanV3 = results_all_tests[0][5][d][1]   # Test 1 mean V3 value
-            T2meanV3 = results_all_tests[1][5][d][1]   # Test 2
-            T3meanV3 = results_all_tests[2][5][d][1]   # Test 3
-            arrx = [T1meanV2, T2meanV2, T3meanV2]
-            arry = [T1meanV3, T2meanV3, T3meanV3]
-            labels_list = ['Avg in Pixel Space', 'Avg in Sky', 'No Avg']
+            if len(list_test2perform) != 3:
+                T1sigmaV2 = results_all_tests[0][5][s][0]   # Test ran sigma V2 value
+                T1sigmaV3 = results_all_tests[0][5][s][1]   # Test ran sigma V3 value
+                T1meanV3 = results_all_tests[0][5][d][1]    # Test ran mean V3 value
+                T1meanV2 = results_all_tests[0][5][d][0]    # Test ran mean V2 value
+                if test2perform == "T1":
+                    labels_list = ['Avg in Pixel Space']
+                if test2perform == "T2":
+                    labels_list = ['Avg in Sky']
+                if test2perform == "T3":
+                    labels_list = ['No Avg']
+                arrx = [T1meanV2]
+                arry = [T1meanV3]
+                print_side_values = [T1sigmaV2, T1meanV2, T1sigmaV3, T1meanV3]
+            if len(list_test2perform) == 3:
+                T1sigmaV2 = results_all_tests[0][5][s][0]   # Test 1 ran sigma V2 value
+                T1sigmaV3 = results_all_tests[0][5][s][1]   # Test 1 ran sigma V3 value
+                T1meanV3 = results_all_tests[0][5][d][1]    # Test 1 ran mean V3 value
+                T1meanV2 = results_all_tests[0][5][d][0]    # Test 1 ran mean V2 value
+                T2sigmaV2 = results_all_tests[1][5][s][0]   # Test 2
+                T2sigmaV3 = results_all_tests[1][5][s][1]   # Test 2
+                T2meanV2 = results_all_tests[1][5][d][0]    # Test 2
+                T2meanV3 = results_all_tests[1][5][d][1]    # Test 2
+                T3sigmaV2 = results_all_tests[2][5][s][0]   # Test 3
+                T3sigmaV3 = results_all_tests[2][5][s][1]   # Test 3
+                T3meanV2 = results_all_tests[2][5][d][0]    # Test 3
+                T3meanV3 = results_all_tests[2][5][d][1]    # Test 3
+                labels_list = ['Avg in Pixel Space', 'Avg in Sky', 'No Avg']
+                arrx = [T1meanV2, T2meanV2, T3meanV2]
+                arry = [T1meanV3, T2meanV3, T3meanV3]
+                print_side_values = [T1sigmaV2, T1meanV2, T2sigmaV2, T2meanV2, T3sigmaV2, T3meanV2,
+                                     T1sigmaV3, T1meanV3, T2sigmaV3, T2meanV3, T3sigmaV3, T3meanV3]
             print_side_string = ['V2$\mu$ [marcsec]', 'V3$\mu$ [marcsec]']
-            print_side_values = [T1sigmaV2, T1meanV2, T2sigmaV2, T2meanV2, T3sigmaV2, T3meanV2,
-                                 T1sigmaV3, T1meanV3, T2sigmaV3, T2meanV3, T3sigmaV3, T3meanV3]
             # determine which one is larger
             if np.abs(T1meanV2) > np.abs(T1meanV3):
                 largV = np.abs(T1meanV2)+np.abs(T1meanV2)*0.5
             else:
                 largV = np.abs(T1meanV3)+np.abs(T1meanV3)*0.5
             xlims, ylims = [-1*largV, largV], [-1*largV, largV]
-            #xlims, ylims = None, None
+
             vp.make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=plot_title,
                       labels_list=labels_list, xlims=xlims, ylims=ylims,
                       print_side_string=print_side_string, print_side_values=print_side_values,
@@ -1145,26 +1062,193 @@ if __name__ == '__main__':
             # Graphical display of the standard deviation
             plot_title = r'Graphical Display of the Standard Deviation, $\sigma$'
             destination = os.path.join(gen_path, 'plots/V2V3_Cwin'+repr(cwin)+'.jpg')
-            arrx = [results_all_tests[0][4][v], results_all_tests[1][4][v], results_all_tests[2][4][v]]
-            arry = [results_all_tests[0][4][v+1], results_all_tests[1][4][v+1], results_all_tests[2][4][v+1]]
-            # determine which one is larger
-            maxx = max(np.abs(results_all_tests[2][4][v]))
-            maxy = max(np.abs(results_all_tests[2][4][v+1]))
+            if len(list_test2perform) == 3:
+                arrx = [results_all_tests[0][4][v], results_all_tests[1][4][v], results_all_tests[2][4][v]]
+                arry = [results_all_tests[0][4][v+1], results_all_tests[1][4][v+1], results_all_tests[2][4][v+1]]
+                # determine which one is larger
+                maxx = max(np.abs(results_all_tests[2][4][v]))
+                maxy = max(np.abs(results_all_tests[2][4][v+1]))
+                new_stars_sample = [results_all_tests[0][1][s], results_all_tests[1][1][s], results_all_tests[2][1][s]]
+            else:
+                arrx = [results_all_tests[0][4][v]]
+                arry = [results_all_tests[0][4][v+1]]
+                # determine which one is larger
+                maxx = max(np.abs(results_all_tests[0][4][v]))
+                maxy = max(np.abs(results_all_tests[0][4][v+1]))
+                new_stars_sample = [results_all_tests[0][1][s]]
             if maxx > maxy:
                 largsig = maxx + maxx*0.5
             else:
                 largsig = maxy + maxy*0.5
             xlims, ylims = [-1*largsig, largsig], [-1*largsig, largsig]
-            #xlims, ylims = None, None
-            new_stars_sample = [results_all_tests[0][1][s], results_all_tests[1][1][s], results_all_tests[2][1][s]]
             vp.make_plot(cwincase, arrx, arry, xlabel, ylabel, plot_title=plot_title,
-                      labels_list=labels_list, xlims=xlims, ylims=ylims,
-                      print_side_string=print_side_string, print_side_values=print_side_values,
-                      save_plot=save_plots, show_plot=show_plots, destination=destination,
-                      star_sample=new_stars_sample)
+                            labels_list=labels_list, xlims=xlims, ylims=ylims,
+                            print_side_string=print_side_string, print_side_values=print_side_values,
+                            save_plot=save_plots, show_plot=show_plots, destination=destination,
+                            star_sample=new_stars_sample)
+
+    return results_all_tests
 
 
-        '''
+
+#######################################################################################################################
+
+
+### CODE
+
+if __name__ == '__main__':
+
+
+    # SET PRIMARY PARAMETERS
+    do_plots = True                    # 1. Least squares plot in V2/V3 space showing the true position (0,0)
+    #                                       and the mean of the three calculation cases:  Averaging in pixel space,
+    #                                       averaging on sky, and no averaging : True or False
+    #                                    2. Same plot but instead of the mean show all stars in one 20star calculation
+    save_plots = False                 # Save the plots? True or False
+    show_plots = True                  # Show the plots? True or False
+    detector = 'both'                     # Integer (491 or 492) OR string, 'both' to select stars from both detectors
+    output_full_detector = True        # Give resulting coordinates in terms of full detector: True or False
+    show_onscreen_results = True       # Want to show on-screen resulting V2s, V3s and statistics? True or False
+    show_pixpos_and_v23_plots = False  # Show the plots of x-y and v2-v3 residual positions?
+    save_text_file = False             # Want to save the text file of comparison? True or False
+    save_centroid_disp = False         # Save the display with measured and true positions?
+    keep_bad_stars = False             # Keep the bad stars in the sample (both positions measured wrong)? True or False
+    keep_ugly_stars = True             # Keep the ugly stars (one position measured wrong)? True or False
+    perform_abs_threshold = False       # Perform abs_threshold routine (True) or only perform least squares routine (False)
+    stars_in_sample = 5               # Number of stars in sample (165 for all good and uglies)
+    scene = 1                          # Integer or string, scene=1 is constant Mag 23, scene=2 is stars with Mag 18-23
+    background_method = 'frac'         # Select either 'fractional', 'fixed', or None
+    background2use = 0.3               # Background to use for analysis: None or float
+    shutters = "rapid"                 # Shutter velocity, string: "rapid" or "slow"
+    noise = "real"                     # Noise level, string: "nonoise" or "real"
+    filter_input = "F140X"             # Filter, string: for now only test case is "F140X"
+    test2perform = "all"                # Test to perform, string: "all", "T1", "T2", "T3" for test 1, 2, and 3, respectively
+    Nsigma = 2.5                         # N-sigma rejection of bad stars: integer or float
+    abs_threshold = 0.32               # threshold to reject points after each iteration of least squares routine, default=0.32
+    min_elements = 4                   # minimum number of elements in the absolute threshold least squares routine, default=4
+    max_iters_Nsig = 10                # Max number of iterations for N-sigma function: integer
+
+    # SET SECONDARY PARAMETERS THAT CAN BE ADJUSTED
+    checkbox_size = 3                  # Real checkbox size
+    xwidth_list = [3, 5, 7]            # Number of rows of the centroid region
+    ywidth_list = [3, 5, 7]            # Number of columns of the centroid region
+    vlim = (1, 100)                    # Sensitivity limits of image, i.e. (0.001, 0.1)
+    threshold = 0.01                   # Convergence threshold of accepted difference between checkbox centroid and coarse location
+    max_iter = 10                      # Maximum number of iterations for finding coarse location
+    verbose = False                    # Show some debug messages (i.e. resulting calculations)
+    debug = False                      # See all debug messages (i.e. values of variables and calculations)
+    arcsecs = True                     # Final units in arcsecs? True or False (=degrees)
+    determine_moments = False          # Want to determine 2nd and 3rd moments?
+    display_master_img = False         # Want to see the combined ramped images for every star?
+    show_centroids = False             # Print measured centroid on screen: True or False
+    show_disp = False                  # Show display of resulting positions? (will show 2 figs, same but different contrast)
+    Pier_corr = True                   # Include Pier's corrections to measured positions
+    tilt = False                       # Tilt angle: True or False
+    backgnd_subtraction_method = 1     # 1    = Do background subtraction on final image (after subtracting 3-2 and 2-1),
+    #                                           before converting negative values into zeros
+    #                                    2    = Do background subtraction on 3-2 and 2-1 individually
+    #                                    None = Do not subtract background
+
+    random_sample = False               # choose a random sample of stars from either detector: True or False
+    # control samples to be used when random is set to False
+    #stars_sample = [1, 10, 23, 29, 33, 47, 61, 67, 95, 100, 107, 128, 133, 139, 151, 171, 190, 194, 195, 198]
+    #stars_sample = [9, 20, 32, 48, 65, 69, 82, 83, 93, 98, 99, 107, 111, 126, 128, 136, 172, 176, 196, 198] #all good stars
+    #stars_sample = [3, 26, 32, 38, 46, 48, 51, 65, 75, 84, 92, 96, 121, 122, 132, 133, 160, 174, 186, 194]
+    #stars_sample = [3, 8, 9, 32, 38, 65, 96, 128, 132, 133, 136, 143, 145, 147, 160, 175, 178, 191, 193, 194] #all good stars
+    #stars_sample = [32, 41, 49, 64, 65, 68, 84, 96, 99, 104, 131, 167, 175, 182, 192, 194, 195, 196, 197, 198]# all good
+    #stars_sample = [2, 4, 5, 6, 11, 32, 38, 47, 81, 127, 129, 136, 138, 141, 160, 163, 166, 171, 174, 179] #* all good
+    #stars_sample = [6, 18, 41, 49, 66, 75, 84, 93, 97, 99, 108, 110, 134, 140, 151, 160, 164, 175, 186, 200]# VERY good!
+    #stars_sample = [15, 20, 43, 46, 47, 57, 62, 69, 71, 83, 86, 87, 90, 106, 121, 168, 179, 182, 185, 194]
+    #stars_sample = [4, 42, 44, 69, 76, 96, 97, 99, 102, 114, 116, 128, 129, 130, 132, 142, 167, 176, 193, 194] # good to show bads
+    stars_sample = [1, 128, 130, 131, 196]
+    #stars_sample = [1, 35, 128, 130, 164]
+    #stars_sample = [3, 4, 8, 32, 139]
+    #stars_sample = [32, 33, 104, 188, 199]
+    #stars_sample = [3, 32, 33, 133, 162]
+    #stars_sample = [16, 22, 29, 50, 108]
+    #stars_sample = [2, 5, 15, 46, 154, 156, 163]
+    #stars_sample = [5, 80, 116, 130, 135]#, 17, 31, 113, 182]
+    #stars_sample = [8, 11, 27, 44, 90]
+    #stars_sample = [12, 21, 32, 54, 77]
+    ##stars_sample = [22, 90, 108, 126, 145]
+    #stars_sample = [101, 110, 121, 133, 200]
+    #stars_sample = [111, 120, 142, 173, 180]
+    #stars_sample = [10, 32, 33, 35, 42, 47, 52, 70, 73, 77, 100, 128, 130, 135, 136, 137, 141, 147, 179, 192] # all good stars *
+    #stars_sample = [8, 33, 37, 38, 44, 50, 51, 54, 63, 98, 99, 109, 114, 127, 138, 139, 162, 163, 171, 186]
+    #stars_sample = [3, 16, 35, 36, 39, 64, 65, 70, 73, 90, 111, 122, 129, 134, 136, 154, 165, 183, 194, 196]
+    #stars_sample = [2, 4, 6, 11, 36, 38, 43, 98, 102, 109, 110, 141, 149, 160, 161, 163, 165, 173, 174, 177]
+    #stars_sample = [5, 7, 8, 12, 33, 37, 40, 101, 108, 109, 111, 151, 159, 162, 166, 167, 169, 170, 175, 187]
+    # bad samples:
+    #stars_sample = [7, 24, 51, 56, 66, 68, 71, 72, 74, 91, 106, 109, 120, 125, 127, 128, 138, 154, 187, 188]
+    #stars_sample = [8, 9, 20, 21, 39, 40, 46, 54, 58, 76, 78, 87, 88, 121, 134, 146, 150, 167, 179, 180]
+    # OLNY detector 491
+    #stars_sample = [101, 105, 108, 109, 111, 113, 114, 133, 136, 147, 150, 157, 158, 161, 181, 184, 185, 186, 194, 199]
+    #stars_sample = [101, 104, 105, 112, 117, 118, 133, 135, 136, 140, 145, 151, 152, 157, 159, 161, 174, 178, 184, 200]
+    #stars_sample = [109, 114, 128, 135, 136, 145, 149, 153, 160, 166, 171, 174, 176, 177, 193, 194, 195, 198, 199, 200]
+    #stars_sample = [101, 102, 104, 107, 117, 128, 130, 131, 132, 135, 136, 137, 141, 154, 167, 184, 185, 186, 187, 193]#*
+    # ONLY detector 492
+    ##stars_sample = [8, 11, 19, 24, 30, 37, 39, 41, 48, 51, 55, 65, 73, 85, 87, 88, 90, 91, 93, 98]
+    #stars_sample = [2, 4, 8, 10, 11, 22, 25, 28, 33, 37, 54, 64, 68, 76, 80, 89, 96, 97, 99, 100]
+    # all stars of one detector or both
+    #stars_sample = [s+1 for s in range(200)]
+    # Known bad stars in X and Y: 103, 105, 106, 112, 134, 152, 156, 170, 188
+    #6, 23, 50, 55, 65, 67, 70, 71, 73, 90, 105, 108, 119, 124, 126, 127, 137, 153, 186, 187
+
+
+
+    ######################################################
+
+    ### CODE
+
+    continue_code = True
+    if not perform_abs_threshold and min_elements!=4:
+        print ('***** You are running the code with  min_elements =', min_elements, ' and No absolute threshold, ')
+        continue_code = raw_input('  Do you wish to continue?  y  [n]')
+        if continue_code == 'y':
+            raw_input('Ok, continuing... but the output files will not have a marker to know the number of minimum '
+                      'elements allowed in the absolute threshold routine.  Press enter')
+        else:
+            exit()
+
+    # start the timer to compute the whole running time
+    start_time = time.time()
+
+    # make sure that bad stars are gone if ugly stars are to be gone as well
+    if not keep_ugly_stars:
+        keep_bad_stars = False
+
+    # Set variable as it appears defined in function
+    if perform_abs_threshold:
+        just_least_sqares = False  # Only perform least squares routine = True, perform abs_threshold routine = False
+    else:
+        just_least_sqares = True
+
+    # set paths
+    gen_path = os.path.abspath('../resultsXrandomstars')
+    path4results =  "../resultsXrandomstars/"
+
+    # Compact variables
+    primary_params1 = [do_plots, save_plots, show_plots, detector, output_full_detector, show_onscreen_results,
+                       show_pixpos_and_v23_plots, save_text_file]
+    primary_params2 = [save_centroid_disp, keep_bad_stars, keep_ugly_stars, just_least_sqares, stars_in_sample,
+                       scene, background_method, background2use]
+    primary_params3 = [shutters, noise, filter_input, test2perform, Nsigma, abs_threshold, abs_threshold, min_elements,
+                       max_iters_Nsig]
+    primary_params = [primary_params1, primary_params2, primary_params3]
+    secondary_params1 = [checkbox_size, xwidth_list, ywidth_list, vlim, threshold, max_iter, verbose]
+    secondary_params2 = [debug, arcsecs, determine_moments, display_master_img, show_centroids, show_disp]
+    secondary_params3 = [Pier_corr, tilt, backgnd_subtraction_method, random_sample]
+    secondary_params = [secondary_params1, secondary_params2, secondary_params3]
+
+
+    # Run main function of script
+    extra_string = None
+    results_all_tests = run_testXrandom_stars(stars_sample, primary_params, secondary_params, path4results,
+                                              gen_path, extra_string)
+
+
+
+    '''
         common3files = '_results_'+case+'.txt'
         test_fileT1 = os.path.join(gen_path, 'T1'+common3files)
         test_fileT2 = os.path.join(gen_path, 'T2'+common3files)
@@ -1248,6 +1332,6 @@ if __name__ == '__main__':
                       print_side_string=print_side_string, print_side_values=print_side_values,
                       save_plot=save_plots, show_plot=show_plots, destination=destination,
                       star_sample=stars_sample)
-            '''
+        '''
 
     print ("\n Script 'testXrandom_stars.py' finished! Took  %s  seconds to finish. \n" % (time.time() - start_time))

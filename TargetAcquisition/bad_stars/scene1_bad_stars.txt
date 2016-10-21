@@ -1,5 +1,6 @@
 # Known bad stars of Scene 1 = mag 23
-# UGLY = stars with one bad measurement (only one good position)
+# UGLY = stars with one bad measurement (only one good position) - 14 stars
+# BAD stars are marked as 0 in Ugly column - 35
 #Star  Ugly Reason 
 12     0    # hot pixel, Tony=bad shutters
 17     0    # hot pixel, Tony=no PF data     
