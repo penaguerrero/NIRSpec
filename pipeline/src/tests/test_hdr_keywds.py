@@ -3,22 +3,25 @@
 from __future__ import print_function, division
 import pytest
 import os
-import string
 import re
 from datetime import datetime
 
 # import the scripts I wrote
-import functions4tests as f4t
-import hdr_keywords_dictionary as hkwd
+from . import functions4tests as f4t
+from . import hdr_keywords_dictionary as hkwd
 
 '''
 This script checks that the fits files for the Fixed Slits (FS) have the format that the pipeline
 build 7 is expecting.
+
+To test and get an html report run code with:
+    > pytest --html=report.html
 '''
 
 
 # Define paths
-pileline_path = string.split(os.getcwd(), sep='pipeline')[0]
+pileline_path = os.path.abspath(os.curdir).split('pipeline')[0]
+print(pileline_path)
 #build_path = os.path.join(pileline_path, 'pipeline/build7')
 fits_file = os.path.join(pileline_path, "pipeline/src/jwtest1001001_01101_00001_NRS1_uncal_mod.fits")
 
