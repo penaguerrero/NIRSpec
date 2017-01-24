@@ -22,7 +22,6 @@ To test and get an html report run code with:
 
 # Define paths
 pileline_path = os.path.abspath(os.curdir).split('pipeline')[0]
-#build_path = os.path.join(pileline_path, 'pipeline/build7')
 fits_file = os.path.join(pileline_path, "pipeline/src/jwtest1001001_01101_00001_NRS1_uncal_mod.fits")
 
 
