@@ -1,12 +1,13 @@
 from __future__ import print_function, division
+
 import os
-import string
 import re
+import string
 from datetime import datetime
 
 # import the scripts I wrote
-import tests.functions4tests as f4t
-import tests.hdr_keywords_dictionary as hkwd
+import functions4fitsfiles as f4t
+import hdr_keywords_dictionary as hkwd
 
 '''
 This script checks that the fits files for the Fixed Slits (FS) have the format that the pipeline

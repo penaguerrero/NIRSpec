@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 
 from __future__ import print_function, division
-import pytest
+
 import os
 import re
-import numpy as np
 from datetime import datetime
 
+import numpy as np
+import pytest
+
 # import the scripts I wrote
-from . import functions4tests as f4t
-from . import hdr_keywords_dictionary as hkwd
+import functions4fitsfiles as f4t
+import hdr_keywords_dictionary as hkwd
 
 '''
 This script checks that the fits files for the Fixed Slits (FS) have the format that the pipeline
@@ -64,17 +66,26 @@ def test_NIRSpec_hdr_keywds(get_hdr):
 
         # Check if type of value matches expected
         valtype = type(val)
-        # Check if type of value correspond to what is given
-        if (valtype is not str) and (val is not None):
+        # Check if type of value correspond to what is given, else change it
+        if val is not None:
             count = 0
             for v in val:
                 if v=='.':
                     count += 1
-            if (count == 0) and ('fits' not in val) and (':' not in val) and ('-' not in val):
-                val = int(val)
-            if (count==1) and ('fits' not in val) and (':' not in val):
-                val = float(val)
-            valtype = type(val)
+            no_letters_in_string = True
+            for char in val:
+                if char.isalpha():
+                    no_letters_in_string = False
+            if no_letters_in_string:
+                if (count == 0) and (':' not in val) and ('-' not in val):
+                    if val=='':
+                        warning = 'Keyword '+key+' has empty value.'
+                        print (warning)
+                        return warning
+                    val = int(val)
+                if (count==1) and (':' not in val):
+                    val = float(val)
+                valtype = type(val)
         assert [v==valtype for v in hkwd_val]
 
         # Check for specific keywords
