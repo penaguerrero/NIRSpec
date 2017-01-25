@@ -6,6 +6,14 @@ import string
 
 """
 This script reads the header of a fits file and gives info of its extensions.
+
+Example usage:
+    The code works from the terminal.
+    To simply see the header on-screen type:
+        > python hdr_info.py blah.fits
+    To see and save the header into a text file type:
+        > python hdr_info.py blah.fits -s
+
 """
 
 # Header
