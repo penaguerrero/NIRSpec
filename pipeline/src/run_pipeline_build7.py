@@ -29,7 +29,7 @@ Example usage:
       -fs = Fixed Slit
       -ifu = Integral Field Unit
       -msa = Multi Shutter Array
-      -nrs1 and -nrs2
+      -nrs1 and -nrs2 = use if you want to override the configuration files/steps
       -rlev2A = will stop after CalwebSpec2 (next step from level 1b SloperPipeline)
 
  * NOTE - This script will run fine as long as you have the following directory structure:
@@ -136,14 +136,13 @@ if ifu or msa:
         newdark = test_data_path+'/Reffiles/jwst_nirspec_dark_0032_mod.fits'
         newbias = test_data_path+'/Reffiles/jwst_nirspec_superbias_0036_mod.fits'
 
-
 if modify_config_file:
     # copy the config file into the current directory
-    src_dir_path = pileline_path+'pipeline/src'
-    os.system('cp '+calwebb_sloper+' '+src_dir_path)
-    os.system('cp '+src_dir_path+'/calwebb_sloper.cfg'+' '+src_dir_path+'/calwebb_sloper_original.cfg')
-    calwebb_sloper = os.path.join(src_dir_path, 'calwebb_sloper.cfg')
+    os.system('cp '+calwebb_sloper+' .')
+    new_copy_calwebbsloper = os.path.abspath('calwebb_sloper.cfg')
+    os.system('cp '+new_copy_calwebbsloper+' '+new_copy_calwebbsloper.replace('.cfg','_original.cfg'))
     # now modify the file
+    calwebb_sloper = new_copy_calwebbsloper
     config = ConfigObj(calwebb_sloper)
     # modify paths of config files to use and add relevant lines
     config['steps']['dq_init']['config_file'] = config_files_path+'/dq_init.cfg'
@@ -163,13 +162,14 @@ if modify_config_file:
     config.write()
 
 # Run the pipeline
+print ('I am using the followging configuration file: ', calwebb_sloper)
 result_level2A = SloperPipeline.call(input_file, config_file=calwebb_sloper)
 print ('\n OK, I finished the level 2A, here is the result: ')
 print ('Level 2A shape of resulting file:', repr(np.shape(result_level2A)) +'\n')
 
 # Onto level 2B
 if rlev2A:
-    rlev2A = input_file.split('_uncal')[0]+'_uncal_rateints.fits'
+    rlev2A = input_file.split('_uncal')[0]+'_uncal_rateins.fits'
     result_level2B = Spec2Pipeline.call(rlev2A, config_file=calwebb_spec2)
     print ('\n OK, I finished the level 2B, here is the result: ')
     print ('Level 2B shape of resulting file:', repr(np.shape(result_level2B)) +'\n')
