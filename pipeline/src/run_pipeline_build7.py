@@ -145,6 +145,7 @@ if modify_config_file:
     calwebb_sloper = new_copy_calwebbsloper
     config = ConfigObj(calwebb_sloper)
     # modify paths of config files to use and add relevant lines
+    config['save_calibrated_ramp'] = 'True'
     config['steps']['dq_init']['config_file'] = config_files_path+'/dq_init.cfg'
     config['steps']['saturation']['config_file'] = config_files_path+'/saturation.cfg'
     config['steps']['superbias']['override_superbias'] = newbias
