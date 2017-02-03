@@ -11,6 +11,7 @@ import argparse
 # import the scripts I wrote
 import functions4fitsfiles as f4t
 import hdr_keywords_dictionary as hkwd
+import sample_hdr_keywd_vals_dict as shkvd
 
 '''
 This script checks that the fits files for the Fixed Slits (FS) have the format that the pipeline
@@ -174,7 +175,8 @@ class NIRSpec_hdr_format_check:
 
     def add_keywds(self, only_update):
         '''
-        This function adds the missing keywords from the hdr_keywords_dictionary.py file
+        This function adds the missing keywords from the hdr_keywords_dictionary.py (hkwd) file and gives
+        the fake values taken from the dictionary sample_hdr_keywd_vals_dict.py (shkvd).
         Args:
             only_update: If false a copy of the original fits file will be created with the
                          updated header.
@@ -186,23 +188,16 @@ class NIRSpec_hdr_format_check:
             os.system('cp '+fits_file+' '+updated_fitsfile)
         # add missimg keywords
         print ('Path of updated file: ', updated_fitsfile)
-        prev_key = 'S_REGION'
-        # made-up values for missing keywords:
-        # keywd_dict['V2_REF']  = location of the aperture reference point in V2 (arcsec): 100-400 arcsec
-        # keywd_dict['V3_REF']  = location of the aperture reference point in V3 (arcsec): -100 to -400 arcsec
-        # keywd_dict['RA_REF']  = RA at the reference point (deg): 0 < RA < 360
-        # keywd_dict['DEC_REF'] =  Dec at the reference point (deg): -90 < Dec < +90
-        # keywd_dict['ROLL_REF']= Roll angle at the reference point (deg), e.g. 5.3196
-        missing_keywds_values = [101.1, -202.2, 156.11, -45.6, 5.3196]
-        print ('New values for added keywords: ')
         for i, key in enumerate(self.missing_keywds):
-            print (key, missing_keywds_values[i])
-            fits.setval(updated_fitsfile, key, value=missing_keywds_values[i], after=prev_key)
-            prev_key = key
-        #print ('\n New header: ')
-        #hdulist = fits.open(updated_fitsfile)
-        #hdr = hdulist[0].header
-        #print (repr(hdr))
+            # get the index of the keyword previous to the one you want to add
+            prev_key_idx = hkwd.keywd_dict.keys().index(key) - 1
+            # add the keyword in the right place
+            fits.setval(updated_fitsfile, key, value=shkvd.keywd_dict[key],
+                        after=shkvd.keywd_dict.keys()[prev_key_idx])
+        print ('\n New header: ')
+        hdulist = fits.open(updated_fitsfile)
+        hdr = hdulist[0].header
+        print (repr(hdr))
 
     def perform_check(self):
         # create text file to log warnings
