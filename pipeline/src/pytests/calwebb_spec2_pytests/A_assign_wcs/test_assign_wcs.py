@@ -4,6 +4,7 @@ py.test module for unit testing the assign_wcs step.
 
 import pytest
 import os
+from jwst.pipeline import Spec2Pipeline
 from jwst.assign_wcs.assign_wcs_step import AssignWcsStep
 
 from .. import core_utils
@@ -35,11 +36,21 @@ def output_hdul(request, config):
     output_file = input_file.replace(".fits", "_assign_wcs.fits")
     output_file = os.path.join(working_directory, output_file)
     stp = AssignWcsStep()
-    #result = stp.call(input_file)
-    #result.save(output_file)
+    run_calwebb_spec2 = config.get("run_calwebb_spec2_in_full", "run_calwebb_spec2")
+    # if run_calwebb_spec2 is True calwebb_spec2 will be called, else individual steps will be ran
+    if run_calwebb_spec2:
+        print ("Will run calwebb_spec2... ")
+        calwebb_spec2_cfg = config.get("run_calwebb_spec2_in_full", "calwebb_spec2_cfg")
+        result_level2B = Spec2Pipeline.call(input_file, config_file=calwebb_spec2_cfg)
+        #result_level2B.save(newfilename)
+    else:
+        # run individual step of the pipeline
+        print ("Will run assign_wcs step...")
+        #result = stp.call(input_file)
+        #result.save(output_file)
     if config.has_option("steps", step):
         hdul = core_utils.read_hdrfits(output_file, info=True, show_hdr=True)
-        return hdul
+        return hdul, output_file
     else:
         pytest.skip("needs assign_wcs output_file")
 
@@ -49,7 +60,7 @@ def output_hdul(request, config):
 def input_hdul(request, config):
     step = "A_assign_wcs"
     if  config.has_option(step, "input_file"):
-        hdul = core_utils.read_hdrfits(config.get(step, "input_file"), info=True, show_hdr=True)
+        hdul, fdata = core_utils.read_fits(config.get(step, "input_file"), info=True, show_hdr=True)
         return hdul
     else:
         pytest.skip("needs assign_wcs input_file")
@@ -58,7 +69,7 @@ def input_hdul(request, config):
 def output_hdul(request, config):
     step = "A_assign_wcs"
     if  config.has_option(step, "output_file"):
-        hdul = core_utils.read_hdrfits(config.get(step, "output_file"), info=True, show_hdr=True)
+        hdul, fdata = core_utils.read_fits(config.get(step, "output_file"), info=True, show_hdr=True)
         return hdul
     else:
         pytest.skip("needs assign_wcs output_file")

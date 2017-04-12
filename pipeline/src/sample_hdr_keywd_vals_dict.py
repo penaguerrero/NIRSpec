@@ -1,11 +1,11 @@
 import collections
 
 '''
-This script contains an ordered dictionary of the key words and their sample values. These values
-were taken from a Fixed-Slit file.
+This script contains SAMPLE VALUES of the ordered python dictionary for the header keywords. These sample
+values were taken from a Fixed-Slit example file.
 
-* The information was obtained from emails in the pipeline group and the information contained in the
-online dictionary located at:
+* The information for the keywords was obtained from emails in the pipeline group and the information
+contained in the online dictionary located at:
 https://iwjwdmsdauiwebv.stsci.edu/portal/Mashup/Clients/jwkeywords/
 
 '''

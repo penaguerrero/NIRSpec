@@ -6,6 +6,8 @@ Selected keywords are checked to verify that the step ran through successfully.
 """
 
 
+### VERIFICATION FUNCTIONS
+
 def s_bkdsub_exists(output_hdul):
     """
     This function checks that the keyword S_BKDSUB was added.

@@ -124,7 +124,7 @@ keywd_dict['SUBSTRT2']= [int] # starting pixel number in the SIAS y direction, e
 keywd_dict['SUBSIZE2']= [int] # number of pixels in the SIAS y direction, e.g. 256
 keywd_dict['NXLIGHT'] = [str] # number of light sensitive x values (columns), e.g #TODO
 keywd_dict['FASTAXIS']= [1, 2, -1, -2] # Direction of fast readout (+/-2 X direction, +/-
-keywd_dict['SLOWAXIS']= [1, 2, -1, -2] # Direction of slow readout (+/-1 X direction, +/
+keywd_dict['SLOWAXIS']= [1, 2, -1, -2] # Direction of slow readout (+/-1 X direction, +/-
 
 # NIRSpec configuration (NIRSpec only)
 keywd_dict['FILTER']  = ['CLEAR', 'F070LP', 'F100LP', 'F110W', 'F140X', 'F170LP', 'F290LP',

@@ -145,8 +145,9 @@ if modify_config_file:
     calwebb_sloper = new_copy_calwebbsloper
     config = ConfigObj(calwebb_sloper)
     # modify paths of config files to use and add relevant lines
-    config['save_calibrated_ramp'] = 'True'
+    config['save_calibrated_ramp'] = 'False'
     config['steps']['dq_init']['config_file'] = config_files_path+'/dq_init.cfg'
+    #config['steps']['dq_init']['output_file'] = build7_path+'/pipeline_testing/dq_init_output.fits'
     config['steps']['saturation']['config_file'] = config_files_path+'/saturation.cfg'
     config['steps']['superbias']['override_superbias'] = newbias
     config['steps']['refpix']['config_file'] = config_files_path+'/refpix.cfg'
@@ -165,6 +166,8 @@ if modify_config_file:
 # Run the pipeline
 print ('I am using the followging configuration file: ', calwebb_sloper)
 result_level2A = SloperPipeline.call(input_file, config_file=calwebb_sloper)
+newfilename = input_file.replace('.fits', '_rate.fits')
+result_level2A.save(newfilename)
 print ('\n OK, I finished the level 2A, here is the result: ')
 print ('Level 2A shape of resulting file:', repr(np.shape(result_level2A)) +'\n')
 

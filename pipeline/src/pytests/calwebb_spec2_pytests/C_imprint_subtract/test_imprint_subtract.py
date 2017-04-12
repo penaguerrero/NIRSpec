@@ -46,8 +46,12 @@ def output_hdul(request, config):
     next_input_file = initial_input_file_fullpath.replace(".fits", prev_file_name+".fits")
     output_file = next_input_file.replace(".fits", out_file_name+".fits")
     stp = ImprintStep()
-    #result = stp.call(next_input_file)
-    #result.save(output_file)
+    run_calwebb_spec2 = config.get("run_calwebb_spec2_in_full", "run_calwebb_spec2")
+    # if run_calwebb_spec2 is True calwebb_spec2 will be called, else individual steps will be ran
+    if not run_calwebb_spec2:
+        print ("Will run "+step+" step ...")
+        #result = stp.call(next_input_file)
+        #result.save(output_file)
     if config.has_option("steps", step):
         if os.path.isfile(next_input_file):
             hdul = core_utils.read_hdrfits(output_file, info=True, show_hdr=True)
