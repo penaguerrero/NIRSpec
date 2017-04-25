@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 """
 py.test module for unit testing the assign_wcs step.
 """
@@ -30,9 +31,11 @@ def input_hdul(request, config):
 @pytest.fixture(scope="module")
 def output_hdul(request, config):
     step = "assign_wcs"
-    working_directory = config.get("calwebb_spec2_input_file", "working_directory")
-    input_file = config.get("calwebb_spec2_input_file", "input_file")
-    input_file = os.path.join(working_directory, input_file)
+    initiate_calwebb_spc2 = "calwebb_spec2_input_file"
+    working_directory = config.get(initiate_calwebb_spc2, "working_directory")
+    input_file = config.get(initiate_calwebb_spc2, "input_file")
+    data_directory = config.get(initiate_calwebb_spc2, "data_directory")
+    input_file = os.path.join(data_directory, input_file)
     output_file = input_file.replace(".fits", "_assign_wcs.fits")
     output_file = os.path.join(working_directory, output_file)
     stp = AssignWcsStep()

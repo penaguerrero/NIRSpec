@@ -12,6 +12,7 @@ import argparse
 import functions4fitsfiles as f4t
 import hdr_keywords_dictionary as hkwd
 import sample_hdr_keywd_vals_dict as shkvd
+import sample_hdr_keywd_vals_dict_MOS as shkvdMOS
 
 '''
 This script checks that the fits files for the Fixed Slits (FS) have the format that the pipeline
@@ -19,10 +20,15 @@ build 7 is expecting.
 
 Example usage:
     The code works from the terminal.
-    To create a NEW fits file with the updated header type:
+    To create a NEW FS fits file with the updated header type:
         > python check_hdr_keywds.py blah.fits
-    To simply update the header of the existing fits file type:
+    for an MOS fits file type:
+        > python check_hdr_keywds.py blah.fits -mos
+
+    To simply update the header of the existing FS fits file type:
         > python check_hdr_keywds.py blah.fits -u
+    for an MOS fits file type
+        > python check_hdr_keywds.py blah.fits -u -mos
 
 '''
 
@@ -120,10 +126,11 @@ def check_datetimeformat(key, val, check_time, check_date, check_datetime):
 ### keyword and format check
 
 class NIRSpec_hdr_format_check:
-    def __init__(self, file_keywd_dict, fits_file, only_update):
+    def __init__(self, file_keywd_dict, fits_file, only_update, mosdata):
         self.file_keywd_dict = file_keywd_dict
         self.fits_file = fits_file
         self.only_update = only_update
+        self.mosdata = mosdata
         self.warnings_list = []
         self.missing_keywds = []
 
@@ -191,9 +198,13 @@ class NIRSpec_hdr_format_check:
         for i, key in enumerate(self.missing_keywds):
             # get the index of the keyword previous to the one you want to add
             prev_key_idx = hkwd.keywd_dict.keys().index(key) - 1
-            # add the keyword in the right place
-            fits.setval(updated_fitsfile, key, value=shkvd.keywd_dict[key],
-                        after=shkvd.keywd_dict.keys()[prev_key_idx])
+            # add the keyword in the right place from the right dictionary
+            new_value = shkvd.keywd_dict[key]
+            after_key = shkvd.keywd_dict.keys()[prev_key_idx]
+            if self.mosdata:
+                new_value = shkvdMOS.keywd_dict[key]
+                after_key = shkvdMOS.keywd_dict.keys()[prev_key_idx]
+            fits.setval(updated_fitsfile, key, value=new_value, after=after_key)
         print ('\n New header: ')
         hdulist = fits.open(updated_fitsfile)
         hdr = hdulist[0].header
@@ -239,11 +250,17 @@ if __name__ == '__main__':
                         action='store_true',
                         default=False,
                         help='Use if NOT wanting to create a new file with updated header.')
+    parser.add_argument("-mos",
+                        dest="mosdata",
+                        action='store_true',
+                        default=False,
+                        help='Use this for processing MOS data.')
     args = parser.parse_args()
 
     # Set the variables
     fits_file = args.fits_file
     only_update = args.only_update
+    mosdata = args.mosdata
 
     # Define paths - THIS IS FOR TESTING THE CODE ONLY
     #pileline_path = os.path.abspath(os.curdir).split('pipeline')[0]
@@ -255,7 +272,7 @@ if __name__ == '__main__':
     file_keywd_dict = f4t.read_hdrfits(fits_file)
 
     # Perform the keyword check
-    t = NIRSpec_hdr_format_check(file_keywd_dict, fits_file, only_update)
+    t = NIRSpec_hdr_format_check(file_keywd_dict, fits_file, only_update, mosdata)
     t.perform_check()
 
     print ('\n * Script  check_hdr_keywds.py  finished * \n')

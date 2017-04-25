@@ -85,9 +85,3 @@ def find_DETECTOR(output_hdul):
         det = output_hdul["DETECTOR"]
         return det
 
-
-# From compare_wcs_fs.pro
-def compare_wcs_fs(fdata):
-    # Get the wavelength and Del_Y values
-
-    pass
