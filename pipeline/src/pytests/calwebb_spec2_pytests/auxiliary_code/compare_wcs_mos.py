@@ -122,11 +122,39 @@ def compare_wcs(infile_hdr, infile_name, data_extension, esaroot, auxiliary_code
     # the ESA direcoty names use/follow their name conventions
     ESA_dir_name = CV3filename.split("_")[0].replace("NRS", "")+"_"+NID+"_JLAB88"
     esafile_directory = esaroot+"/RegressionTestData_CV3_March2017_MOS/"+ESA_dir_name+"/"+ESA_dir_name+"_trace_MOS"
-
-    #esafile = os.path.join(esafile_directory, )
+    # separate the quadrant and shutter ID
+    slit = "[    3 19924]"
+    quadid = int(slit.split()[1])
+    shuttid = int(slit.split()[2].replace("]", ""))
+    jp = int(round((shuttid - 1)/365 +1)) # the l used in the IDL code at the end of the 365 is not necessary in python
+    ip = abs(int(round(shuttid - (jp - 1) * 365)))
+    if ip < 99:
+        ip = "0"+str(ip)
+    else:
+        ip = str(ip)
+    if jp < 99:
+        jp = "0"+str(jp)
+    else:
+        jp = str(jp)
+    #print ("quadid=", quadid, "   shuttid=", shuttid)
+    #print ("ip=", ip, "   jp=", jp)
+    # exactly from James' IDL code
+    #esafile_basename = "Trace_MOS_"+str(quadid)+"_"+ip+"_"+jp+"_SCI-OBS-SIM-B-15_10112_jlab85.fits"
+    # to match current ESA intermediary files naming convention
+    esafile_basename = "Trace_MOS_"+str(quadid)+"_"+ip+"_"+jp+"_"+ESA_dir_name+".fits"
+    print ("Using this ESA file: \n", "Directory =", esafile_directory, "\n", "File =", esafile_basename)
+    esafile = os.path.join(esafile_directory, esafile_basename)
     # This fixed path is just to test that the code works
-    #esafile = "/Users/pena/Documents/PyCharmProjects/nirspec/pipeline/build7/test_data/MOS_CV3/complete_pipeline_testset/V9621500100101_short_msa.fits"
-    #print ("Using this ESA file: \n", esafile)
+    esafile = "/Users/pena/Documents/PyCharmProjects/nirspec/pipeline/build7/test_data/MOS_CV3/complete_pipeline_testset/V9621500100101_short_msa.fits"
+    esahdulist = fits.open(esafile)
+    print ("* ESA file contents ")
+    esahdulist.info()
+    esahdulist.close()
+    enext = []
+    for ext in esahdulist:
+        enext.append(ext)
+    eflux = fits.getdata(esafile, 1)
+    ewave = fits.getdata(esafile, 4)
     #if det == "NRS1":
     #    eflux =
 
