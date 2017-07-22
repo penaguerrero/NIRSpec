@@ -36,10 +36,10 @@ def do_idl_match(arrA, arrB):
     interAB = setA.intersection(setB)
     # Find the index corresponding to the intersection elements and return them as arrays
     subA, subB = [], []
-    for i, ai in arrA:
+    for i, ai in enumerate(arrA):
         if ai in interAB:
             subA.append(i)
-    for i, bi in arrB:
+    for i, bi in enumerate(arrB):
         if bi in interAB:
             subB.append(i)
     return np.array(subA), np.array(subB)

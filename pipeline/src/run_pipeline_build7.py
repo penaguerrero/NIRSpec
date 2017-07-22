@@ -173,7 +173,7 @@ print ('Level 2A shape of resulting file:', repr(np.shape(result_level2A)) +'\n'
 
 # Onto level 2B
 if rlev2A:
-    rlev2A = input_file.split('_uncal')[0]+'_uncal_rateins.fits'
+    rlev2A = input_file.split('_uncal')[0]+'_uncal_rate.fits'
     result_level2B = Spec2Pipeline.call(rlev2A, config_file=calwebb_spec2)
     print ('\n OK, I finished the level 2B, here is the result: ')
     print ('Level 2B shape of resulting file:', repr(np.shape(result_level2B)) +'\n')
