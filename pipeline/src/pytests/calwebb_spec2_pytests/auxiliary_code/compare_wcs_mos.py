@@ -16,7 +16,6 @@ This script compares pipeline WCS info with ESA results for Multi-Object Spectro
 """
 
 
-
 def find_nearest(arr, value):
     '''
     This function gives the content and the index in the array of the number that is closest to
@@ -99,7 +98,29 @@ def do_idl_rebin(a, *args):
     return eval(''.join(evList))
 
 
-def get_esafile(auxiliary_code_path, det, grat, filt, esaroot, quad, row, col):
+def get_esafile(auxiliary_code_path, det, grat, filt, esa_files_path, quad, row, col):
+    """
+    This function gets the ESA file corresponding to the input given.
+    Args:
+        auxiliary_code_path: str, path where to find the auxiliary code. If not set the code will assume
+                            it is in the the auxiliary code directory
+        det: str, e.g "NRS1"
+        grat: str, grating
+        filt: str, filter
+        sltname_list: list, slit from data extension
+        esa_files_path: str, full path of where to find all ESA intermediary products to make comparisons for the tests
+        quad: list, slitlet quadrant
+        row: list, slitlet row
+        col: list, slitlet column
+
+    Returns:
+        esafile: str, full path of the ESA file corresponding to input given
+    """
+
+    # check if a specific file needs to be used
+    if ".fits" in esa_files_path:
+        return esa_files_path
+
     # get the corresponding ESA file to the input file
     # to do this, the script needs the python dictionary of the CV3 data
     sys.path.append(auxiliary_code_path)
@@ -117,7 +138,7 @@ def get_esafile(auxiliary_code_path, det, grat, filt, esaroot, quad, row, col):
     # read in ESA data
     # the ESA direcoty names use/follow their name conventions
     ESA_dir_name = CV3filename.split("_")[0].replace("NRS", "")+"_"+NID+"_JLAB88"
-    esafile_directory = esaroot+"/RegressionTestData_CV3_March2017_MOS/"+ESA_dir_name+"/"+ESA_dir_name+"_trace_MOS"
+    esafile_directory = esa_files_path+ESA_dir_name+"/"+ESA_dir_name+"_trace_MOS"
     # add a 0 if necessary for convention purposes
     if col < 99:
         col = "0"+str(col[0])
@@ -136,6 +157,22 @@ def get_esafile(auxiliary_code_path, det, grat, filt, esaroot, quad, row, col):
 
 def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=None,
              histogram=False, deltas_plt=False, msacolormap=False, fig_name=None):
+    """
+    This function makes all the plots of the script.
+    Args:
+        title: str, title of the plot
+        show_figs: boolean, show figures on screen or not
+        save_figs: boolean, save figures or not
+        info_fig1: list, arrays, number of bins, and limits for the first figure in the plot
+        info_fig2: list, arrays, number of bins, and limits for the second figure in the plot
+        histogram: boolean, are the figures in the plot histograms
+        deltas_plt: boolean, regular plot
+        msacolormap: boolean, single figure
+        fig_name: str, name of plot
+
+    Returns:
+        It either shows the resulting figure on screen and saves it, or one of the two.
+    """
     font = {#'family' : 'normal',
             'weight' : 'normal',
             'size'   : 16}
@@ -199,6 +236,7 @@ def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=N
             #plt.plot(xarr1, yarr1, linewidth=7)
         plt.minorticks_on()
         plt.tick_params(axis='both', which='both', bottom='on', top='on', right='on', direction='in', labelbottom='on')
+
         # FIGURE 2
         # number in the parenthesis are nrows, ncols, and plot number, numbering in next row starts at left
         ax = plt.subplot(212)
@@ -287,35 +325,41 @@ def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=N
         print ('\n Plot saved: ', fig_name)
     if show_figs:
         plt.show()
+    plt.close()
 
 
-
-def compare_wcs(infile_hdr, infile_name, data_extension, msa_conf_root=None, esaroot=None, auxiliary_code_path=None,
+def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_code_path=None,
                 show_figs=True, save_figs=False, plot_names=None, debug=False):
     """
     This function does the WCS comparison from the world coordinates calculated using the
     compute_world_coordinates.py script with the ESA files. The function calls that script.
 
     Args:
-        infile_hdr: list, header of the output fits file from the 2d_extract step
         infile_name: str, name of the output fits file from the 2d_extract step (with full path)
-        data_extension: int, number of the data extension from the infile
-        esaroot: str, full path of where to find all ESA intermediary products to make comparisons for the tests
+        msa_conf_root: str, full path of where the MSA configuration fits files exist
+        esa_files_path: str, full path of where to find all ESA intermediary products to make comparisons for the tests
         auxiliary_code_path: str, path where to find the auxiliary code. If not set the code will assume
                             it is in the the auxiliary code directory
+        show_figs: boolean, whether to show plots or not
+        save_figs: boolean, save the plots (the 3 plots can be saved or not independently with the function call)
+        plot_names: list of 3 strings, desired names (if names are not given, the plot function will name the plots by
+                    default)
+        debug: boolean, if true a series of print statements will show on-screen
 
     Returns:
+        3 plots
 
     """
 
     # get info from the rate file header
-    det = fits.getval(infile_name, "DETECTOR", 0)
-    print('infile_name=', infile_name)
-    msametfl = fits.getval(infile_name, "MSAMETFL", 0)
-    lamp = fits.getval(infile_name, "LAMP", 0)
-    grat = fits.getval(infile_name, "GRATING", 0)
-    filt = fits.getval(infile_name, "FILTER", 0)
-    print ("Grating:", grat, "    Filter:", filt, "    Lamp:", lamp)
+    rate_file = infile_name.replace("_assign_wcs_extract_2d", "")
+    det = fits.getval(rate_file, "DETECTOR", 0)
+    print('infile_name=', rate_file)
+    msametfl = fits.getval(rate_file, "MSAMETFL", 0)
+    lamp = fits.getval(rate_file, "LAMP", 0)
+    grat = fits.getval(rate_file, "GRATING", 0)
+    filt = fits.getval(rate_file, "FILTER", 0)
+    print ("rate_file  -->     Grating:", grat, "   Filter:", filt, "   Lamp:", lamp)
 
     # get shutter info from metadata
     metafile = os.path.join(msa_conf_root, msametfl)
@@ -358,13 +402,15 @@ def compare_wcs(infile_hdr, infile_name, data_extension, msa_conf_root=None, esa
     # to move file to location of infile
     #cwc_fname = infile_name.replace(".fits", "_world_coordinates.fits")
     # to rename file within the working directory
-    cwc_fname = basenameinfile_name.replace(".fits", "_assign_wcs_extract_2d_world_coordinates_James.fits")   # FOR TESTING THE CODE
-    #cwc_fname = basenameinfile_name.replace(".fits", "_assign_wcs_extract_2d_world_coordinates.fits")
+    #cwc_fname = basenameinfile_name.replace(".fits", "_world_coordinates_James.fits")   # FOR TESTING THE CODE
+    cwc_fname = basenameinfile_name.replace(".fits", "_world_coordinates_b7.fits")
+    #cwc_fname = basenameinfile_name.replace(".fits", "_world_coordinates.fits")
     print (cwc_fname)
-    #os.system("mv "+wcoordfile+" "+cwc_fname)
+    os.system("mv "+wcoordfile+" "+cwc_fname)
 
     # get info from the extract_2d file header
-    extract_2d_file = cwc_fname.replace("_world_coordinates_James", "")
+    #extract_2d_file = cwc_fname.replace("_world_coordinates_James", "")
+    extract_2d_file = cwc_fname.replace("_world_coordinates_b7", "")
     #extract_2d_file = cwc_fname.replace("_world_coordinates", "")
     print('extract_2d_file=', extract_2d_file)
     det_extract_2d_file = fits.getval(extract_2d_file, "DETECTOR", 0)
@@ -405,14 +451,13 @@ def compare_wcs(infile_hdr, infile_name, data_extension, msa_conf_root=None, esa
         # get the subwindow origin
         px0 = fits.getval(cwc_fname, "CRVAL1", 1)
         py0 = fits.getval(cwc_fname, "CRVAL2", 1)
-        if debug:
-            print ("px0=",px0, "   py0=", py0)
-
+        #if debug:
+        print ("px0=",px0, "   py0=", py0)
+        exit()
         # get the count rates for this spectrum
-        #f = infile_name.replace("_assign_wcs_extract_2d", "")
-        counts = fits.getdata(infile_name, 1)
+        counts = fits.getdata(rate_file, 1)
         n_p = np.shape(pwave)
-        #print ("n_p=", n_p)
+        #print(np.shape(pwave))
         npx = n_p[1]
         npy = n_p[0]
         px = np.arange(npx)+px0
@@ -425,7 +470,7 @@ def compare_wcs(infile_hdr, infile_name, data_extension, msa_conf_root=None, esa
 
         # read in the ESA data
         esafile = get_esafile(auxiliary_code_path, det_extract_2d_file, grat_extract_2d_file, filt_extract_2d_file,
-                              esaroot, quad, row, col)
+                              esa_files_path, quad, row, col)
         esahdulist = fits.open(esafile)
         print ("* ESA file contents ")
         esahdulist.info()
@@ -481,8 +526,8 @@ def compare_wcs(infile_hdr, infile_name, data_extension, msa_conf_root=None, esa
         imp, ime  = imp.flatten(), ime.flatten()
 
         if debug:
-            print ("SAPES subpx, subex: ", np.shape(subpx), np.shape(subex))
-            print ("SAPES subpy, subey: ", np.shape(subpy), np.shape(subey))
+            print ("SAHPES subpx, subex: ", np.shape(subpx), np.shape(subex))
+            print ("SHAPES subpy, subey: ", np.shape(subpy), np.shape(subey))
 
         # get the difference between the two in units of m
         # do not include pixels where one or the other solution is 0 or NaN
@@ -587,12 +632,11 @@ if __name__ == '__main__':
     # input parameters that the script expects
     auxiliary_code_path = pipeline_path+"/src/pytests/calwebb_spec2_pytests/auxiliary_code"
     #infile_name = pipeline_path+"/build7/test_data/MOS_CV3/complete_pipeline_testset/jwtest1010001_01101_00001_NRS1_uncal_rate_short_assign_wcs_extract_2d.fits"
-    #infile_name = "jwtest1010001_01101_00001_NRS1_rate_short_assign_wcs_extract_2d.fits"
-    infile_name = "jwtest1010001_01101_00001_NRS1_rate_short.fits"
-    data_extension = 1
-    infile_hdr = fits.getheader(infile_name, 0)
+    infile_name = "jwtest1010001_01101_00001_NRS1_rate_short_assign_wcs_extract_2d.fits"
+    #infile_name = "jwtest1010001_01101_00001_NRS1_rate_short.fits"
     msa_conf_root = "/Users/pena/Documents/PyCharmProjects/nirspec/pipeline/build7/test_data/MOS_CV3/complete_pipeline_testset"
-    esaroot = "/Users/pena/Documents/PyCharmProjects/nirspec/pipeline/build7/test_data/ESA_intermediary_products"
+    #esaroot = "/Users/pena/Documents/PyCharmProjects/nirspec/pipeline/build7/test_data/ESA_intermediary_products"
+    esa_files_path=pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_MOS/"
 
     # set the names of the resulting plots
     hist_name = "jwtest1010001_01101_00001_wcs_histogram.jpg"
@@ -601,5 +645,5 @@ if __name__ == '__main__':
     plot_names = [hist_name, deltas_name, msacolormap_name]
 
     # Run the principal function of the script
-    compare_wcs(infile_hdr, infile_name, data_extension, msa_conf_root, esaroot=esaroot,
-                auxiliary_code_path=auxiliary_code_path, plot_names=plot_names, show_figs=False, save_figs=True)
+    compare_wcs(infile_name, msa_conf_root=msa_conf_root, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
+                plot_names=plot_names, show_figs=True, save_figs=True)

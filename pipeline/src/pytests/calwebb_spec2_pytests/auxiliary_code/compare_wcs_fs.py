@@ -1,11 +1,12 @@
 from __future__ import print_function, division
 import numpy as np
 import os
-from glob import glob
-
-from .. import core_utils
-from ..D_extract_2d import extract_2d_utils
-from ..auxiliary_code import CV3_testdata_used4build7
+import sys
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+from astropy.io import fits
+from jwst.assign_wcs.tools.nirspec import compute_world_coordinates
 
 
 """
@@ -16,6 +17,36 @@ det = 'NRS1' or 'NRS2'
 subarray_origin = [SUBSTRT1, SUBSTRT2] from original image; needed since SUBSTRT in
                     world_coordinates file is not in full frame reference
 """
+
+
+def find_nearest(arr, value):
+    '''
+    This function gives the content and the index in the array of the number that is closest to
+    the value given.
+    :param arr = 1-D numpy array
+    :param value = float or integer
+    :return: The array element closest to value and its index
+    '''
+    idx=(np.abs(arr-value)).argmin()
+    return arr[idx], idx
+
+
+def get_sci_extensions(fits_file_name):
+    """
+    This functions obtains all the science extensions in the given file
+    Args:
+        fits_file_name: name of the fits file of interest
+
+    Returns:
+        sci_list: list of the numbers of the science extensions
+    """
+    hdulist = fits.open(fits_file_name)
+    sci_list = []
+    for ext, hdu in enumerate(hdulist):
+        if hdu.name == "SCI":
+            sci_list.append(ext)
+    return sci_list
+
 
 def do_idl_match(arrA, arrB):
     """
@@ -30,90 +61,80 @@ def do_idl_match(arrA, arrB):
         subA: numpy array of index of arrA from elements also present in arrB
         subB: numpy array of index of arrB from elements also present in arrA
     """
-    # First turn the arrays into sets
-    setA, setB = set(arrA), set(arrB)
-    # Find the intersection with Python built-in method
-    interAB = setA.intersection(setB)
     # Find the index corresponding to the intersection elements and return them as arrays
     subA, subB = [], []
     for i, ai in enumerate(arrA):
-        if ai in interAB:
+        if ai in arrB:
             subA.append(i)
     for i, bi in enumerate(arrB):
-        if bi in interAB:
+        if bi in arrA:
             subB.append(i)
     return np.array(subA), np.array(subB)
 
 
-def compare_wcs(infile_hdr, infile_name, data_extension, esaroot):
-    """
-    This function does the WCS comparison from the world coordinates calculated using the
-    compute_world_coordinates.py script with the ESA files. The function calls that script.
+def do_idl_rebin(a, *args):
+    '''
+    * This function was copied from Example 2 in http://scipy-cookbook.readthedocs.io/items/Rebinning.html
 
+    This acts identically to IDL's rebin command where all values in the original array are summed
+    and divided amongst the entries in the new array. As in IDL, the new shape must be a factor of
+    the old one. The ugly 'evList trick' builds and executes a python command of the form
+    a.reshape(args[0],factor[0],).sum(1)/factor[0]
+    a.reshape(args[0],factor[0],args[1],factor[1],).sum(1).sum(2)/factor[0]/factor[1]
+    etc. This general form is extended to cover the number of required dimensions.
+
+    This function rebins ndarray data into a smaller ndarray of the same rank whose dimensions
+    are factors of the original dimensions. eg. An array with 6 columns and 4 rows
+    can be reduced to have 6,3,2 or 1 columns and 4,2 or 1 rows.
+    example usages:
+     a=rand(6,4); b=rebin(a,3,2)
+     a=rand(6); b=rebin(a,2)
+    '''
+    shape = a.shape
+    lenShape = len(shape)
+    factor = np.asarray(shape)/np.asarray(args)
+    evList = ['a.reshape('] + \
+             ['args[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
+             [')'] + ['.sum(%d)'%(i+1) for i in range(lenShape)] + \
+             ['/factor[%d]'%i for i in range(lenShape)]
+    #print (''.join(evList))
+    return eval(''.join(evList))
+
+
+def get_esafile(auxiliary_code_path, det, grat, filt, sltname_list, esa_files_path):
+    """
+    This function gets the ESA file corresponding to the input given.
     Args:
-        infile_hdr: list, header of the output fits file from the 2d_extract step
-        infile_name: str, name of the output fits file from the 2d_extract step (with full path)
-        data_extension: int, number of the data extension from the infile
-        esaroot: str, full path of where to find all ESA intermediary products to make comparisons for the tests
+        auxiliary_code_path: str, path where to find the auxiliary code. If not set the code will assume
+                            it is in the the auxiliary code directory
+        det: str, e.g "NRS1"
+        grat: str, grating
+        filt: str, filter
+        sltname_list: list, slit from data extension
+        esa_files_path: str, full path of where to find all ESA intermediary products to make comparisons for the tests
 
     Returns:
-
+        esafile: str, full path of the ESA file corresponding to input given
     """
 
-    # Run compute_world_coordinates.py in order to produce the necessary file
-    os.system("compute_world_coordinates('"+infile_name+"')")
-
-    # Read the resulting file
-    cwc_fname = infile_name.replace(".fits", "_world_coordinates.fits")
-    fdata = core_utils.get_filedata(cwc_fname, ext=data_extension)
-    pwave = fdata[0,:,:]
-    pdy = fdata[3,:,:]
-    pskyx = fdata[1,:,:]
-    pskyy = fdata[2,:,:]
-    # get the origin of the subwindow and the grating from the extract_2d file header
-    det = extract_2d_utils.find_DETECTOR(infile_hdr)
-    # the science extensions are always the same in the extract_2d file
-    sci_data_list, px0_list, py0_list, sltname_list = [], [], [], []
-    grat = core_utils.get_keywd_val(infile_name, "GRATING", ext=0)
-    filt = core_utils.get_keywd_val(infile_name, "FILTER", ext=0)
-    print ("Grating = ", grat, "   Filter = ", filt)
-    sci_exts = core_utils.get_sci_extensions(infile_name)
-    for se in sci_exts:
-        sci_data_list.append(core_utils.get_filedata(infile_name, ext=se))
-        px0_se = core_utils.get_keywd_val(infile_name, "SLTSTRT1", ext=se)+core_utils.get_keywd_val(infile_name, "SUBSTRT1", ext=0)-1
-        py0_se = core_utils.get_keywd_val(infile_name, "SLTSTRT2", ext=se)+core_utils.get_keywd_val(infile_name, "SUBSTRT2", ext=0)-1
-        px0_list.append(px0_se)
-        py0_list.append(py0_se)
-        sltname = core_utils.get_keywd_val(infile_name, "SLTNAME", ext=se)
-        sltname_list.append(sltname)
-    n_p = np.shape(pwave)
-    npx = n_p[0]
-    npy = n_p[1]
-    px = np.arange(1, npx+1)+np.array(px0_list)
-    py = np.arange(1, npy+1)+np.array(py0_list)
-    print  ("Pipeline subwindow corner pixel ID: ", px0_list, py0_list)
+    # check if a specific file needs to be used
+    if ".fits" in esa_files_path:
+        return esa_files_path
 
     # get the corresponding ESA file to the input file
+    # to do this, the script needs the python dictionary of the CV3 data
+    sys.path.append(auxiliary_code_path)
+    import CV3_testdata_used4build7
     if det == "NRS1":
         file4detector = 0
     elif det == "NRS2":
         file4detector = 1
-    NID = CV3_testdata_used4build7.CV3_testdata_dict["FS"][grat]["NID"]
-    CV3filename = CV3_testdata_used4build7.CV3_testdata_dict["FS"][grat]["CV3filename"][file4detector]
-    if len(NID) != 1:
-        # Find the NID of the file used
-        initial_infile_name = infile_name.replace(glob("_rate*", ""))
-        for i, fi in enumerate(CV3_testdata_used4build7.CV3_testdata_dict["FS"][grat]["level1Bfilenames"]):
-            for j, f in enumerate(fi):
-                if initial_infile_name in f:
-                    NID = CV3_testdata_used4build7.CV3_testdata_dict["FS"][grat]["NID"][i]
-                    CV3filename = CV3_testdata_used4build7.CV3_testdata_dict["FS"][grat]["CV3filename"][i][j]
-    Vnumber = CV3filename.split("_")[0].replace("NRS", "")
-    ESA_dir_name = Vnumber+"_"+NID+"_JLAB88"
-
-    esafile_dir = esaroot+"RegressionTestData_CV3_March2017_FixedSlit/"+ESA_dir_name+"/"+ESA_dir_name+"_trace_SLIT"
-
-    # read in ESA data
+    for NID, nid_dict_key in CV3_testdata_used4build7.CV3_testdata_dict["FS"]["NID"].items():
+        if nid_dict_key["grism"] == grat:
+            if nid_dict_key["filter"] == filt:
+                CV3filename = nid_dict_key["CV3filename"][file4detector]
+                print ("NID of ESA file:", NID)
+                print("CV3filename =", CV3filename)
     for sltname in sltname_list:
         # change the format of the string to match the ESA trace
         sltname = sltname.split("S")[1]
@@ -124,72 +145,401 @@ def compare_wcs(infile_hdr, infile_name, data_extension, esaroot):
         elif sltname[-1] == "A":
             sltname = "A_"+sltname.split("A")[0]+"_"
         elif sltname[-1] == "B":
-            sltname = "B_"+sltname.split("A")[0]+"_"
-        esa_file = esafile_dir+"/Trace_SLIT_"+sltname+ESA_dir_name+".fits"
-    if det == "NRS1":
-        eflux = core_utils.get_filedata(esa_file, ext=1)
-        ewave = core_utils.get_filedata(esa_file, ext=4)
-        edy = core_utils.get_filedata(esa_file, ext=5)
-    else:
-        eflux = core_utils.get_filedata(esa_file, ext=6)
-        ewave = core_utils.get_filedata(esa_file, ext=9)
-        edy = core_utils.get_filedata(esa_file, ext=10)
-    n_p = np.shape(eflux)
-    nex = n_p[0]
-    ney = n_p[1]
+            sltname = "B_"+sltname.split("B")[0]+"_"
 
-    # get the origin of the subwindow
-    CRVAL1 = core_utils.get_keywd_val(esa_file, "CRVAL1", ext=0)
-    CRPIX1 = core_utils.get_keywd_val(esa_file, "CRPIX1", ext=0)
-    CRVAL2 = core_utils.get_keywd_val(esa_file, "CRVAL1", ext=0)
-    CRPIX2 = core_utils.get_keywd_val(esa_file, "CRPIX1", ext=0)
-    print ("CRVAL1 = ", CRVAL1, "    CRPIX1 = ", CRPIX1)
-    print ("CRVAL2 = ", CRVAL1, "    CRPIX2 = ", CRPIX1)
-    if det == "NRS1":
-        ex0 = CRVAL1 - CRPIX1 + 1
-        ey0 = CRVAL2 - CRPIX2 + 1
-    else:
-        ex0 = 2048 - CRPIX1 + CRVAL1
-        ey0 = 2048 - CRVAL2 + CRPIX2
-    print ("ESA subwindow corner pixel ID: ", ex0, ey0)
-    ex = np.arange(nex) + ex0
-    ey = np.arange(ney) + ey0
+    # the ESA direcoty names use/follow their name conventions
+    ESA_dir_name = CV3filename.split("_")[0].replace("NRS", "")+"_"+NID+"_JLAB88"
+    esafile_directory = esa_files_path+ESA_dir_name+"/"+ESA_dir_name+"_trace_SLIT"
 
-    # match up the correct elements in each data set
-    subpx, subex = do_idl_match(px, ex)
-    subpy, subey = do_idl_match(py, ey)
-    countx, county = len(subpx), len(subpy)
-    print ("Matched elements in the 2D spectra: ", countx, county)
-    # flatten the arrays
-    imp = subpy.flatten()
-    ime = subey.flatten()
-    print (ime[0:9])
+    # to match current ESA intermediary files naming convention
+    esafile_basename = "Trace_SLIT_"+sltname+ESA_dir_name+".fits"
+    print ("Using this ESA file: \n", "Directory =", esafile_directory, "\n", "File =", esafile_basename)
+    esafile = os.path.join(esafile_directory, esafile_basename)
+    return esafile
 
-    # get the difference between the two in units of resels
-    # don't include pixels where one or the other solution is 0 or NaN
-    ig, igy = np.array([]), np.array([])
-    for i, imp_i in enumerate(imp):
-        if pwave[imp_i] != 0.0:
-            if ewave[ime[i]] != 0.0:
-                if np.isfinite(pwave[imp_i]):
-                    if np.isfinite(ewave[ime[i]]):
-                        ig = np.append(ig, i)
-        # and now in the y direction
-        if pdy[imp_i] != 0.0:
-            if edy[ime[i]] != 0.0:
-                if np.isfinite(pdy[imp_i]):
-                    if np.isfinite(edy[ime[i]]):
-                        igy = np.append(igy, i)
-    delwav1, delwav2 = [], []
-    for imp_i in imp:
-        for i in ig:
-            d = pwave[imp_i[i]]
-            delwav1.append(d)
-    for ime_i in ime:
-        for i in ig:
-            d = ewave[ime_i[i]]
-            delwav2.append(d)
-    delwave = np.array(delwav1) - 6 - np.array(delwav2)
+
+def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=None,
+             histogram=False, deltas_plt=False, fig_name=None):
+    """
+    This function makes all the plots of the script.
+    Args:
+        title: str, title of the plot
+        show_figs: boolean, show figures on screen or not
+        save_figs: boolean, save figures or not
+        info_fig1: list, arrays, number of bins, and limits for the first figure in the plot
+        info_fig2: list, arrays, number of bins, and limits for the second figure in the plot
+        histogram: boolean, are the figures in the plot histograms
+        deltas_plt: boolean, regular plot
+        fig_name: str, name of plot
+
+    Returns:
+        It either shows the resulting figure on screen and saves it, or one of the two.
+    """
+    font = {#'family' : 'normal',
+            'weight' : 'normal',
+            'size'   : 16}
+    matplotlib.rc('font', **font)
+    fig = plt.figure(1, figsize=(12, 10))
+    plt.subplots_adjust(hspace=.4)
+    alpha = 0.2
+    fontsize = 15
+
+    # FIGURE 1
+    # number in the parenthesis are nrows, ncols, and plot number, numbering in next row starts at left
+    ax = plt.subplot(211)
+    if histogram:
+        xlabel1, ylabel1, xarr1, yarr1, xmin, xmax, bins, x_median, x_stddev = info_fig1
+        x_median = "median = {:0.3}".format(x_median)
+        x_stddev = "stddev = {:0.3}".format(x_stddev)
+        plt.title(title)
+        plt.xlabel(xlabel1)
+        plt.ylabel(ylabel1)
+        plt.xlim(xmin, xmax)
+        ax.text(0.7, 0.9, x_median, transform=ax.transAxes, fontsize=fontsize)
+        ax.text(0.7, 0.83, x_stddev, transform=ax.transAxes, fontsize=fontsize)
+        n, bins, patches = ax.hist(xarr1, bins=bins, histtype='bar', ec='k', facecolor="red", alpha=alpha)
+    if deltas_plt:
+        title1, xlabel1, ylabel1, xarr1, yarr1, xdelta, x_median, x_stddev = info_fig1
+        plt.title(title1)
+        plt.xlabel(xlabel1)
+        plt.ylabel(ylabel1)
+        mean_minus_1half_std = x_median - 1.5*x_stddev
+        mean_minus_half_std = x_median - 0.5*x_stddev
+        mean_plus_half_std = x_median + 0.5*x_stddev
+        mean_plus_1half_std = x_median + 1.5*x_stddev
+        '''
+        for xd, xi, yi in zip(xdelta, xarr1, yarr1):
+            if xd > mean_plus_1half_std:
+                plt.plot(xi, yi, linewidth=7, marker='D', color='red')#, label="")
+            if xd < mean_minus_1half_std:
+                plt.plot(xi, yi, linewidth=7, marker='D', color='fuchsia')#, label="")
+            if (xd > mean_minus_1half_std) and (xd < mean_minus_half_std):
+                plt.plot(xi, yi, linewidth=7, marker='D', color='blue')#, label="")
+            if (xd > mean_minus_half_std) and (xd < mean_plus_half_std):
+                plt.plot(xi, yi, linewidth=7, marker='D', color='lime')#, label="")
+            if (xd > mean_plus_half_std) and (xd < mean_plus_1half_std):
+                plt.plot(xi, yi, linewidth=7, marker='D', color='black')#, label="")
+        '''
+        idx_red = np.where(xdelta > mean_plus_1half_std)
+        idx_fuchsia = np.where(xdelta < mean_minus_1half_std)
+        idx_blue = np.where((xdelta > mean_minus_1half_std) & (xdelta < mean_minus_half_std))
+        idx_lime = np.where((xdelta > mean_minus_half_std) & (xdelta < mean_plus_half_std))
+        idx_black = np.where((xdelta > mean_plus_half_std) & (xdelta < mean_plus_1half_std))
+        plt.plot(xarr1[idx_red], yarr1[idx_red], linewidth=7, marker='D', color='red')#, label="")
+        plt.plot(xarr1[idx_fuchsia], yarr1[idx_fuchsia], linewidth=7, marker='D', color='fuchsia')#, label="")
+        plt.plot(xarr1[idx_blue], yarr1[idx_blue], linewidth=7, marker='D', color='blue')#, label="")
+        plt.plot(xarr1[idx_lime], yarr1[idx_lime], linewidth=7, marker='D', color='lime')#, label="")
+        plt.plot(xarr1[idx_black], yarr1[idx_black], linewidth=7, marker='D', color='black')#, label="")
+        # add legend
+        #box = ax.get_position()
+        #ax.set_position([box.x0, box.y0, box.width * 1.0, box.height])
+        #ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+        #plt.plot(xarr1, yarr1, linewidth=7)
+    plt.minorticks_on()
+    plt.tick_params(axis='both', which='both', bottom='on', top='on', right='on', direction='in', labelbottom='on')
+
+    # FIGURE 2
+    # number in the parenthesis are nrows, ncols, and plot number, numbering in next row starts at left
+    ax = plt.subplot(212)
+    if histogram:
+        xlabel2, ylabel2, xarr2, yarr2, xmin, xmax, bins, y_median, y_stddev = info_fig2
+        y_median = "median = {:0.3}".format(y_median)
+        y_stddev = "stddev = {:0.3}".format(y_stddev)
+        plt.xlabel(xlabel2)
+        plt.ylabel(ylabel2)
+        plt.xlim(xmin, xmax)
+        ax.text(0.7, 0.9, y_median, transform=ax.transAxes, fontsize=fontsize)
+        ax.text(0.7, 0.83, y_stddev, transform=ax.transAxes, fontsize=fontsize)
+        n, bins, patches = ax.hist(xarr2, bins=bins, histtype='bar', ec='k', facecolor="red", alpha=alpha)
+    if deltas_plt:
+        title2, xlabel2, ylabel2, xarr2, yarr2, ydelta, y_median, y_stddev = info_fig2
+        plt.title(title2)
+        plt.xlabel(xlabel2)
+        plt.ylabel(ylabel2)
+        mean_minus_1half_std = y_median - 1.5*y_stddev
+        mean_minus_half_std = y_median - 0.5*y_stddev
+        mean_plus_half_std = y_median + 0.5*y_stddev
+        mean_plus_1half_std = y_median + 1.5*y_stddev
+        '''
+        for yd, xi, yi in zip(ydelta, xarr2, yarr2):
+            if yd > mean_plus_1half_std:
+                plt.plot(xi, yi, linewidth=7, marker='D', color='red')#, label="")
+            if yd < mean_minus_1half_std:
+                plt.plot(xi, yi, linewidth=7, marker='D', color='fuchsia')#, label="")
+            if (yd > mean_minus_1half_std) and (yd < mean_minus_half_std):
+                plt.plot(xi, yi, linewidth=7, marker='D', color='blue')#, label="")
+            if (yd > mean_minus_half_std) and (yd < mean_plus_half_std):
+                plt.plot(xi, yi, linewidth=7, marker='D', color='lime')#, label="")
+            if (yd > mean_plus_half_std) and (yd < mean_plus_1half_std):
+                plt.plot(xi, yi, linewidth=7, marker='D', color='black')#, label=r"$\mu+0.5*\sigma$ > $\mu+1.5*\sigma$")
+        '''
+        idx_red = np.where(ydelta > mean_plus_1half_std)
+        idx_fuchsia = np.where(ydelta < mean_minus_1half_std)
+        idx_blue = np.where((ydelta > mean_minus_1half_std) & (ydelta < mean_minus_half_std))
+        idx_lime = np.where((ydelta > mean_minus_half_std) & (ydelta < mean_plus_half_std))
+        idx_black = np.where((ydelta > mean_plus_half_std) & (ydelta < mean_plus_1half_std))
+        plt.plot(xarr2[idx_red], yarr2[idx_red], linewidth=7, marker='D', color='red')#, label="")
+        plt.plot(xarr2[idx_fuchsia], yarr2[idx_fuchsia], linewidth=7, marker='D', color='fuchsia')#, label="")
+        plt.plot(xarr2[idx_blue], yarr2[idx_blue], linewidth=7, marker='D', color='blue')#, label="")
+        plt.plot(xarr2[idx_lime], yarr2[idx_lime], linewidth=7, marker='D', color='lime')#, label="")
+        plt.plot(xarr2[idx_black], yarr2[idx_black], linewidth=7, marker='D', color='black')#, label="")
+        # add legend
+        #box = ax.get_position()
+        #ax.set_position([box.x0, box.y0, box.width * 1.0, box.height])
+        #ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+        #plt.plot(xarr2, yarr2, linewidth=7)
+    plt.tick_params(axis='both', which='both', bottom='on', top='on', right='on', direction='in', labelbottom='on')
+    plt.minorticks_on()
+    if save_figs:
+        if histogram:
+            if fig_name is None:
+                fig_name = "FS_wcs_histogram.jpg"
+        if deltas_plt:
+            if fig_name is None:
+                fig_name = "FS_wcs_Deltas.jpg"
+        print ('\n Plot saved: ', fig_name)
+    if show_figs:
+        plt.show()
+    plt.close()
+
+
+def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
+                show_figs=True, save_figs=False, plot_names=None, debug=False):
+    """
+    This function does the WCS comparison from the world coordinates calculated using the
+    compute_world_coordinates.py script with the ESA files. The function calls that script.
+
+    Args:
+        infile_name: str, name of the output fits file from the 2d_extract step (with full path)
+        esa_files_path: str, full path of where to find all ESA intermediary products to make comparisons for the tests
+        auxiliary_code_path: str, path where to find the auxiliary code. If not set the code will assume
+                            it is in the the auxiliary code directory
+        show_figs: boolean, whether to show plots or not
+        save_figs: boolean, save the plots (the 3 plots can be saved or not independently with the function call)
+        plot_names: list of 3 strings, desired names (if names are not given, the plot function will name the plots by
+                    default)
+        debug: boolean, if true a series of print statements will show on-screen
+
+    Returns:
+        2 plots
+
+    """
+
+    # get grating and filter info from the rate file header
+    det = fits.getval(infile_name, "DETECTOR", 0)
+    print('infile_name=', infile_name)
+    lamp = fits.getval(infile_name, "LAMP", 0)
+    grat = fits.getval(infile_name, "GRATING", 0)
+    filt = fits.getval(infile_name, "FILTER", 0)
+    print ("extract_2d  -->     Detector:", det, "   Grating:", grat, "   Filter:", filt, "   Lamp:", lamp)
+
+
+    # Run compute_world_coordinates.py in order to produce the necessary file
+    # !!! note that the code expects to be in the build environment !!!
+    if auxiliary_code_path is None:
+        auxiliary_code_path = "./"
+
+    #compute_world_coordinates.compute_world_coordinates(infile_name)
+
+    # The world coordinate file was created but it needs to be renamed
+    basenameinfile_name = os.path.basename(infile_name)
+    fileID = basenameinfile_name.split("_")[0]   # obtain the id of the file
+    working_dir_path = os.getcwd()
+    wcoordfile = working_dir_path+"/"+fileID+"_world_coordinates.fits"
+    #print (wcoordfile)
+    # to move file to location of infile
+    #cwc_fname = infile_name.replace(".fits", "_world_coordinates.fits")
+    # to rename file within the working directory
+    cwc_fname = basenameinfile_name.replace(".fits", "_world_coordinates.fits")
+    print (cwc_fname)
+    #os.system("mv "+wcoordfile+" "+cwc_fname)
+
+    # loop over the slits
+    sltname_list = []
+    wchdu = fits.open(cwc_fname)
+    #n_ext = len(wchdu)
+    sci_ext_list = get_sci_extensions(infile_name)
+    for i in sci_ext_list:
+        print("extension =", i, "  of file:", infile_name)
+        hdr = wchdu[i].header
+
+        # what is the slit of this exposure
+        pslit = hdr["SLIT"]
+        print("SLIT = ", pslit)
+
+        # for matched spectrum, get the wavelength and Delta_Y values
+        fdata = fits.getdata(infile_name, ext=i)
+        pwave = fdata[0,:]
+        pdy = fdata[3,:]
+        pskyx = fdata[1,:]
+        pskyy = fdata[2,:]
+
+        # get the origin of the subwindow
+        px0 = fits.getval(infile_name, "SLTSTRT1", ext=i)+fits.getval(infile_name, "SUBSTRT1", ext=0)-1
+        py0 = fits.getval(infile_name, "SLTSTRT2", ext=i)+fits.getval(infile_name, "SUBSTRT2", ext=0)-1
+        sltname = fits.getval(infile_name, "SLTNAME", ext=i)
+        sltname_list.append(sltname)
+        n_p = np.shape(fdata)
+        npx = n_p[0]
+        npy = n_p[1]
+        print("npx+1=", npx+1, "px0_list=", px0)
+        px = np.arange(1, npx+1)+np.array(px0)
+        py = np.arange(1, npy+1)+np.array(py0)
+        print  ("Pipeline subwindow corner pixel ID: ", px0, py0)
+
+        # read in ESA data
+        esafile = get_esafile(auxiliary_code_path, det, grat, filt, sltname_list, esa_files_path)
+        esahdulist = fits.open(esafile)
+        #print ("* ESA file contents ")
+        #esahdulist.info()
+        esahdr1 = esahdulist[1].header
+        enext = []
+        for ext in esahdulist:
+            enext.append(ext)
+        if det == "NRS1":
+            eflux = fits.getdata(esafile, 1)
+            ewave = fits.getdata(esafile, 4)
+            edy = fits.getdata(esafile, 5)
+        if det == "NRS2":
+            eflux = fits.getdata(esafile, 6)
+            ewave = fits.getdata(esafile, 9)
+            edy = fits.getdata(esafile, 10)
+        esahdulist.close()
+        n_p = np.shape(eflux)
+        nex = n_p[1]
+        ney = n_p[0]
+        # get the origin of the subwindow
+        if det == "NRS1":
+            ex0 = esahdr1["CRVAL1"] - esahdr1["CRPIX1"] + 1
+            ey0 = esahdr1["CRVAL2"] - esahdr1["CRPIX2"] + 1
+        else:
+            ex0 = 2048.0 - (esahdr1["CRPIX1"] - esahdr1["CRVAL1"] + 1)
+            ey0 = 2048.0 - (esahdr1["CRPIX2"] - esahdr1["CRVAL2"] + 1)
+        ex = np.arange(nex) + ex0
+        ey = np.arange(ney) + ey0
+        print("ESA subwindow corner pixel ID: ", ex0, ey0)
+        if debug:
+            print("From ESA file: ")
+            print("   ex0 =", ex0)
+            print("   ex0+nex-1 =", ex0+nex-1)
+            print("   ey0 =", ey0)
+            print("   ey0+ney-1 =", ey0+ney-1)
+            print("   ex=", ex, "   ey=", ey)
+
+        # match up the correct elements in each data set
+        subpx, subex = do_idl_match(px, ex)
+        subpy, subey = do_idl_match(py, ey)
+        print("matched elements in the 2D spectra: ", len(subex), len(subey))
+        imp, ime = [], []
+        for spy in subpy:
+            im0 = subpx + npx * spy
+            imp.append(im0)
+        for sey in subey:
+            im0 = subex + nex * sey
+            ime.append(im0)
+        imp, ime = np.array(imp), np.array(ime)
+        imp, ime  = imp.flatten(), ime.flatten()
+
+        # get the difference between the two in units of resels
+        # do not include pixels where one or the other solution is 0 or NaN
+        flat_pwave, flat_ewave = pwave.flatten(), ewave.flatten()
+        ig = []
+        for ip, ie, ig_i in zip(imp, ime, range(len(imp))):
+            if all( [flat_pwave[ip] != 0 and flat_ewave[ie].size != 0 and np.isfinite(flat_pwave[ip]) and np.isfinite(flat_ewave[ip])] ):
+                ig.append(ig_i)
+
+        delwave = []
+        for ig_i in ig:
+            delw = flat_pwave[imp[ig_i]] - flat_ewave[ime[ig_i]]
+            delwave.append(delw)
+        delwave = np.array(delwave)
+        for dw in delwave:
+            if not np.isfinite(dw):
+                print("Got a NaN in delwave array!, median and standard deviation will fail.")
+
+        pxr, pyr = np.array([]), np.array([])
+        for _ in range(npy):
+            pxr = np.concatenate((pxr, px))
+        pxr = pxr.astype(int)
+        reshaped_py = py.reshape(npy, 1)
+        for rpy_i in reshaped_py:
+            for _ in range(npx):
+                pyr = np.concatenate((pyr, rpy_i))
+        pyr = pyr.astype(int)
+
+        pxrg, pyrg, deldy = [], [], []
+        flat_pdy, flat_edy = pdy.flatten(), edy.flatten()
+        for ig_i in ig:
+            pxrg_i = pxr[imp[ig_i]]
+            pxrg.append(pxrg_i)
+            pyrg_i = pyr[imp[ig_i]]
+            pyrg.append(pyrg_i)
+            deldy_i = flat_pdy[imp[ig_i]] - flat_edy[ime[ig_i]]
+            deldy.append(deldy_i)
+        pxrg, pyrg, deldy = np.array(pxrg), np.array(pyrg), np.array(deldy)
+        for d in deldy:
+            if not np.isfinite(d):
+                print("Got a NaN in deldy array!, median and standard deviation will fail.")
+
+        if len(delwave) > 1:
+            delwave_median, delwave_stddev = np.median(delwave), np.std(delwave)
+            deldy_median, deldy_stddev = np.median(deldy), np.std(deldy)
+            print("\n  delwave:   median =", delwave_median, "   stdev =", delwave_stddev)
+            print("\n  deldy:   median =", deldy_median, "   stdev =", deldy_stddev)
+
+            # PLOTS
+            if plot_names is not None:
+                hist_name, deltas_name = plot_names
+
+            # HISTOGRAM
+            title = filt+"   "+grat+"   SLIT="+sltname
+            xmin1 = min(delwave) - (max(delwave)-min(delwave))*0.1
+            xmax1 = max(delwave) + (max(delwave)-min(delwave))*0.1
+            xlabel1, ylabel1 = r"$\lambda_{pipe}$ - $\lambda_{ESA}$ (10$^{-10}$m)", "N"
+            yarr = None
+            bins = 15
+            info_fig1 = [xlabel1, ylabel1, delwave, yarr, xmin1, xmax1, bins, delwave_median, delwave_stddev]
+            xmin2 = min(deldy) - (max(deldy)-min(deldy))*0.1
+            xmax2 = max(deldy) + (max(deldy)-min(deldy))*0.1
+            xlabel2, ylabel2 = r"$\Delta y_{pipe}$ - $\Delta y_{ESA}$ (relative slit position)", "N"
+            info_fig2 = [xlabel2, ylabel2, deldy, yarr, xmin2, xmax2, bins, deldy_median, deldy_stddev]
+            mk_plots(title, info_fig1=info_fig1, info_fig2=info_fig2, show_figs=show_figs, save_figs=save_figs,
+                     histogram=True, fig_name=hist_name)
+
+            # DELTAS PLOT
+            title = ""
+            title1, xlabel1, ylabel1 = r"$\Delta \lambda$", "x (pixels)", "y (pixels)"
+            info_fig1 = [title1, xlabel1, ylabel1, pxrg, pyrg, delwave, delwave_median, delwave_stddev]
+            title2, xlabel2, ylabel2 = r"$\Delta$ Flux", "x (pixels)", "y (pixels)"
+            info_fig2 = [title2, xlabel2, ylabel2, pxrg, pyrg, deldy, deldy_median, deldy_stddev]
+            mk_plots(title, info_fig1=info_fig1, info_fig2=info_fig2, show_figs=show_figs, save_figs=save_figs,
+                     deltas_plt=True, fig_name=deltas_name)
+        else:
+            print("Delta_wavelength array is emtpy. No plots being made.")
+
+
+
+if __name__ == '__main__':
+
+    # This is a simple test of the code
+    pipeline_path = "/Users/pena/Documents/PyCharmProjects/nirspec/pipeline"
+
+    # input parameters that the script expects
+    auxiliary_code_path = pipeline_path+"/src/pytests/calwebb_spec2_pytests/auxiliary_code"
+    infile_name = "jwtest1003001_01101_00001_NRS1_uncal_rate_assign_wcs_extract_2d.fits"
+    #esa_files_path=pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_FixedSlit/"
+    # if a specific file needs to be used
+    esa_files_path = pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_FixedSlit/V84600003001P0000000002104_39528_JLAB88/V84600003001P0000000002104_39528_JLAB88_trace_SLIT/Trace_SLIT_A_200_1_V84600003001P0000000002104_39528_JLAB88.fits"
+
+    # set the names of the resulting plots
+    hist_name = "FS_jwtest1003001_01101_00001_wcs_histogram.jpg"
+    deltas_name = "FS_jwtest1003001_01101_00001_wcs_deltas.jpg"
+    plot_names = [hist_name, deltas_name]
+
+    # Run the principal function of the script
+    compare_wcs(infile_name, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
+                plot_names=plot_names, show_figs=True, save_figs=False)
+
 
 
 
