@@ -1,101 +1,18 @@
 from __future__ import print_function, division
 import numpy as np
 import os
-import subprocess
 import sys
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from astropy.io import fits
 from jwst.assign_wcs.tools.nirspec import compute_world_coordinates
-
+import wcs_auxiliary_functions as wcsfunc
 
 """
 This script compares pipeline WCS info with ESA results for Multi-Object Spectroscopy (MOS) data.
 
 """
-
-
-def find_nearest(arr, value):
-    '''
-    This function gives the content and the index in the array of the number that is closest to
-    the value given.
-    :param arr = 1-D numpy array
-    :param value = float or integer
-    :return: The array element closest to value and its index
-    '''
-    idx=(np.abs(arr-value)).argmin()
-    return arr[idx], idx
-
-
-def get_sci_extensions(fits_file_name):
-    """
-    This functions obtains all the science extensions in the given file
-    Args:
-        fits_file_name: name of the fits file of interest
-
-    Returns:
-        sci_list: list of the numbers of the science extensions
-    """
-    hdulist = fits.open(fits_file_name)
-    sci_list = []
-    for ext, hdu in enumerate(hdulist):
-        if hdu.name == "SCI":
-            sci_list.append(ext)
-    return sci_list
-
-
-def do_idl_match(arrA, arrB):
-    """
-    This function does the same that the IDL match function does. It finds the elements common
-    in both arrays and it returns two arrays with the index of those elements in each array.
-    (The arrays do not need to be the same length)
-    Args:
-        arrA: numpy array
-        arrB: numpy array
-
-    Returns:
-        subA: numpy array of index of arrA from elements also present in arrB
-        subB: numpy array of index of arrB from elements also present in arrA
-    """
-    # Find the index corresponding to the intersection elements and return them as arrays
-    subA, subB = [], []
-    for i, ai in enumerate(arrA):
-        if ai in arrB:
-            subA.append(i)
-    for i, bi in enumerate(arrB):
-        if bi in arrA:
-            subB.append(i)
-    return np.array(subA), np.array(subB)
-
-
-def do_idl_rebin(a, *args):
-    '''
-    * This function was copied from Example 2 in http://scipy-cookbook.readthedocs.io/items/Rebinning.html
-
-    This acts identically to IDL's rebin command where all values in the original array are summed
-    and divided amongst the entries in the new array. As in IDL, the new shape must be a factor of
-    the old one. The ugly 'evList trick' builds and executes a python command of the form
-    a.reshape(args[0],factor[0],).sum(1)/factor[0]
-    a.reshape(args[0],factor[0],args[1],factor[1],).sum(1).sum(2)/factor[0]/factor[1]
-    etc. This general form is extended to cover the number of required dimensions.
-
-    This function rebins ndarray data into a smaller ndarray of the same rank whose dimensions
-    are factors of the original dimensions. eg. An array with 6 columns and 4 rows
-    can be reduced to have 6,3,2 or 1 columns and 4,2 or 1 rows.
-    example usages:
-     a=rand(6,4); b=rebin(a,3,2)
-     a=rand(6); b=rebin(a,2)
-    '''
-    shape = a.shape
-    lenShape = len(shape)
-    factor = np.asarray(shape)/np.asarray(args)
-    evList = ['a.reshape('] + \
-             ['args[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
-             [')'] + ['.sum(%d)'%(i+1) for i in range(lenShape)] + \
-             ['/factor[%d]'%i for i in range(lenShape)]
-    #print (''.join(evList))
-    return eval(''.join(evList))
 
 
 def get_esafile(auxiliary_code_path, det, grat, filt, esa_files_path, quad, row, col):
@@ -376,21 +293,6 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
     if auxiliary_code_path is None:
         auxiliary_code_path = "./"
 
-    '''
-    # There is no need to run the script from the local copy ...
-    print ("auxiliary_code_path=", auxiliary_code_path)
-    # The latest copy of the script can be copied with
-    #os.system("curl -O https://raw.githubusercontent.com/STScI-JWST/jwst/e6ead034c48fc14573b161c82f9bf8384fdb5508/jwst/assign_wcs/tools/nirspec/compute_world_coordinates.py")
-    #os.system("mv compute_world_coordinates.py "+auxiliary_code_path)
-    compute_world_coords_code = os.path.join(auxiliary_code_path, "compute_world_coordinates.py")
-    print("about to run "+compute_world_coords_code+" on file:", infile_name)
-    raw_input()
-    run_compute_world_coords = subprocess.Popen(compute_world_coords_code+" mos "+infile_name, shell=True,
-                                                stdout=subprocess.PIPE)
-    run_compute_world_coords.wait()
-    print("compute_world_coordinates.py finished, continuing with comparison...")
-    '''
-
     #compute_world_coordinates.compute_world_coordinates(infile_name)
 
     # The world coordinate file was created but it needs to be renamed
@@ -410,8 +312,8 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
 
     # get info from the extract_2d file header
     #extract_2d_file = cwc_fname.replace("_world_coordinates_James", "")
-    extract_2d_file = cwc_fname.replace("_world_coordinates_b7", "")
-    #extract_2d_file = cwc_fname.replace("_world_coordinates", "")
+    #extract_2d_file = cwc_fname.replace("_world_coordinates_b7", "")
+    extract_2d_file = cwc_fname.replace("_world_coordinates", "")
     print('extract_2d_file=', extract_2d_file)
     det_extract_2d_file = fits.getval(extract_2d_file, "DETECTOR", 0)
     lamp_extract_2d_file = fits.getval(extract_2d_file, "LAMP", 0)
@@ -429,16 +331,18 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
         wcslit = int(hdr["SLIT"])
         ims = np.where(np.array(pslit, dtype=int) == wcslit)
         # get slitlet in this exposure
+        row_str = str(row[ims][0])
+        col_str = str(col[ims][0])
         if ims[0].size != 0:
             row, col = np.array(row), np.array(col)
-            if len(row[ims]) == 1:
-                row_str = "00"+str(row[ims][0])
-            elif len(row[ims]) == 2:
-                row_str = "0"+str(row[ims][0])
-            if len(col[ims]) == 1:
-                col_str = "00"+str(col[ims][0])
-            elif len(col[ims]) == 2:
-                col_str = "0"+str(col[ims][0])
+            if len(row_str) == 1:
+                row_str = "00"+row_str
+            elif len(row_str) == 2:
+                row_str = "0"+row_str
+            if len(col_str) == 1:
+                col_str = "00"+col_str
+            elif len(col_str) == 2:
+                col_str = "0"+col_str
         #print("row_str, col_str: ", row_str, col_str)
 
         # get wavelength (convert from microns to m)
@@ -453,7 +357,7 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
         py0 = fits.getval(cwc_fname, "CRVAL2", 1)
         #if debug:
         print ("px0=",px0, "   py0=", py0)
-        exit()
+
         # get the count rates for this spectrum
         counts = fits.getdata(rate_file, 1)
         n_p = np.shape(pwave)
@@ -513,8 +417,8 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
             print ("ex=", ex, "   ey=", ey)
 
         # match up the correct elements in each data set
-        subpx, subex = do_idl_match(px, ex)
-        subpy, subey = do_idl_match(py, ey)
+        subpx, subex = wcsfunc.do_idl_match(px, ex)
+        subpy, subey = wcsfunc.do_idl_match(py, ey)
         imp, ime = [], []
         for spy in subpy:
             im0 = subpx + npx * spy
@@ -580,7 +484,8 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
             print("\n  delwave:   median =", delwave_median, "   stdev =", delwave_stddev)
             print("\n  deldy:   median =", deldy_median, "   stdev =", deldy_stddev)
 
-        if len(delwave) > 1:
+        # PLOTS
+        if len(delwave) != 0:
             if plot_names is not None:
                 hist_name, deltas_name, msacolormap_name = plot_names
 
@@ -621,6 +526,8 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
             info_fig1 = [xlabel, ylabel, arrx, arry, delwave]
             mk_plots(title, info_fig1=info_fig1, show_figs=show_figs, save_figs=save_figs,
                      msacolormap=True, fig_name=msacolormap_name)
+        else:
+            print(" * Delta_wavelength array is emtpy. No plots being made. \n")
 
 
 
@@ -646,4 +553,4 @@ if __name__ == '__main__':
 
     # Run the principal function of the script
     compare_wcs(infile_name, msa_conf_root=msa_conf_root, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
-                plot_names=plot_names, show_figs=True, save_figs=True)
+                plot_names=plot_names, show_figs=True, save_figs=False)

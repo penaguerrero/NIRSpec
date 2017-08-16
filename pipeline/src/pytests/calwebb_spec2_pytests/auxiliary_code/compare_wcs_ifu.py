@@ -11,12 +11,8 @@ import wcs_auxiliary_functions as wcsfunc
 
 
 """
-This script compares pipeline WCS info with ESA results for FIXED SLIT.
+This script compares pipeline WCS info with ESA results for Integral Field Unit (IFU) data.
 
-slit = 'S200A1', 'S200A2', 'S400A1', 'S1600A1', 'S200B1'
-det = 'NRS1' or 'NRS2'
-subarray_origin = [SUBSTRT1, SUBSTRT2] from original image; needed since SUBSTRT in
-                    world_coordinates file is not in full frame reference
 """
 
 
@@ -78,7 +74,7 @@ def get_esafile(auxiliary_code_path, det, grat, filt, sltname_list, esa_files_pa
 
 
 def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=None,
-             histogram=False, deltas_plt=False, fig_name=None):
+             histogram=False, deltas_plt=False, msacolormap=False, fig_name=None):
     """
     This function makes all the plots of the script.
     Args:
@@ -89,6 +85,7 @@ def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=N
         info_fig2: list, arrays, number of bins, and limits for the second figure in the plot
         histogram: boolean, are the figures in the plot histograms
         deltas_plt: boolean, regular plot
+        msacolormap: boolean, single figure
         fig_name: str, name of plot
 
     Returns:
@@ -102,120 +99,147 @@ def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=N
     plt.subplots_adjust(hspace=.4)
     alpha = 0.2
     fontsize = 15
+    if not msacolormap:
+        # FIGURE 1
+        # number in the parenthesis are nrows, ncols, and plot number, numbering in next row starts at left
+        ax = plt.subplot(211)
+        if histogram:
+            xlabel1, ylabel1, xarr1, yarr1, xmin, xmax, bins, x_median, x_stddev = info_fig1
+            x_median = "median = {:0.3}".format(x_median)
+            x_stddev = "stddev = {:0.3}".format(x_stddev)
+            plt.title(title)
+            plt.xlabel(xlabel1)
+            plt.ylabel(ylabel1)
+            plt.xlim(xmin, xmax)
+            ax.text(0.7, 0.9, x_median, transform=ax.transAxes, fontsize=fontsize)
+            ax.text(0.7, 0.83, x_stddev, transform=ax.transAxes, fontsize=fontsize)
+            n, bins, patches = ax.hist(xarr1, bins=bins, histtype='bar', ec='k', facecolor="red", alpha=alpha)
+        if deltas_plt:
+            title1, xlabel1, ylabel1, xarr1, yarr1, xdelta, x_median, x_stddev = info_fig1
+            plt.title(title1)
+            plt.xlabel(xlabel1)
+            plt.ylabel(ylabel1)
+            mean_minus_1half_std = x_median - 1.5*x_stddev
+            mean_minus_half_std = x_median - 0.5*x_stddev
+            mean_plus_half_std = x_median + 0.5*x_stddev
+            mean_plus_1half_std = x_median + 1.5*x_stddev
 
-    # FIGURE 1
-    # number in the parenthesis are nrows, ncols, and plot number, numbering in next row starts at left
-    ax = plt.subplot(211)
-    if histogram:
-        xlabel1, ylabel1, xarr1, yarr1, xmin, xmax, bins, x_median, x_stddev = info_fig1
-        x_median = "median = {:0.3}".format(x_median)
-        x_stddev = "stddev = {:0.3}".format(x_stddev)
+            for xd, xi, yi in zip(xdelta, xarr1, yarr1):
+                if xd > mean_plus_1half_std:
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='red')#, label="")
+                if xd < mean_minus_1half_std:
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='fuchsia')#, label="")
+                if (xd > mean_minus_1half_std) and (xd < mean_minus_half_std):
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='blue')#, label="")
+                if (xd > mean_minus_half_std) and (xd < mean_plus_half_std):
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='lime')#, label="")
+                if (xd > mean_plus_half_std) and (xd < mean_plus_1half_std):
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='black')#, label="")
+            '''
+            idx_red = np.where(xdelta > mean_plus_1half_std)
+            idx_fuchsia = np.where(xdelta < mean_minus_1half_std)
+            idx_blue = np.where((xdelta > mean_minus_1half_std) & (xdelta < mean_minus_half_std))
+            idx_lime = np.where((xdelta > mean_minus_half_std) & (xdelta < mean_plus_half_std))
+            idx_black = np.where((xdelta > mean_plus_half_std) & (xdelta < mean_plus_1half_std))
+            plt.plot(xarr1[idx_red], yarr1[idx_red], linewidth=7, marker='D', color='red')#, label="")
+            plt.plot(xarr1[idx_fuchsia], yarr1[idx_fuchsia], linewidth=7, marker='D', color='fuchsia')#, label="")
+            plt.plot(xarr1[idx_blue], yarr1[idx_blue], linewidth=7, marker='D', color='blue')#, label="")
+            plt.plot(xarr1[idx_lime], yarr1[idx_lime], linewidth=7, marker='D', color='lime')#, label="")
+            plt.plot(xarr1[idx_black], yarr1[idx_black], linewidth=7, marker='D', color='black')#, label="")
+            '''
+            # add legend
+            #box = ax.get_position()
+            #ax.set_position([box.x0, box.y0, box.width * 1.0, box.height])
+            #ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+            #plt.plot(xarr1, yarr1, linewidth=7)
+        plt.minorticks_on()
+        plt.tick_params(axis='both', which='both', bottom='on', top='on', right='on', direction='in', labelbottom='on')
+
+        # FIGURE 2
+        # number in the parenthesis are nrows, ncols, and plot number, numbering in next row starts at left
+        ax = plt.subplot(212)
+        if histogram:
+            xlabel2, ylabel2, xarr2, yarr2, xmin, xmax, bins, y_median, y_stddev = info_fig2
+            y_median = "median = {:0.3}".format(y_median)
+            y_stddev = "stddev = {:0.3}".format(y_stddev)
+            plt.xlabel(xlabel2)
+            plt.ylabel(ylabel2)
+            plt.xlim(xmin, xmax)
+            ax.text(0.7, 0.9, y_median, transform=ax.transAxes, fontsize=fontsize)
+            ax.text(0.7, 0.83, y_stddev, transform=ax.transAxes, fontsize=fontsize)
+            n, bins, patches = ax.hist(xarr2, bins=bins, histtype='bar', ec='k', facecolor="red", alpha=alpha)
+        if deltas_plt:
+            title2, xlabel2, ylabel2, xarr2, yarr2, ydelta, y_median, y_stddev = info_fig2
+            plt.title(title2)
+            plt.xlabel(xlabel2)
+            plt.ylabel(ylabel2)
+            mean_minus_1half_std = y_median - 1.5*y_stddev
+            mean_minus_half_std = y_median - 0.5*y_stddev
+            mean_plus_half_std = y_median + 0.5*y_stddev
+            mean_plus_1half_std = y_median + 1.5*y_stddev
+            for yd, xi, yi in zip(ydelta, xarr2, yarr2):
+                if yd > mean_plus_1half_std:
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='red')#, label="")
+                if yd < mean_minus_1half_std:
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='fuchsia')#, label="")
+                if (yd > mean_minus_1half_std) and (yd < mean_minus_half_std):
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='blue')#, label="")
+                if (yd > mean_minus_half_std) and (yd < mean_plus_half_std):
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='lime')#, label="")
+                if (yd > mean_plus_half_std) and (yd < mean_plus_1half_std):
+                    plt.plot(xi, yi, linewidth=7, marker='D', color='black')#, label=r"$\mu+0.5*\sigma$ > $\mu+1.5*\sigma$")
+            # add legend
+            #box = ax.get_position()
+            #ax.set_position([box.x0, box.y0, box.width * 1.0, box.height])
+            #ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+            #plt.plot(xarr2, yarr2, linewidth=7)
+        plt.tick_params(axis='both', which='both', bottom='on', top='on', right='on', direction='in', labelbottom='on')
+        plt.minorticks_on()
+    else:
+        xlabel, ylabel, xarr, yarr, xdelta = info_fig1
+        ax = plt.subplot(111)
         plt.title(title)
-        plt.xlabel(xlabel1)
-        plt.ylabel(ylabel1)
-        plt.xlim(xmin, xmax)
-        ax.text(0.7, 0.9, x_median, transform=ax.transAxes, fontsize=fontsize)
-        ax.text(0.7, 0.83, x_stddev, transform=ax.transAxes, fontsize=fontsize)
-        n, bins, patches = ax.hist(xarr1, bins=bins, histtype='bar', ec='k', facecolor="red", alpha=alpha)
-    if deltas_plt:
-        title1, xlabel1, ylabel1, xarr1, yarr1, xdelta, x_median, x_stddev = info_fig1
-        plt.title(title1)
-        plt.xlabel(xlabel1)
-        plt.ylabel(ylabel1)
-        mean_minus_1half_std = x_median - 1.5*x_stddev
-        mean_minus_half_std = x_median - 0.5*x_stddev
-        mean_plus_half_std = x_median + 0.5*x_stddev
-        mean_plus_1half_std = x_median + 1.5*x_stddev
-        '''
-        for xd, xi, yi in zip(xdelta, xarr1, yarr1):
-            if xd > mean_plus_1half_std:
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        lim_a = -5.0e-13
+        lim_b = -1.0e-15
+        lim_c = 1.0e-13
+        lim_d = 5.0e-13
+        plt.xlim(0.0405, 0.0425)
+        plt.ylim(-0.0010, 0.0010)
+        #plt.xticks(np.arange(min(xarr), max(xarr), xarr[0]*5))
+        #plt.yticks(np.arange(min(yarr), max(yarr), 0.000005))
+        for xd, xi, yi in zip(xdelta, xarr, yarr):
+            if xd > lim_d:
                 plt.plot(xi, yi, linewidth=7, marker='D', color='red')#, label="")
-            if xd < mean_minus_1half_std:
+            if xd < lim_a:
                 plt.plot(xi, yi, linewidth=7, marker='D', color='fuchsia')#, label="")
-            if (xd > mean_minus_1half_std) and (xd < mean_minus_half_std):
+            if (xd > lim_a) and (xd < lim_b):
                 plt.plot(xi, yi, linewidth=7, marker='D', color='blue')#, label="")
-            if (xd > mean_minus_half_std) and (xd < mean_plus_half_std):
+            if (xd > lim_b) and (xd < lim_c):
                 plt.plot(xi, yi, linewidth=7, marker='D', color='lime')#, label="")
-            if (xd > mean_plus_half_std) and (xd < mean_plus_1half_std):
+            if (xd > lim_c) and (xd < lim_d):
                 plt.plot(xi, yi, linewidth=7, marker='D', color='black')#, label="")
-        '''
-        idx_red = np.where(xdelta > mean_plus_1half_std)
-        idx_fuchsia = np.where(xdelta < mean_minus_1half_std)
-        idx_blue = np.where((xdelta > mean_minus_1half_std) & (xdelta < mean_minus_half_std))
-        idx_lime = np.where((xdelta > mean_minus_half_std) & (xdelta < mean_plus_half_std))
-        idx_black = np.where((xdelta > mean_plus_half_std) & (xdelta < mean_plus_1half_std))
-        plt.plot(xarr1[idx_red], yarr1[idx_red], linewidth=7, marker='D', color='red')#, label="")
-        plt.plot(xarr1[idx_fuchsia], yarr1[idx_fuchsia], linewidth=7, marker='D', color='fuchsia')#, label="")
-        plt.plot(xarr1[idx_blue], yarr1[idx_blue], linewidth=7, marker='D', color='blue')#, label="")
-        plt.plot(xarr1[idx_lime], yarr1[idx_lime], linewidth=7, marker='D', color='lime')#, label="")
-        plt.plot(xarr1[idx_black], yarr1[idx_black], linewidth=7, marker='D', color='black')#, label="")
-        # add legend
-        #box = ax.get_position()
-        #ax.set_position([box.x0, box.y0, box.width * 1.0, box.height])
-        #ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
-        #plt.plot(xarr1, yarr1, linewidth=7)
-    plt.minorticks_on()
-    plt.tick_params(axis='both', which='both', bottom='on', top='on', right='on', direction='in', labelbottom='on')
-
-    # FIGURE 2
-    # number in the parenthesis are nrows, ncols, and plot number, numbering in next row starts at left
-    ax = plt.subplot(212)
-    if histogram:
-        xlabel2, ylabel2, xarr2, yarr2, xmin, xmax, bins, y_median, y_stddev = info_fig2
-        y_median = "median = {:0.3}".format(y_median)
-        y_stddev = "stddev = {:0.3}".format(y_stddev)
-        plt.xlabel(xlabel2)
-        plt.ylabel(ylabel2)
-        plt.xlim(xmin, xmax)
-        ax.text(0.7, 0.9, y_median, transform=ax.transAxes, fontsize=fontsize)
-        ax.text(0.7, 0.83, y_stddev, transform=ax.transAxes, fontsize=fontsize)
-        n, bins, patches = ax.hist(xarr2, bins=bins, histtype='bar', ec='k', facecolor="red", alpha=alpha)
-    if deltas_plt:
-        title2, xlabel2, ylabel2, xarr2, yarr2, ydelta, y_median, y_stddev = info_fig2
-        plt.title(title2)
-        plt.xlabel(xlabel2)
-        plt.ylabel(ylabel2)
-        mean_minus_1half_std = y_median - 1.5*y_stddev
-        mean_minus_half_std = y_median - 0.5*y_stddev
-        mean_plus_half_std = y_median + 0.5*y_stddev
-        mean_plus_1half_std = y_median + 1.5*y_stddev
-        '''
-        for yd, xi, yi in zip(ydelta, xarr2, yarr2):
-            if yd > mean_plus_1half_std:
-                plt.plot(xi, yi, linewidth=7, marker='D', color='red')#, label="")
-            if yd < mean_minus_1half_std:
-                plt.plot(xi, yi, linewidth=7, marker='D', color='fuchsia')#, label="")
-            if (yd > mean_minus_1half_std) and (yd < mean_minus_half_std):
-                plt.plot(xi, yi, linewidth=7, marker='D', color='blue')#, label="")
-            if (yd > mean_minus_half_std) and (yd < mean_plus_half_std):
-                plt.plot(xi, yi, linewidth=7, marker='D', color='lime')#, label="")
-            if (yd > mean_plus_half_std) and (yd < mean_plus_1half_std):
-                plt.plot(xi, yi, linewidth=7, marker='D', color='black')#, label=r"$\mu+0.5*\sigma$ > $\mu+1.5*\sigma$")
-        '''
-        idx_red = np.where(ydelta > mean_plus_1half_std)
-        idx_fuchsia = np.where(ydelta < mean_minus_1half_std)
-        idx_blue = np.where((ydelta > mean_minus_1half_std) & (ydelta < mean_minus_half_std))
-        idx_lime = np.where((ydelta > mean_minus_half_std) & (ydelta < mean_plus_half_std))
-        idx_black = np.where((ydelta > mean_plus_half_std) & (ydelta < mean_plus_1half_std))
-        plt.plot(xarr2[idx_red], yarr2[idx_red], linewidth=7, marker='D', color='red')#, label="")
-        plt.plot(xarr2[idx_fuchsia], yarr2[idx_fuchsia], linewidth=7, marker='D', color='fuchsia')#, label="")
-        plt.plot(xarr2[idx_blue], yarr2[idx_blue], linewidth=7, marker='D', color='blue')#, label="")
-        plt.plot(xarr2[idx_lime], yarr2[idx_lime], linewidth=7, marker='D', color='lime')#, label="")
-        plt.plot(xarr2[idx_black], yarr2[idx_black], linewidth=7, marker='D', color='black')#, label="")
-        # add legend
-        #box = ax.get_position()
-        #ax.set_position([box.x0, box.y0, box.width * 1.0, box.height])
-        #ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
-        #plt.plot(xarr2, yarr2, linewidth=7)
-    plt.tick_params(axis='both', which='both', bottom='on', top='on', right='on', direction='in', labelbottom='on')
-    plt.minorticks_on()
+        # Shrink current axis
+        box = ax.get_position()
+        #percent = 0.85
+        #ax.set_position([box.x0, box.y0, box.width * percent, box.height * percent])
+        plt.gca().xaxis.set_major_locator(MaxNLocator(prune='lower'))
+        plt.tight_layout()
+        #ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))   # put legend out of the plot box
+        plt.tick_params(axis='both', which='both', bottom='on', top='on', right='on', direction='in', labelbottom='on')
+        plt.minorticks_on()
     if save_figs:
         if histogram:
             if fig_name is None:
-                fig_name = "FS_wcs_histogram.jpg"
+                fig_name = "wcs_histogram.jpg"
         if deltas_plt:
             if fig_name is None:
-                fig_name = "FS_wcs_Deltas.jpg"
+                fig_name = "wcs_Deltas.jpg"
+        if msacolormap:
+            if fig_name is None:
+                fig_name = "wcs_MSAcolormap.jpg"
+        fig.savefig(fig_name)
         print ('\n Plot saved: ', fig_name)
     if show_figs:
         plt.show()
@@ -403,18 +427,22 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             if not np.isfinite(d):
                 print("Got a NaN in deldy array!, median and standard deviation will fail.")
 
-        if len(delwave) != 0:
+        # get the median and standard deviations
+        if len(delwave) > 1:
             delwave_median, delwave_stddev = np.median(delwave), np.std(delwave)
             deldy_median, deldy_stddev = np.median(deldy), np.std(deldy)
             print("\n  delwave:   median =", delwave_median, "   stdev =", delwave_stddev)
             print("\n  deldy:   median =", deldy_median, "   stdev =", deldy_stddev)
 
-            # PLOTS
+        # PLOTS
+        if len(delwave) != 0:
             if plot_names is not None:
-                hist_name, deltas_name = plot_names
+                hist_name, deltas_name, msacolormap_name = plot_names
 
             # HISTOGRAM
-            title = filt+"   "+grat+"   SLIT="+sltname
+            if filt == "OPAQUE":
+                filt = lamp
+            title = filt+"   "+grat+"   Slitlet ID: "+slitlet_id
             xmin1 = min(delwave) - (max(delwave)-min(delwave))*0.1
             xmax1 = max(delwave) + (max(delwave)-min(delwave))*0.1
             xlabel1, ylabel1 = r"$\lambda_{pipe}$ - $\lambda_{ESA}$ (10$^{-10}$m)", "N"
@@ -436,6 +464,18 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             info_fig2 = [title2, xlabel2, ylabel2, pxrg, pyrg, deldy, deldy_median, deldy_stddev]
             mk_plots(title, info_fig1=info_fig1, info_fig2=info_fig2, show_figs=show_figs, save_figs=save_figs,
                      deltas_plt=True, fig_name=deltas_name)
+
+            # MSA COLOR MAP
+            title = "MSA Color Map"
+            xlabel, ylabel = "MSA_x (m)", "MSA_y (m)"
+            emsax, emsay = emsax.flatten(), emsay.flatten()
+            arrx, arry = [], []
+            for ig_i in ig:
+                arrx.append(emsax[ime[ig_i]])
+                arry.append(emsay[ime[ig_i]])
+            info_fig1 = [xlabel, ylabel, arrx, arry, delwave]
+            mk_plots(title, info_fig1=info_fig1, show_figs=show_figs, save_figs=save_figs,
+                     msacolormap=True, fig_name=msacolormap_name)
         else:
             print(" * Delta_wavelength array is emtpy. No plots being made. \n")
 
@@ -448,20 +488,16 @@ if __name__ == '__main__':
 
     # input parameters that the script expects
     auxiliary_code_path = pipeline_path+"/src/pytests/calwebb_spec2_pytests/auxiliary_code"
-    infile_name = "jwtest1003001_01101_00001_NRS1_uncal_rate_assign_wcs_extract_2d.fits"
-    #esa_files_path=pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_FixedSlit/"
-    # if a specific file needs to be used
-    esa_files_path = pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_FixedSlit/V84600003001P0000000002104_39528_JLAB88/V84600003001P0000000002104_39528_JLAB88_trace_SLIT/Trace_SLIT_A_200_1_V84600003001P0000000002104_39528_JLAB88.fits"
+    infile_name = "jwtest1010001_01101_00001_NRS1_rate_short_assign_wcs_extract_2d.fits"
+    msa_conf_root = "/Users/pena/Documents/PyCharmProjects/nirspec/pipeline/build7/test_data/MOS_CV3/complete_pipeline_testset"
+    esa_files_path=pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_IFU/"
 
     # set the names of the resulting plots
-    hist_name = "FS_jwtest1003001_01101_00001_wcs_histogram.jpg"
-    deltas_name = "FS_jwtest1003001_01101_00001_wcs_deltas.jpg"
-    plot_names = [hist_name, deltas_name]
+    hist_name = "jwtest1010001_01101_00001_wcs_histogram.jpg"
+    deltas_name = "jwtest1010001_01101_00001_wcs_deltas.jpg"
+    msacolormap_name = "jwtest1010001_01101_00001_wcs_msacolormap.jpg"
+    plot_names = [hist_name, deltas_name, msacolormap_name]
 
     # Run the principal function of the script
-    compare_wcs(infile_name, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
-                plot_names=plot_names, show_figs=True, save_figs=False)
-
-
-
-
+    compare_wcs(infile_name, msa_conf_root=msa_conf_root, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
+                plot_names=plot_names, show_figs=True, save_figs=True)
