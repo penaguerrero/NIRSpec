@@ -240,7 +240,8 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
         debug: boolean, if true a series of print statements will show on-screen
 
     Returns:
-        2 plots
+        - 2 plots, if told to save and/or show them.
+        - median_diff: Boolean, True if smaller or equal to 1e-14
 
     """
 
@@ -403,11 +404,17 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             if not np.isfinite(d):
                 print("Got a NaN in deldy array!, median and standard deviation will fail.")
 
+        # get the median and standard deviations
+        median_diff = False
         if len(delwave) != 0:
             delwave_median, delwave_stddev = np.median(delwave), np.std(delwave)
             deldy_median, deldy_stddev = np.median(deldy), np.std(deldy)
             print("\n  delwave:   median =", delwave_median, "   stdev =", delwave_stddev)
             print("\n  deldy:   median =", deldy_median, "   stdev =", deldy_stddev)
+
+            # This is the key argument for the assert pytest function
+            if delwave_median <= 1.0e-14:
+                median_diff = True
 
             # PLOTS
             if plot_names is not None:
@@ -439,6 +446,8 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
         else:
             print(" * Delta_wavelength array is emtpy. No plots being made. \n")
 
+    return median_diff
+
 
 
 if __name__ == '__main__':
@@ -459,8 +468,8 @@ if __name__ == '__main__':
     plot_names = [hist_name, deltas_name]
 
     # Run the principal function of the script
-    compare_wcs(infile_name, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
-                plot_names=plot_names, show_figs=True, save_figs=False)
+    median_diff = compare_wcs(infile_name, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
+                              plot_names=plot_names, show_figs=True, save_figs=False)
 
 
 

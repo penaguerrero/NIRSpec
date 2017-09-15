@@ -57,20 +57,38 @@ def find_which_slit(output_hdul):
             if "FXD_SLIT" == s:
                 return i+1, s
 
+
 def check_MOS_true(output_hdul):
     """
-    This function checks if the fits file is a Fixed Slit.
+    This function checks if the fits file is Multi-Object Spectroscopy (MOS).
     Args:
         output_hdul: the HDU list of the output header keywords
 
     Returns:
-        result: boolean, if true, the file is assumed to be MOS
+        result: boolean, if true, the file is assumed to be MOS data
     """
     result = False
     if "EXP_TYPE" in output_hdul:
         if "EXP_TYPE" == "NRS_MSASPEC":
             result = True
     return result
+
+
+def check_IFU_true(output_hdul):
+    """
+    This function checks if the fits file is IFU data.
+    Args:
+        output_hdul: the HDU list of the output header keywords
+
+    Returns:
+        result: boolean, if true, the file is assumed to be IFU data
+    """
+    result = False
+    if "EXP_TYPE" in output_hdul:
+        if "EXP_TYPE" == "NRS_IFU":
+            result = True
+    return result
+
 
 def find_DETECTOR(output_hdul):
     """

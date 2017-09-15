@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 from pandeia.engine.perform_calculation import perform_calculation
 import json
 import os
@@ -7,7 +8,7 @@ import matplotlib.pyplot as plt
 #######################################################################################
 
 # Script setup variables
-json_file = "nirspec_ta_1431_2.json"
+json_file = "nirspec_ta_test.json"
 
 #######################################################################################
 
@@ -34,10 +35,19 @@ with open(jf) as f:
 # Perform calculation
 results = perform_calculation(imgr_data)   # results is a dictionary
 
+# Print the results on-screen
+print ("filter =", results["scalar"]["filter"])
+print ("subarray: ", results["input"]["configuration"]["detector"]["subarray"])
+print ("readout mode: ", results["input"]["configuration"]["detector"]["readmode"])
+print ("warnings: ", results["warnings"])
+print ("total exposure time: ", results["scalar"]["total_exposure_time"])
+print ("extracted flux [-e/s] =", results["scalar"]["extracted_flux"])
+print ("S/N =", results["scalar"]["sn"])
+
 # Plot the results
 f, ax = plt.subplots()
 ax.imshow(results["2d"]["saturation"])
 f.savefig("nirspec_1431_2d_saturation.jpg")
 plt.show()
 
-print("Script run_nirspec_single_calculation.py  finished.")
+print("\n Script   run_nirspec_single_calculation.py   finished.")

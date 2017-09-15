@@ -264,7 +264,8 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
         debug: boolean, if true a series of print statements will show on-screen
 
     Returns:
-        3 plots
+        - 3 plots, if told to save and/or show them.
+        - median_diff: Boolean, True if smaller or equal to 1e-14
 
     """
 
@@ -300,20 +301,20 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
     fileID = basenameinfile_name.split("_")[0]   # obtain the id of the file
     working_dir_path = os.getcwd()
     wcoordfile = working_dir_path+"/"+fileID+"_world_coordinates.fits"
-    #print (wcoordfile)
+    #print ("*** wcoordfile = ", wcoordfile)
     # to move file to location of infile
     #cwc_fname = infile_name.replace(".fits", "_world_coordinates.fits")
     # to rename file within the working directory
     #cwc_fname = basenameinfile_name.replace(".fits", "_world_coordinates_James.fits")   # FOR TESTING THE CODE
     cwc_fname = basenameinfile_name.replace(".fits", "_world_coordinates_b7.fits")
     #cwc_fname = basenameinfile_name.replace(".fits", "_world_coordinates.fits")
-    print (cwc_fname)
+    #print ("*** cwc_fname = ", cwc_fname)
     os.system("mv "+wcoordfile+" "+cwc_fname)
 
     # get info from the extract_2d file header
     #extract_2d_file = cwc_fname.replace("_world_coordinates_James", "")
-    #extract_2d_file = cwc_fname.replace("_world_coordinates_b7", "")
-    extract_2d_file = cwc_fname.replace("_world_coordinates", "")
+    extract_2d_file = cwc_fname.replace("_world_coordinates_b7", "")
+    #extract_2d_file = cwc_fname.replace("_world_coordinates", "")
     print('extract_2d_file=', extract_2d_file)
     det_extract_2d_file = fits.getval(extract_2d_file, "DETECTOR", 0)
     lamp_extract_2d_file = fits.getval(extract_2d_file, "LAMP", 0)
@@ -478,11 +479,18 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
             deldy_i = flat_pdy[imp[ig_i]] - flat_edy[ime[ig_i]]
             deldy.append(deldy_i)
         pxrg, pyrg, deldy = np.array(pxrg), np.array(pyrg), np.array(deldy)
+
+        # get the median and standard deviations
+        median_diff = False
         if len(delwave) > 1:
             delwave_median, delwave_stddev = np.median(delwave), np.std(delwave)
             deldy_median, deldy_stddev = np.median(deldy), np.std(deldy)
             print("\n  delwave:   median =", delwave_median, "   stdev =", delwave_stddev)
             print("\n  deldy:   median =", deldy_median, "   stdev =", deldy_stddev)
+
+            # This is the key argument for the assert pytest function
+            if delwave_median <= 1.0e-14:
+                median_diff = True
 
         # PLOTS
         if len(delwave) != 0:
@@ -529,6 +537,8 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
         else:
             print(" * Delta_wavelength array is emtpy. No plots being made. \n")
 
+    return median_diff
+
 
 
 if __name__ == '__main__':
@@ -552,5 +562,6 @@ if __name__ == '__main__':
     plot_names = [hist_name, deltas_name, msacolormap_name]
 
     # Run the principal function of the script
-    compare_wcs(infile_name, msa_conf_root=msa_conf_root, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
-                plot_names=plot_names, show_figs=True, save_figs=False)
+    median_diff = compare_wcs(infile_name, msa_conf_root=msa_conf_root, esa_files_path=esa_files_path,
+                              auxiliary_code_path=auxiliary_code_path, plot_names=plot_names,
+                              show_figs=True, save_figs=False)
