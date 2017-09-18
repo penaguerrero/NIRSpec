@@ -61,7 +61,7 @@ def output_hdul(request, config):
 '''
 @pytest.fixture(scope="module")
 def input_hdul(request, config):
-    step = "A_assign_wcs"
+    step = "B_assign_wcs"
     if  config.has_option(step, "input_file"):
         hdul, fdata = core_utils.read_fits(config.get(step, "input_file"), info=True, show_hdr=True)
         return hdul
@@ -70,7 +70,7 @@ def input_hdul(request, config):
 
 @pytest.fixture(scope="module")
 def output_hdul(request, config):
-    step = "A_assign_wcs"
+    step = "B_assign_wcs"
     if  config.has_option(step, "output_file"):
         hdul, fdata = core_utils.read_fits(config.get(step, "output_file"), info=True, show_hdr=True)
         return hdul

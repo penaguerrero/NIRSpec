@@ -87,24 +87,29 @@ def validate_wcs_extract2d(output_hdul):
     infile_name = output_hdul.initial_input_file.replace(".fits", "_assign_wcs_extract_2d.fits")
     esa_files_path = output_hdul.esaroot
 
+    # define the threshold difference between the pipeline output and the ESA files for the pytest to pass or fail
+    threshold_diff = 1.0e-14
+
     if extract_2d_utils.check_FS_true(output_hdul):
         # Find what slit the data corresponds to
         ext, slit = extract_2d_utils.find_which_slit(output_hdul)
         if (slit is not None) or (slit != "NULL"):
             median_diff = compare_wcs_fs.compare_wcs(infile_name, esa_files_path=esa_files_path,
                                                      auxiliary_code_path=None, plot_names=None,
-                                                     show_figs=False, save_figs=False)
+                                                     show_figs=False, save_figs=False,
+                                                  threshold_diff=threshold_diff)
 
     elif extract_2d_utils.check_MOS_true(output_hdul):
         msa_conf_root = output_hdul.msa_conf_root
         median_diff = compare_wcs_mos.compare_wcs(infile_name, msa_conf_root=msa_conf_root,
                                                   esa_files_path=esa_files_path, auxiliary_code_path=None,
-                                                  plot_names=None, show_figs=False, save_figs=False)
+                                                  plot_names=None, show_figs=False, save_figs=False,
+                                                  threshold_diff=threshold_diff)
 
     elif extract_2d_utils.check_IFU_true(output_hdul):
-        print ("pytest does not yet include the routine to verify WCS step for IFU data.")
-        #median_diff = compare_wcs_ifu.compare_wcs(infile_name, esa_files_path=esa_files_path, auxiliary_code_path=None,
-        #                                          plot_names=None, show_figs=False, save_figs=False)
+        median_diff = compare_wcs_ifu.compare_wcs(infile_name, esa_files_path=esa_files_path, auxiliary_code_path=None,
+                                                  plot_names=None, show_figs=False, save_figs=False,
+                                                  threshold_diff=threshold_diff)
     else:
         pytest.skip("Skipping pytest: The fits file is not FS, MOS, or IFU. Pytest does not yet include the routine to verify this kind of file.")
     return median_diff

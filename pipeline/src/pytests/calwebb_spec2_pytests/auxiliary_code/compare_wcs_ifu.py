@@ -13,12 +13,12 @@ import wcs_auxiliary_functions as wcsfunc
 """
 This script compares pipeline WCS info with ESA results for Integral Field Unit (IFU) data.
 
-THIS CODE IS NOT FUNCTIONAL YET....
+THIS CODE HAS NOT BEEN TESTED YET....
 
 """
 
 
-def get_esafile(auxiliary_code_path, det, grat, filt, sltname_list, esa_files_path):
+def get_esafile(auxiliary_code_path, det, grat, filt, IFUslice, esa_files_path):
     """
     This function gets the ESA file corresponding to the input given.
     Args:
@@ -27,7 +27,7 @@ def get_esafile(auxiliary_code_path, det, grat, filt, sltname_list, esa_files_pa
         det: str, e.g "NRS1"
         grat: str, grating
         filt: str, filter
-        sltname_list: list, slit from data extension
+        IFUslice: string, IFU slice, e.g. '02'
         esa_files_path: str, full path of where to find all ESA intermediary products to make comparisons for the tests
 
     Returns:
@@ -46,30 +46,19 @@ def get_esafile(auxiliary_code_path, det, grat, filt, sltname_list, esa_files_pa
         file4detector = 0
     elif det == "NRS2":
         file4detector = 1
-    for NID, nid_dict_key in CV3_testdata_used4build7.CV3_testdata_dict["FS"]["NID"].items():
+    for NID, nid_dict_key in CV3_testdata_used4build7.CV3_testdata_dict["IFU"]["NID"].items():
         if nid_dict_key["grism"] == grat:
             if nid_dict_key["filter"] == filt:
                 CV3filename = nid_dict_key["CV3filename"][file4detector]
                 print ("NID of ESA file:", NID)
                 print("CV3filename =", CV3filename)
-    for sltname in sltname_list:
-        # change the format of the string to match the ESA trace
-        sltname = sltname.split("S")[1]
-        if sltname[-1] == "A1":
-            sltname = "A_"+sltname.split("A")[0]+"_1"
-        elif sltname[-1] == "A2":
-            sltname = "A_"+sltname.split("A")[0]+"_2"
-        elif sltname[-1] == "A":
-            sltname = "A_"+sltname.split("A")[0]+"_"
-        elif sltname[-1] == "B":
-            sltname = "B_"+sltname.split("B")[0]+"_"
 
     # the ESA direcoty names use/follow their name conventions
     ESA_dir_name = CV3filename.split("_")[0].replace("NRS", "")+"_"+NID+"_JLAB88"
-    esafile_directory = esa_files_path+ESA_dir_name+"/"+ESA_dir_name+"_trace_SLIT"
+    esafile_directory = esa_files_path+ESA_dir_name+"/"+ESA_dir_name+"_trace_IFU"
 
     # to match current ESA intermediary files naming convention
-    esafile_basename = "Trace_SLIT_"+sltname+ESA_dir_name+".fits"
+    esafile_basename = "Trace_IFU_Slice_"+IFUslice+"_"+ESA_dir_name+".fits"
     print ("Using this ESA file: \n", "Directory =", esafile_directory, "\n", "File =", esafile_basename)
     esafile = os.path.join(esafile_directory, esafile_basename)
     return esafile
@@ -249,7 +238,7 @@ def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=N
 
 
 def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
-                show_figs=True, save_figs=False, plot_names=None, debug=False):
+                show_figs=True, save_figs=False, plot_names=None, threshold_diff=1.0e-14, debug=False):
     """
     This function does the WCS comparison from the world coordinates calculated using the
     compute_world_coordinates.py script with the ESA files. The function calls that script.
@@ -263,6 +252,7 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
         save_figs: boolean, save the plots (the 3 plots can be saved or not independently with the function call)
         plot_names: list of 3 strings, desired names (if names are not given, the plot function will name the plots by
                     default)
+        threshold_diff: float, threshold difference between pipeline output and ESA file
         debug: boolean, if true a series of print statements will show on-screen
 
     Returns:
@@ -285,7 +275,7 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
     if auxiliary_code_path is None:
         auxiliary_code_path = "./"
 
-    #compute_world_coordinates.compute_world_coordinates(infile_name)
+    compute_world_coordinates.compute_world_coordinates(infile_name)
 
     # The world coordinate file was created but it needs to be renamed
     basenameinfile_name = os.path.basename(infile_name)
@@ -301,9 +291,7 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
     #os.system("mv "+wcoordfile+" "+cwc_fname)
 
     # loop over the slits
-    sltname_list = []
     wchdu = fits.open(cwc_fname)
-    #n_ext = len(wchdu)
     sci_ext_list = wcsfunc.get_sci_extensions(infile_name)
     print ('sci_ext_list=', sci_ext_list, '\n')
 
@@ -312,73 +300,72 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
         print("   which corresponds to ext:", i+1, " of file:", cwc_fname)
         hdr = wchdu[i+1].header
 
-        # what is the slit of this exposure
+        # what is the slice of this exposure
         pslit = hdr["SLIT"]
-        print("SLIT = ", pslit)
+        IFUslice = "0"+pslit
+        print("slice = ", IFUslice)
 
         # for matched spectrum, get the wavelength and Delta_Y values
         fdata = fits.getdata(infile_name, ext=s_ext)
-        pwave = fdata[0,:]
+        pwave = fdata[0,:]*1.0e-6
         pdy = fdata[3,:]
         pskyx = fdata[1,:]
         pskyy = fdata[2,:]
 
-        # get the origin of the subwindow
-        px0 = fits.getval(infile_name, "SLTSTRT1", ext=s_ext)+fits.getval(infile_name, "SUBSTRT1", ext=0)-1
-        py0 = fits.getval(infile_name, "SLTSTRT2", ext=s_ext)+fits.getval(infile_name, "SUBSTRT2", ext=0)-1
-        sltname = fits.getval(infile_name, "SLTNAME", ext=s_ext)
-        sltname_list.append(sltname)
-        n_p = np.shape(fdata)
-        npx = n_p[0]
-        npy = n_p[1]
-        print("npx+1=", npx+1, "px0_list=", px0)
-        px = np.arange(1, npx+1)+np.array(px0)
-        py = np.arange(1, npy+1)+np.array(py0)
-        print  ("Pipeline subwindow corner pixel ID: ", px0, py0)
+        # get the subwindow origin (technically no subwindows for IFU, but need it for comparing with IDT extractions)
+        px0 = fits.getval(cwc_fname, "CRVAL1", 1)
+        py0 = fits.getval(cwc_fname, "CRVAL2", 1)
+        if debug:
+            print ("px0=",px0, "   py0=", py0)
+
+        # get the count rates for this spectrum
+        counts = fits.getdata(infile_name, 1)
+        n_p = np.shape(pwave)
+        if debug:
+            print("n_p =", np.shape(pwave))
+        npx = n_p[1]
+        npy = n_p[0]
+        px = np.arange(npx)+px0
+        py = np.arange(npy)+py0
+        if debug:
+            print  ("px =", px)
+            print  ("px0+npx-1 =", px0+npx-1)
+            print  ("py =", py)
+            print  ("py0+npy-1 =", py0+npy-1)
 
         # read in ESA data
-        esafile = get_esafile(auxiliary_code_path, det, grat, filt, sltname_list, esa_files_path)
+        esafile = get_esafile(auxiliary_code_path, det, grat, filt, IFUslice, esa_files_path)
         esahdulist = fits.open(esafile)
-        #print ("* ESA file contents ")
-        #esahdulist.info()
+        print ("* ESA file contents ")
+        esahdulist.info()
         esahdr1 = esahdulist[1].header
         enext = []
         for ext in esahdulist:
             enext.append(ext)
-        if det == "NRS1":
-            eflux = fits.getdata(esafile, 1)
-            ewave = fits.getdata(esafile, 4)
-            edy = fits.getdata(esafile, 5)
-        if det == "NRS2":
-            eflux = fits.getdata(esafile, 6)
-            ewave = fits.getdata(esafile, 9)
-            edy = fits.getdata(esafile, 10)
+        eflux = fits.getdata(esafile, 1)
+        ewave = fits.getdata(esafile, 4)
+        edy = fits.getdata(esafile, 5)
+        emsax = fits.getdata(esafile, 6)
+        emsay = fits.getdata(esafile, 7)
         esahdulist.close()
         n_p = np.shape(eflux)
         nex = n_p[1]
         ney = n_p[0]
         # get the origin of the subwindow
-        if det == "NRS1":
-            ex0 = esahdr1["CRVAL1"] - esahdr1["CRPIX1"] + 1
-            ey0 = esahdr1["CRVAL2"] - esahdr1["CRPIX2"] + 1
-        else:
-            ex0 = 2048.0 - (esahdr1["CRPIX1"] - esahdr1["CRVAL1"] + 1)
-            ey0 = 2048.0 - (esahdr1["CRPIX2"] - esahdr1["CRVAL2"] + 1)
+        ex0 = esahdr1["CRVAL1"] - esahdr1["CRPIX1"] + 1
+        ey0 = esahdr1["CRVAL2"] - esahdr1["CRPIX2"] + 1
         ex = np.arange(nex) + ex0
         ey = np.arange(ney) + ey0
         print("ESA subwindow corner pixel ID: ", ex0, ey0)
         if debug:
             print("From ESA file: ")
             print("   ex0 =", ex0)
-            print("   ex0+nex-1 =", ex0+nex-1)
             print("   ey0 =", ey0)
-            print("   ey0+ney-1 =", ey0+ney-1)
             print("   ex=", ex, "   ey=", ey)
 
         # match up the correct elements in each data set
         subpx, subex = wcsfunc.do_idl_match(px, ex)
         subpy, subey = wcsfunc.do_idl_match(py, ey)
-        print("matched elements in the 2D spectra: ", len(subex), len(subey))
         imp, ime = [], []
         for spy in subpy:
             im0 = subpx + npx * spy
@@ -389,7 +376,12 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
         imp, ime = np.array(imp), np.array(ime)
         imp, ime  = imp.flatten(), ime.flatten()
 
-        # get the difference between the two in units of resels
+        if debug:
+            print ("SAHPES subpx, subex: ", np.shape(subpx), np.shape(subex))
+            print ("SHAPES subpy, subey: ", np.shape(subpy), np.shape(subey))
+
+
+        # get the difference between the two in units of m
         # do not include pixels where one or the other solution is 0 or NaN
         flat_pwave, flat_ewave = pwave.flatten(), ewave.flatten()
         ig = []
@@ -402,9 +394,6 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             delw = flat_pwave[imp[ig_i]] - flat_ewave[ime[ig_i]]
             delwave.append(delw)
         delwave = np.array(delwave)
-        for dw in delwave:
-            if not np.isfinite(dw):
-                print("Got a NaN in delwave array!, median and standard deviation will fail.")
 
         pxr, pyr = np.array([]), np.array([])
         for _ in range(npy):
@@ -416,6 +405,17 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
                 pyr = np.concatenate((pyr, rpy_i))
         pyr = pyr.astype(int)
 
+        if debug:
+            print("shapes of px, py: ", np.shape(px), np.shape(py))
+            print("shapes of pxr, pyr: ", np.shape(pxr), np.shape(pyr))
+            print("shapes of pdy, edy: ", np.shape(pdy), np.shape(edy))
+            print("shapes of ig, delwave: ", np.shape(ig), np.shape(delwave))
+            print("shapes of pwave, ewave, imp, ime: ", np.shape(pwave), np.shape(ewave), np.shape(imp), np.shape(ime))
+
+        for dw in delwave:
+            if not np.isfinite(dw):
+                print("Got a NaN!, median and standard deviation will fail.")
+
         pxrg, pyrg, deldy = [], [], []
         flat_pdy, flat_edy = pdy.flatten(), edy.flatten()
         for ig_i in ig:
@@ -426,9 +426,6 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             deldy_i = flat_pdy[imp[ig_i]] - flat_edy[ime[ig_i]]
             deldy.append(deldy_i)
         pxrg, pyrg, deldy = np.array(pxrg), np.array(pyrg), np.array(deldy)
-        for d in deldy:
-            if not np.isfinite(d):
-                print("Got a NaN in deldy array!, median and standard deviation will fail.")
 
         # get the median and standard deviations
         median_diff = False
@@ -439,7 +436,7 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             print("\n  deldy:   median =", deldy_median, "   stdev =", deldy_stddev)
 
             # This is the key argument for the assert pytest function
-            if delwave_median <= 1.0e-14:
+            if delwave_median <= threshold_diff:
                 median_diff = True
 
         # PLOTS
@@ -450,7 +447,7 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             # HISTOGRAM
             if filt == "OPAQUE":
                 filt = lamp
-            title = filt+"   "+grat+"   Slitlet ID: "+slitlet_id
+            title = filt+"   "+grat+"   slice ID: "+IFUslice
             xmin1 = min(delwave) - (max(delwave)-min(delwave))*0.1
             xmax1 = max(delwave) + (max(delwave)-min(delwave))*0.1
             xlabel1, ylabel1 = r"$\lambda_{pipe}$ - $\lambda_{ESA}$ (10$^{-10}$m)", "N"
@@ -499,16 +496,14 @@ if __name__ == '__main__':
     # input parameters that the script expects
     auxiliary_code_path = pipeline_path+"/src/pytests/calwebb_spec2_pytests/auxiliary_code"
     infile_name = "jwtest1010001_01101_00001_NRS1_rate_short_assign_wcs_extract_2d.fits"
-    msa_conf_root = "/Users/pena/Documents/PyCharmProjects/nirspec/pipeline/build7/test_data/MOS_CV3/complete_pipeline_testset"
     esa_files_path=pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_IFU/"
 
     # set the names of the resulting plots
-    hist_name = "jwtest1010001_01101_00001_wcs_histogram.jpg"
-    deltas_name = "jwtest1010001_01101_00001_wcs_deltas.jpg"
-    msacolormap_name = "jwtest1010001_01101_00001_wcs_msacolormap.jpg"
+    hist_name = infile_name.replace("fits", "")+"_wcs_histogram.jpg"
+    deltas_name = infile_name.replace("fits", "")+"_wcs_deltas.jpg"
+    msacolormap_name = infile_name.replace("fits", "")+"_wcs_msacolormap.jpg"
     plot_names = [hist_name, deltas_name, msacolormap_name]
 
     # Run the principal function of the script
-    median_diff = compare_wcs(infile_name, msa_conf_root=msa_conf_root, esa_files_path=esa_files_path,
-                              auxiliary_code_path=auxiliary_code_path, plot_names=plot_names,
-                              show_figs=True, save_figs=True)
+    median_diff = compare_wcs(infile_name, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
+                              plot_names=plot_names, show_figs=True, save_figs=False, threshold_diff=1.0e-14)

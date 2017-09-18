@@ -246,7 +246,7 @@ def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=N
 
 
 def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_code_path=None,
-                show_figs=True, save_figs=False, plot_names=None, debug=False):
+                show_figs=True, save_figs=False, plot_names=None, threshold_diff=1.0e-14, debug=False):
     """
     This function does the WCS comparison from the world coordinates calculated using the
     compute_world_coordinates.py script with the ESA files. The function calls that script.
@@ -261,6 +261,7 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
         save_figs: boolean, save the plots (the 3 plots can be saved or not independently with the function call)
         plot_names: list of 3 strings, desired names (if names are not given, the plot function will name the plots by
                     default)
+        threshold_diff: float, threshold difference between pipeline output and ESA file
         debug: boolean, if true a series of print statements will show on-screen
 
     Returns:
@@ -489,7 +490,7 @@ def compare_wcs(infile_name, msa_conf_root=None, esa_files_path=None, auxiliary_
             print("\n  deldy:   median =", deldy_median, "   stdev =", deldy_stddev)
 
             # This is the key argument for the assert pytest function
-            if delwave_median <= 1.0e-14:
+            if delwave_median <= threshold_diff:
                 median_diff = True
 
         # PLOTS
@@ -564,4 +565,4 @@ if __name__ == '__main__':
     # Run the principal function of the script
     median_diff = compare_wcs(infile_name, msa_conf_root=msa_conf_root, esa_files_path=esa_files_path,
                               auxiliary_code_path=auxiliary_code_path, plot_names=plot_names,
-                              show_figs=True, save_figs=False)
+                              show_figs=True, save_figs=False, threshold_diff=1.0e-14)
