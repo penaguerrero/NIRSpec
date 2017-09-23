@@ -19,7 +19,7 @@ from ..auxiliary_code import compare_wcs_ifu
 
 # Default names of pipeline output files
 prev_file_name = "_assign_wcs_subtract_images"
-out_file_name = "_imprint"
+out_file_name = "_extract_2d"
 
 # This is the default name the pipeline will give an output file that did not have association (ASN) files
 # for the background and imprint subtraction steps
@@ -34,13 +34,13 @@ def input_hdul(request, config):
         working_directory = config.get(initiate_calwebb_spc2, "working_directory")
         initial_input_file = config.get(initiate_calwebb_spc2, "input_file")
         initial_input_file_fullpath = os.path.join(working_directory, initial_input_file)
-        next_input_file = initial_input_file_fullpath.replace(".fits", prev_file_name+".fits")
-        if not os.path.isfile(next_input_file):
-            next_input_file = initial_input_file_fullpath.replace(".fits", no_ASN_files_in+".fits")
-        hdul = core_utils.read_hdrfits(next_input_file, info=True, show_hdr=True)
-        return hdul, next_input_file
+        step_input_file = initial_input_file_fullpath.replace(".fits", prev_file_name+".fits")
+        if not os.path.isfile(step_input_file):
+            step_input_file = initial_input_file_fullpath.replace(".fits", no_ASN_files_in+".fits")
+        hdul = core_utils.read_hdrfits(step_input_file, info=True, show_hdr=True)
+        return hdul, step_input_file
     else:
-        pytest.skip("extract_2d needs an input_file")
+        pytest.skip("skipping extract_2d test, step needs an input_file")
 
 
 # fixture to read the output file header
@@ -57,24 +57,27 @@ def output_hdul(request, config):
     initial_input_file = config.get(initiate_calwebb_spc2, "input_file")
     #data_directory = config.get(initiate_calwebb_spc2, "data_directory")
     #initial_input_file_fullpath = os.path.join(data_directory, initial_input_file)
-    next_input_file = os.path.join(working_directory, initial_input_file.replace(".fits", prev_file_name+".fits"))
-    if os.path.isfile(next_input_file):
-        output_file = next_input_file.replace(".fits", out_file_name+".fits")
+    step_input_file = os.path.join(working_directory, initial_input_file.replace(".fits", prev_file_name+".fits"))
+    if os.path.isfile(step_input_file):
+        output_file = step_input_file.replace(".fits", out_file_name+".fits")
     else:
-        next_input_file = os.path.join(working_directory, initial_input_file.replace(".fits", no_ASN_files_in+".fits"))
-        output_file = next_input_file.replace(".fits", no_ASN_files_out+".fits")
+        step_input_file = os.path.join(working_directory, initial_input_file.replace(".fits", no_ASN_files_in+".fits"))
+        output_file = step_input_file.replace(".fits", no_ASN_files_out+".fits")
     stp = Extract2dStep()
     run_calwebb_spec2 = config.get("run_calwebb_spec2_in_full", "run_calwebb_spec2")
     # if run_calwebb_spec2 is True calwebb_spec2 will be called, else individual steps will be ran
     if not run_calwebb_spec2:
-        print ("Will run "+step+" step ...")
-        #result = stp.call(next_input_file)
-        #result.save(output_file)
-    if config.get("steps", step):
-        hdul = core_utils.read_hdrfits(output_file, info=True, show_hdr=True)
-        return initial_input_file, hdul, next_input_file, esaroot, msa_conf_root
+        if config.get("steps", step):
+            print ("Will run "+step+" step ...")
+            if os.path.isfile(step_input_file):
+                #result = stp.call(step_input_file)
+                #result.save(output_file)
+                hdul = core_utils.read_hdrfits(output_file, info=True, show_hdr=True)
+                return hdul, output_file
+        else:
+            pytest.skip("Skiping "+step+" because the input file does not exist.")
     else:
-        pytest.skip("The step "+step+" is set to False, so it was skiped. The pytest needs the extract_2d output_file.")
+        pytest.skip("Skiping "+step+". Step set to False in configuration file.")
 
 
 
