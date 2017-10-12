@@ -20,6 +20,7 @@ def s_ext2d_exists(output_hdul):
     result = "S_EXTR2D" in output_hdul
     return result
 
+
 ### VALIDATION FUNCTIONS
 
 # Functions to compare WCS pipeline info with ESA results

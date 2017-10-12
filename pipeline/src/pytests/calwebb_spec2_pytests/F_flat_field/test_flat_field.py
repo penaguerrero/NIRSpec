@@ -1,23 +1,24 @@
 from __future__ import print_function, division
+
 """
-py.test module for unit testing the imprint_subtract step.
+py.test module for unit testing the extract_2d step.
 """
 
 import pytest
 import os
-from jwst.imprint.imprint_step import ImprintStep
+from jwst.flatfield.flat_field_step import FlatFieldStep
 
 from .. import core_utils
-from . import imprint_subtract_utils
+from . import flat_field_utils
+#from ..auxiliary_code import
 
 
 # Set up the fixtures needed for all of the tests, i.e. open up all of the FITS files
 
-
 # Default names of pipeline input and output files
 @pytest.fixture(scope="module")
 def set_inandout_filenames(request, config):
-    step = "imprint_subtract"
+    step = "flat_field"
     step_dict = dict(config.items("steps"))
     initial_input_file = config.get("calwebb_spec2_input_file", "input_file")
     #step_input_filename, step_output_filename = core_utils.get_step_inandout_filename(step, initial_input_file, step_dict)
@@ -35,7 +36,7 @@ def output_hdul(set_inandout_filenames, config):
     step = set_inandout_filenames[1]
     output_file = set_inandout_filenames[2]
     step_input_file = os.path.join(working_directory, initial_input_file)
-    stp = ImprintStep()
+    stp = FlatFieldStep()
     run_calwebb_spec2 = config.get("run_calwebb_spec2_in_full", "run_calwebb_spec2")
     # if run_calwebb_spec2 is True calwebb_spec2 will be called, else individual steps will be ran
     if not run_calwebb_spec2:
@@ -50,10 +51,3 @@ def output_hdul(set_inandout_filenames, config):
             pytest.skip("Skiping "+step+" because the input file does not exist.")
     else:
         pytest.skip("Skiping "+step+". Step set to False in configuration file.")
-
-
-
-# Unit tests
-
-def test_s_imprint_exists(output_hdul):
-    assert imprint_subtract_utils.s_imprint_exists(output_hdul)

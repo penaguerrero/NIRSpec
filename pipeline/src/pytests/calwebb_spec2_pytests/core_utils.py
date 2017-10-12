@@ -1,9 +1,17 @@
 from __future__ import print_function, division
 from astropy.io import fits
+import collections
+import os
 
 '''
 This script contains functions frequently used in the test suite.
 '''
+
+def getlist(option, sep=',', chars=None):
+    """Return a list from a ConfigParser option. By default,
+       split on a comma and strip whitespaces."""
+    return [ chunk.strip(chars) for chunk in option.split(sep) ]
+
 
 def read_hdrfits(fits_file_name, info=False, show_hdr=False):
     '''
@@ -69,7 +77,7 @@ def get_keywd_val(fits_file_name, keywd, ext=0):
 
 def get_sci_extensions(fits_file_name):
     """
-    This functions obtains all the science extensions in the given file
+    This function obtains all the science extensions in the given file
     Args:
         fits_file_name: name of the fits file of interest
 
@@ -82,3 +90,127 @@ def get_sci_extensions(fits_file_name):
         if hdu.name == "SCI":
             sci_list.append(ext)
     return sci_list
+
+
+def get_step_inandout_filename(step, initial_input_file, steps_dict):
+    """
+    This function determines the corresponding input file name for the step (i.e. the pipeline expects a specific
+    format and name for each step). This is according to which steps where set to True  in the configuration file.
+    Args:
+        step: string, pipeline step to be ran
+        initial_input_file: the base name of the input file for calwebb_spec2
+        steps_dict: dictionary, pipeline steps listed in the input configuration file
+
+    Returns:
+        step_input_filename: string, the base name of the input file for the specified step
+        step_output_filename: string, the base name of the output file for the specified step
+        in_file_suffix : string, the suffix added to the initial file name for the step input file
+        out_file_suffix : string, the suffix added to the initial file name for the step output file
+    """
+
+    # dictionary of the steps and corresponding strings to be added to the file name after the step has ran
+    step_string_dict = collections.OrderedDict()
+    step_string_dict["bkg_subtract"] = "_subtract_images"
+    step_string_dict["assign_wcs"] = "_assign_wcs"
+    step_string_dict["imprint_subtract"] = "_imprint"
+    step_string_dict["msa_flagging"] = "_msa_flag"
+    step_string_dict["extract_2d"] = "_extract_2d"
+    step_string_dict["flat_field"] = "_flat_field"
+    step_string_dict["straylight"] = "_stray"
+    step_string_dict["fringe"] = "_fringe"
+    step_string_dict["pathloss"] = "_pathloss"
+    step_string_dict["photom"] = "_photom"
+    step_string_dict["resample_spec"] = "_resample"
+    step_string_dict["cube_build"] = "_cube"
+    step_string_dict["extract_1d"] = "_extract_1d"
+
+    # get all the steps set to run
+    steps_set_to_True = []
+    for stp, val in steps_dict.items():
+        if val:
+            steps_set_to_True.append(stp)
+
+    # order the steps set to True according to the ordered dictionary step_string_dict
+    ordered_steps_set_to_True = []
+    for key in step_string_dict:
+        if key in steps_set_to_True:
+            ordered_steps_set_to_True.append(key)
+
+    # get the right input and output name according to the steps set to True in the configuration file
+    step_input_filename, step_output_filename, in_file_suffix, out_file_suffix = initial_input_file, "", "", ""
+    for i, stp in enumerate(ordered_steps_set_to_True):
+        if stp == step:
+            out_file_suffix = step_string_dict[stp]
+            step_output_filename = initial_input_file.replace(".fits", out_file_suffix+".fits")
+            break
+        else:
+            in_file_suffix = step_string_dict[ordered_steps_set_to_True[i]]
+            step_input_filename = step_input_filename.replace(".fits", in_file_suffix+".fits")
+
+    return in_file_suffix, out_file_suffix, step_input_filename, step_output_filename
+
+
+def read_True_steps_suffix_map(txtfile_name_with_path):
+    """
+    This function reads the text file that contains all the steps set to True in the configuration file, the
+    corresponding suffix, and whether they were completed or not.
+
+    Args:
+        txtfile_name_with_path: string, full name and path of the text file
+
+    Returns:
+        steps_list: list, steps set to True in configuration file
+        suffix_list: list, suffix for the output file corresponding to each step had it completed
+        completion_list: list, strings of True or False depending on whether the step completed or not
+
+    """
+    steps_list, suffix_list, completion_list = [], [], []
+    with open(txtfile_name_with_path, "r") as tf:
+        for line in tf.readlines():
+            if "#" not in line:
+                info = line.split()
+                steps_list.append(info[0])
+                suffix_list.append(info[1])
+                completion_list.append(info[2])
+    return steps_list, suffix_list, completion_list
+
+
+def add_completed_steps(True_steps_suffix_map, step, outstep_file_suffix, step_completed):
+    """
+    This function adds the completed steps along with the corresponding suffix of the output file name into a text file.
+    Args:
+        True_steps_suffix_map: string, full path of where the text file will be written into
+        step: string, pipeline step just ran
+        outstep_file_suffix: string, suffix added right before .fits to the input file
+        step_completed: boolean, True if the step was completed and False if it was skiped
+
+    Returns:
+        nothing
+    """
+    print ("Map saved at: ", True_steps_suffix_map)
+    line2write = "{:<20} {:<20} {:<20}".format(step, outstep_file_suffix, str(step_completed))
+    print (line2write)
+    with open(True_steps_suffix_map, "a") as tf:
+        tf.write(line2write+"\n")
+
+
+def get_correct_input_step_filename(initial_input_file, steps_list, suffix_list, completion_list):
+    """
+    This function gets the name of the input and output step files depending on the info stored in the step mapping
+    file.
+
+    Args:
+        initial_input_file: string, name of the input file to initialize calwebb_spec2
+        steps_list: list, steps set to True in configuration file
+        suffix_list: list, suffix corresponding to the output file for the step
+        completion_list: list, strings of booleans depending if the step ran to completion or not
+
+    Returns:
+        step_input_filename: string, base name of the input file for the step
+    """
+    for i, stp in enumerate(steps_list):
+        if i == 0:
+            step_input_filename = initial_input_file
+        elif bool(completion_list[i]):
+            step_input_filename = initial_input_file.replace(".fits", suffix_list[i]+".fits")
+    return step_input_filename

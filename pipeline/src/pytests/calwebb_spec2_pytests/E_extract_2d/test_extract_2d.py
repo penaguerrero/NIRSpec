@@ -17,52 +17,27 @@ from ..auxiliary_code import compare_wcs_ifu
 
 # Set up the fixtures needed for all of the tests, i.e. open up all of the FITS files
 
-# Default names of pipeline output files
-prev_file_name = "_assign_wcs_subtract_images"
-out_file_name = "_extract_2d"
-
-# This is the default name the pipeline will give an output file that did not have association (ASN) files
-# for the background and imprint subtraction steps
-no_ASN_files_in = "_assign_wcs"
-no_ASN_files_out = "_extract_2d"
-
-# fixture to read the config file
+# Default names of pipeline input and output files
 @pytest.fixture(scope="module")
-def input_hdul(request, config):
-    initiate_calwebb_spc2 = "calwebb_spec2_input_file"
-    if config.has_option(initiate_calwebb_spc2, "input_file"):
-        working_directory = config.get(initiate_calwebb_spc2, "working_directory")
-        initial_input_file = config.get(initiate_calwebb_spc2, "input_file")
-        initial_input_file_fullpath = os.path.join(working_directory, initial_input_file)
-        step_input_file = initial_input_file_fullpath.replace(".fits", prev_file_name+".fits")
-        if not os.path.isfile(step_input_file):
-            step_input_file = initial_input_file_fullpath.replace(".fits", no_ASN_files_in+".fits")
-        hdul = core_utils.read_hdrfits(step_input_file, info=True, show_hdr=True)
-        return hdul, step_input_file
-    else:
-        pytest.skip("skipping extract_2d test, step needs an input_file")
+def set_inandout_filenames(request, config):
+    step = "extract_2d"
+    step_dict = dict(config.items("steps"))
+    initial_input_file = config.get("calwebb_spec2_input_file", "input_file")
+    #step_input_filename, step_output_filename = core_utils.get_step_inandout_filename(step, initial_input_file, step_dict)
+    suffix_and_filenames = core_utils.get_step_inandout_filename(step, initial_input_file, step_dict)
+    in_file_suffix, out_file_suffix, step_input_filename, step_output_filename = suffix_and_filenames
+    return initial_input_file, step, step_input_filename, step_output_filename
 
 
 # fixture to read the output file header
 @pytest.fixture(scope="module")
-def output_hdul(request, config):
-    step = "extract_2d"
-    # get information from the configuration file
-    esaroot = config.get("esa_intermediary_products", "esa_files_path")
-    msa_conf_root = ""
-    if "MOS" in esaroot:
-        msa_conf_root = config.get("esa_intermediary_products", "msa_conf_root")
+def output_hdul(set_inandout_filenames, config):
     initiate_calwebb_spc2 = "calwebb_spec2_input_file"
     working_directory = config.get(initiate_calwebb_spc2, "working_directory")
-    initial_input_file = config.get(initiate_calwebb_spc2, "input_file")
-    #data_directory = config.get(initiate_calwebb_spc2, "data_directory")
-    #initial_input_file_fullpath = os.path.join(data_directory, initial_input_file)
-    step_input_file = os.path.join(working_directory, initial_input_file.replace(".fits", prev_file_name+".fits"))
-    if os.path.isfile(step_input_file):
-        output_file = step_input_file.replace(".fits", out_file_name+".fits")
-    else:
-        step_input_file = os.path.join(working_directory, initial_input_file.replace(".fits", no_ASN_files_in+".fits"))
-        output_file = step_input_file.replace(".fits", no_ASN_files_out+".fits")
+    initial_input_file = set_inandout_filenames[0]
+    step = set_inandout_filenames[1]
+    output_file = set_inandout_filenames[2]
+    step_input_file = os.path.join(working_directory, initial_input_file)
     stp = Extract2dStep()
     run_calwebb_spec2 = config.get("run_calwebb_spec2_in_full", "run_calwebb_spec2")
     # if run_calwebb_spec2 is True calwebb_spec2 will be called, else individual steps will be ran
