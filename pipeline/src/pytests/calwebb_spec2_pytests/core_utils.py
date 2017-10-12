@@ -196,8 +196,8 @@ def add_completed_steps(True_steps_suffix_map, step, outstep_file_suffix, step_c
 
 def get_correct_input_step_filename(initial_input_file, steps_list, suffix_list, completion_list):
     """
-    This function gets the name of the input and output step files depending on the info stored in the step mapping
-    file.
+    This function gets the name of the input step file depending on the info stored in the steps mapping
+    text file.
 
     Args:
         initial_input_file: string, name of the input file to initialize calwebb_spec2
@@ -208,9 +208,24 @@ def get_correct_input_step_filename(initial_input_file, steps_list, suffix_list,
     Returns:
         step_input_filename: string, base name of the input file for the step
     """
+    step_input_filename = initial_input_file
     for i, stp in enumerate(steps_list):
-        if i == 0:
-            step_input_filename = initial_input_file
-        elif bool(completion_list[i]):
-            step_input_filename = initial_input_file.replace(".fits", suffix_list[i]+".fits")
+        if str_to_bool(completion_list[i]):
+            step_input_filename = step_input_filename.replace(".fits", suffix_list[i]+".fits")
     return step_input_filename
+
+
+def str_to_bool(s):
+    """
+    This function converts a string of True or False into a boolean value.
+    Args:
+        s: string
+
+    Returns:
+        boolean value of s
+    """
+    if s == 'True':
+         return True
+    elif s == 'False':
+         return False
+

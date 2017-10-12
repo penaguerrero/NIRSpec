@@ -45,6 +45,7 @@ def output_hdul(set_inandout_filenames, config):
     True_steps_suffix_map = set_inandout_filenames[5]
     txt_name = os.path.join(working_directory, True_steps_suffix_map)
     step_input_file = os.path.join(working_directory, step_input_filename)
+    step_output_file = os.path.join(working_directory, output_file)
     stp = AssignWcsStep()
     run_calwebb_spec2 = config.getboolean("run_calwebb_spec2_in_full", "run_calwebb_spec2")
     # if run_calwebb_spec2 is True calwebb_spec2 will be called, else individual steps will be ran
@@ -54,17 +55,18 @@ def output_hdul(set_inandout_filenames, config):
             print ("*** Step "+step+" set to True")
             if os.path.isfile(step_input_file):
                 #result = stp.call(step_input_file)
-                #result.save(output_file)
+                #result.save(step_output_file)
                 step_completed = True
                 core_utils.add_completed_steps(txt_name, step, outstep_file_suffix, step_completed)
-                hdul = core_utils.read_hdrfits(output_file, info=True, show_hdr=True)
+                hdul = core_utils.read_hdrfits(step_output_file, info=False, show_hdr=False)
                 return hdul
+            else:
+                print("Skipping step. Intput file "+step_input_file+" does not exit.")
+                core_utils.add_completed_steps(txt_name, step, outstep_file_suffix, step_completed)
+                pytest.skip("Skipping "+step+" because the input file does not exist.")
         else:
             core_utils.add_completed_steps(txt_name, step, outstep_file_suffix, step_completed)
-            pytest.skip("Skiping "+step+" because the input file does not exist.")
-    else:
-        core_utils.add_completed_steps(txt_name, step, outstep_file_suffix, step_completed)
-        pytest.skip("Skiping "+step+". Step set to False in configuration file.")
+            pytest.skip("Skipping "+step+". Step set to False in configuration file.")
 
 
 

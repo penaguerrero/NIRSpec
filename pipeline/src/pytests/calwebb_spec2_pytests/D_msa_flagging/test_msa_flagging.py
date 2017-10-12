@@ -16,13 +16,21 @@ from . import msa_flagging_utils
 # Default names of pipeline input and output files
 @pytest.fixture(scope="module")
 def set_inandout_filenames(request, config):
-    step = "imprint_subtract"
+    step = "msa_flagging"
     step_dict = dict(config.items("steps"))
     initial_input_file = config.get("calwebb_spec2_input_file", "input_file")
-    #step_input_filename, step_output_filename = core_utils.get_step_inandout_filename(step, initial_input_file, step_dict)
+    working_directory = config.get("calwebb_spec2_input_file", "working_directory")
+    True_steps_suffix_map = config.get("calwebb_spec2_input_file", "True_steps_suffix_map")
+    txt_name = os.path.join(working_directory, True_steps_suffix_map)
+    steps_list, suffix_list, completion_list = core_utils.read_True_steps_suffix_map(txt_name)
+    step_input_filename = core_utils.get_correct_input_step_filename(initial_input_file, steps_list,
+                                                                     suffix_list, completion_list)
     suffix_and_filenames = core_utils.get_step_inandout_filename(step, initial_input_file, step_dict)
-    in_file_suffix, out_file_suffix, step_input_filename, step_output_filename = suffix_and_filenames
-    return initial_input_file, step, step_input_filename, step_output_filename
+    in_file_suffix, out_file_suffix, _, _ = suffix_and_filenames
+    step_output_filename = step_input_filename.replace(".fits", out_file_suffix+".fits")
+    print ("step_input_filename = ", step_input_filename)
+    print ("step_output_filename = ", step_output_filename)
+    return step, step_input_filename, step_output_filename, in_file_suffix, out_file_suffix, True_steps_suffix_map
 
 
 # fixture to read the output file header
@@ -30,25 +38,34 @@ def set_inandout_filenames(request, config):
 def output_hdul(set_inandout_filenames, config):
     initiate_calwebb_spc2 = "calwebb_spec2_input_file"
     working_directory = config.get(initiate_calwebb_spc2, "working_directory")
-    initial_input_file = set_inandout_filenames[0]
-    step = set_inandout_filenames[1]
+    step = set_inandout_filenames[0]
+    step_input_filename = set_inandout_filenames[1]
     output_file = set_inandout_filenames[2]
-    step_input_file = os.path.join(working_directory, initial_input_file)
+    outstep_file_suffix = set_inandout_filenames[4]
+    True_steps_suffix_map = set_inandout_filenames[5]
+    txt_name = os.path.join(working_directory, True_steps_suffix_map)
+    step_input_file = os.path.join(working_directory, step_input_filename)
+    step_output_file = os.path.join(working_directory, output_file)
     stp = MSAFlagOpenStep()
-    run_calwebb_spec2 = config.get("run_calwebb_spec2_in_full", "run_calwebb_spec2")
+    run_calwebb_spec2 = config.getboolean("run_calwebb_spec2_in_full", "run_calwebb_spec2")
     # if run_calwebb_spec2 is True calwebb_spec2 will be called, else individual steps will be ran
+    step_completed = False
     if not run_calwebb_spec2:
-        if config.get("steps", step):
-            print ("Will run "+step+" step ...")
+        if config.getboolean("steps", step):
+            print ("*** Step "+step+" set to True")
             if os.path.isfile(step_input_file):
-                #result = stp.call(step_input_file)
-                #result.save(output_file)
-                hdul = core_utils.read_hdrfits(output_file, info=True, show_hdr=True)
-                return hdul, output_file
+                result = stp.call(step_input_file)
+                result.save(step_output_file)
+                step_completed = True
+                core_utils.add_completed_steps(txt_name, step, outstep_file_suffix, step_completed)
+                hdul = core_utils.read_hdrfits(step_output_file, info=False, show_hdr=False)
+                return hdul
+            else:
+                core_utils.add_completed_steps(txt_name, step, outstep_file_suffix, step_completed)
+                pytest.skip("Skipping "+step+" because the input file does not exist.")
         else:
-            pytest.skip("Skiping "+step+" because the input file does not exist.")
-    else:
-        pytest.skip("Skiping "+step+". Step set to False in configuration file.")
+            core_utils.add_completed_steps(txt_name, step, outstep_file_suffix, step_completed)
+            pytest.skip("Skipping "+step+". Step set to False in configuration file.")
 
 
 

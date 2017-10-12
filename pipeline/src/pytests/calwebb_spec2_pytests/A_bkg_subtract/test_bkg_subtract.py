@@ -28,7 +28,7 @@ def create_completed_steps_txtfile(True_steps_suffix_map, step_input_file, step,
     # name of the text file to collect the step name and suffix
     print ("Map created at: ", True_steps_suffix_map)
     line0 = "# {:<20}".format("Input file: "+step_input_file)
-    line1 = "# {:<20} {:<20} {:<20}".format("Step", "Added suffix", "Step complition")
+    line1 = "# {:<17} {:<20} {:<20}".format("Step", "Added suffix", "Step complition")
     line2write = "{:<20} {:<20} {:<20}".format(step, outstep_file_suffix, str(step_completed))
     with open(True_steps_suffix_map, "w+") as tf:
         tf.write(line0+"\n")
@@ -62,6 +62,7 @@ def output_hdul(set_inandout_filenames, config):
     True_steps_suffix_map = set_inandout_filenames[5]
     txt_name = os.path.join(working_directory, True_steps_suffix_map)
     step_input_file = os.path.join(working_directory, step_input_filename)
+    step_output_file = os.path.join(working_directory, output_file)
     stp = BackgroundStep()
     run_calwebb_spec2 = config.getboolean("run_calwebb_spec2_in_full", "run_calwebb_spec2")
     # if run_calwebb_spec2 is True calwebb_spec2 will be called, else individual steps will be ran
@@ -79,7 +80,7 @@ def output_hdul(set_inandout_filenames, config):
             print ("*** Step "+step+" set to True")
             if os.path.isfile(step_input_file):
                 print(" The input file ", step_input_filename,"exists... will run step "+step)
-                bkg_list = core_utils.getlist("run_calwebb_spec2_in_full", "additional_arguments")
+                bkg_list = core_utils.getlist("additional_arguments", "bkg_list")
                 existing_bgfiles = 0
                 for bg_file in bkg_list:
                     if os.path.isfile(bg_file):
@@ -88,12 +89,12 @@ def output_hdul(set_inandout_filenames, config):
                     print (" Need at least one background file to continue. Step will be skipped.")
                     create_completed_steps_txtfile(txt_name, step_input_filename, step,
                                                    outstep_file_suffix, step_completed)
-                    pytest.skip("Skiping "+step+" because files listed on bkg_list in the configuration file do not exist.")
+                    pytest.skip("Skipping "+step+" because files listed on bkg_list in the configuration file do not exist.")
                 else:
                     result = stp.call(step_input_file, bkg_list)
                     if result is not None:
-                        result.save(output_file)
-                        hdul = core_utils.read_hdrfits(output_file, info=True, show_hdr=True)
+                        result.save(step_output_file)
+                        hdul = core_utils.read_hdrfits(step_output_file, info=False, show_hdr=False)
                         step_completed = True
                     else:
                         hdul = core_utils.read_hdrfits(step_input_file, info=False, show_hdr=False)
@@ -104,11 +105,11 @@ def output_hdul(set_inandout_filenames, config):
                 print (" The input file does not exist. Skipping step.")
                 create_completed_steps_txtfile(txt_name, step_input_filename, step,
                                                outstep_file_suffix, step_completed)
-                pytest.skip("Skiping "+step+" because the input file does not exist.")
+                pytest.skip("Skipping "+step+" because the input file does not exist.")
         else:
             create_completed_steps_txtfile(txt_name, step_input_filename, step,
                                            outstep_file_suffix, step_completed)
-            pytest.skip("Skiping "+step+". Step set to False in configuration file.")
+            pytest.skip("Skipping "+step+". Step set to False in configuration file.")
 
 
 
