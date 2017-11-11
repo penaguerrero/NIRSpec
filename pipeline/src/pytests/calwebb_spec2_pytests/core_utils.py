@@ -152,7 +152,7 @@ def get_step_inandout_filename(step, initial_input_file, steps_dict):
 
 def read_True_steps_suffix_map(txtfile_name_with_path):
     """
-    This function reads the text file that contains all the steps set to True in the configuration file, the
+    This function reads the text file that contains all the steps in the configuration file, the
     corresponding suffix, and whether they were completed or not.
 
     Args:

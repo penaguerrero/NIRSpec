@@ -73,5 +73,5 @@ def output_hdul(set_inandout_filenames, config):
 
 # Unit tests
 
-#def test_msa_failed_open_exists(output_hdul):
-#    assert msa_flagging_utils.msa_failed_open_exists(output_hdul)
+def test_s_flat_exists(output_hdul):
+    assert flat_field_utils.s_flat_exists(output_hdul)

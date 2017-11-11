@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from astropy.io import fits
 from jwst.assign_wcs.tools.nirspec import compute_world_coordinates
-import wcs_auxiliary_functions as wcsfunc
+import auxiliary_functions as auxfunc
 
 
 """
@@ -216,6 +216,7 @@ def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=N
         if deltas_plt:
             if fig_name is None:
                 fig_name = "FS_wcs_Deltas.jpg"
+        plt.savefig(fig_name)
         print ('\n Plot saved: ', fig_name)
     if show_figs:
         plt.show()
@@ -279,7 +280,7 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
     sltname_list = []
     wchdu = fits.open(cwc_fname)
     #n_ext = len(wchdu)
-    sci_ext_list = wcsfunc.get_sci_extensions(infile_name)
+    sci_ext_list = auxfunc.get_sci_extensions(infile_name)
     print ('sci_ext_list=', sci_ext_list, '\n')
 
     for i, s_ext in enumerate(sci_ext_list):
@@ -351,8 +352,8 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             print("   ex=", ex, "   ey=", ey)
 
         # match up the correct elements in each data set
-        subpx, subex = wcsfunc.do_idl_match(px, ex)
-        subpy, subey = wcsfunc.do_idl_match(py, ey)
+        subpx, subex = auxfunc.do_idl_match(px, ex)
+        subpy, subey = auxfunc.do_idl_match(py, ey)
         print("matched elements in the 2D spectra: ", len(subex), len(subey))
         imp, ime = [], []
         for spy in subpy:

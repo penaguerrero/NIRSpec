@@ -21,6 +21,3 @@ def s_flat_exists(output_hdul):
     return result
 
 
-### VALIDATION FUNCTIONS
-
-# these are taken from James' IDL code

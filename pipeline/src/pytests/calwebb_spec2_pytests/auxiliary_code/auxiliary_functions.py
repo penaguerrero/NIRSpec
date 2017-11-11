@@ -1,6 +1,8 @@
 from __future__ import print_function, division
 import numpy as np
 import os
+from scipy import integrate
+from scipy import interpolate
 from astropy.io import fits
 
 
@@ -117,3 +119,97 @@ def get_esafile(esa_files_path, det, mode, configuration):
         if (grat in fitsfile) and (filt in fitsfile) and (det in fitsfile):
             esafile = fitsfile
     return esafile
+
+
+def idl_tabulate(x, f, p=5):
+    """
+    This is a Python proxy to the IDL int_tabulate function taken from:
+    https://stackoverflow.com/questions/14345001/idls-int-tabulate-scipy-equivalent
+
+    Args:
+        x: array
+        f: array
+        p: integer, integrator order
+
+    Returns:
+        ret: array, integrated values
+    """
+    def newton_cotes(x, f) :
+        if x.shape[0] < 2 :
+            return 0
+        rn = (x.shape[0] - 1) * (x - x[0]) / (x[-1] - x[0])
+        weights = integrate.newton_cotes(rn)[0]
+        # I added this part for the last remaining non 5 points, it will only use the available points
+        lw, lf = len(weights), len(f)
+        if lw != lf:
+            last_weights = []
+            for i, fi in enumerate(f):
+                last_weights.append(weights[i])
+            weights = np.array(last_weights)
+        dot_wf = np.dot(weights, f)
+        return (x[-1] - x[0]) / (x.shape[0] - 1) * dot_wf
+
+    ret = 0
+    for idx in xrange(0, x.shape[0], p - 1) :
+        ret += newton_cotes(x[idx:idx + p], f[idx:idx + p])
+    return ret
+
+
+def idl_valuelocate(arr, vals):
+    """
+    This function is equivalent to value_locate() in IDL.
+
+    Args:
+        arr: array where values will be located. ** This array MUST be in increasing order **
+        vals: array, values that will be located in arr
+
+    Returns:
+        idx: list, indeces of where the values would be located if placed in arr
+
+    """
+
+    if isinstance(vals, float):
+        vals = [vals]
+
+    idx_list = []
+    for v in vals:
+        # Find the index and value of the closest element to vals
+        arr_val, arr_idx = find_nearest(arr, v)
+        #print ("arr_val, arr_idx : ", arr_val, arr_idx)
+
+        if arr_val == v:
+            idx_list.append(arr_idx)
+        else:
+            # Determine if v would go before or after arr_val
+            i = arr_idx
+            if v > arr_val:
+                while v > arr[i]:
+                    i += 1
+                    if i >= len(arr):
+                        i = len(arr) - 1
+                        break
+                idx_list.append(i)
+            else:
+                while v < arr[i]:
+                    i -=  1
+                    if i < 0:
+                        i = 0
+                        break
+                idx_list.append(i)
+    #print ("v, i, arr[i] : ", v, i, arr[i])
+    return idx_list
+
+
+def interp_spline(x,y, atx):
+    """
+    Since spline is being deprecated in scipy, this function does a cubic spline interpolation.
+    Args:
+        x: array
+        y: array
+        atx: float
+
+    Returns:
+        float corresponding to atx
+    """
+    t = interpolate.splrep(x, y)
+    return interpolate.splev(atx, t)

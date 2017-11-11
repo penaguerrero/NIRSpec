@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from astropy.io import fits
 from jwst.assign_wcs.tools.nirspec import compute_world_coordinates
-import wcs_auxiliary_functions as wcsfunc
+import auxiliary_functions as wcsfunc
 
 """
 This script compares pipeline WCS info with ESA results for Multi-Object Spectroscopy (MOS) data.

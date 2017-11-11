@@ -86,7 +86,7 @@ def validate_wcs_extract2d(output_hdul):
     esa_files_path = output_hdul[2]
 
     # define the threshold difference between the pipeline output and the ESA files for the pytest to pass or fail
-    threshold_diff = output_hdul[3]
+    threshold_diff = float(output_hdul[3])
 
     if extract_2d_utils.check_FS_true(hdu):
         # Find what slit the data corresponds to
