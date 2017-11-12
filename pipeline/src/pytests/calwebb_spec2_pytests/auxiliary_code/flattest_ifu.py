@@ -6,17 +6,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from astropy.io import fits
-from jwst.assign_wcs.tools.nirspec import compute_world_coordinates
-import auxiliary_functions as auxfunc
 
 
 """
-This script compares pipeline WCS info with ESA results for FIXED SLIT.
-
-slit = 'S200A1', 'S200A2', 'S400A1', 'S1600A1', 'S200B1'
-det = 'NRS1' or 'NRS2'
-subarray_origin = [SUBSTRT1, SUBSTRT2] from original image; needed since SUBSTRT in
-                    world_coordinates file is not in full frame reference
+This script tests the pipeline flat field step output.
 """
 
 
@@ -216,18 +209,17 @@ def mk_plots(title, show_figs=True, save_figs=False, info_fig1=None, info_fig2=N
         if deltas_plt:
             if fig_name is None:
                 fig_name = "FS_wcs_Deltas.jpg"
-        plt.savefig(fig_name)
         print ('\n Plot saved: ', fig_name)
     if show_figs:
         plt.show()
     plt.close()
 
 
-def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
+def flattest(infile_name, esa_files_path=None, auxiliary_code_path=None,
                 show_figs=True, save_figs=False, plot_names=None, threshold_diff=1.0e-14, debug=False):
     """
-    This function does the WCS comparison from the world coordinates calculated using the
-    compute_world_coordinates.py script with the ESA files. The function calls that script.
+    This function does the comparison from the pipeline flat field output and
+    the intermediary ESA products.
 
     Args:
         infile_name: str, name of the output fits file from the 2d_extract step (with full path)
@@ -247,17 +239,28 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
 
     """
 
-    # get grating and filter info from the rate file header
-    det = fits.getval(infile_name, "DETECTOR", 0)
+    # read in the output of the flat step for relevant info
     print('infile_name=', infile_name)
+    det = fits.getval(infile_name, "DETECTOR", 0)
     lamp = fits.getval(infile_name, "LAMP", 0)
     grat = fits.getval(infile_name, "GRATING", 0)
-    filt = fits.getval(infile_name, "FILTER", 0)
-    print ("extract_2d  -->     Detector:", det, "   Grating:", grat, "   Filter:", filt, "   Lamp:", lamp)
+    filter = fits.getval(infile_name, "FILTER", 0)
+    exptype = fits.getval(infile_name, "EXP_TYPE", 0)
+    print ("flat field fits file  -->     Detector:", det, "   Grating:", grat, "   Filter:", filt, "   Lamp:", lamp)
 
 
-    # Run compute_world_coordinates.py in order to produce the necessary file
-    # !!! note that the code expects to be in the build environment !!!
+    # read in the on-the-fly flat image
+    basenameinfile_name = os.path.basename(infile_name)
+    fileID = basenameinfile_name.split("_")[0]   # obtain the id of the file
+    working_dir_path = os.getcwd()
+    flatfile = working_dir_path+"/"+fileID+"_"+det+"_uncal_rate_assign_intflat.fits"
+    pipeflat =
+    
+    
+    
+    
+    
+    
     if auxiliary_code_path is None:
         auxiliary_code_path = "./"
 
@@ -280,7 +283,7 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
     sltname_list = []
     wchdu = fits.open(cwc_fname)
     #n_ext = len(wchdu)
-    sci_ext_list = auxfunc.get_sci_extensions(infile_name)
+    sci_ext_list = wcsfunc.get_sci_extensions(infile_name)
     print ('sci_ext_list=', sci_ext_list, '\n')
 
     for i, s_ext in enumerate(sci_ext_list):
@@ -352,8 +355,8 @@ def compare_wcs(infile_name, esa_files_path=None, auxiliary_code_path=None,
             print("   ex=", ex, "   ey=", ey)
 
         # match up the correct elements in each data set
-        subpx, subex = auxfunc.do_idl_match(px, ex)
-        subpy, subey = auxfunc.do_idl_match(py, ey)
+        subpx, subex = wcsfunc.do_idl_match(px, ex)
+        subpy, subey = wcsfunc.do_idl_match(py, ey)
         print("matched elements in the 2D spectra: ", len(subex), len(subey))
         imp, ime = [], []
         for spy in subpy:
@@ -459,19 +462,21 @@ if __name__ == '__main__':
 
     # input parameters that the script expects
     auxiliary_code_path = pipeline_path+"/src/pytests/calwebb_spec2_pytests/auxiliary_code"
-    infile_name = "jwtest1003001_01101_00001_NRS1_uncal_rate_assign_wcs_extract_2d.fits"
-    #esa_files_path=pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_FixedSlit/"
+    infile_name = "jwtest1003001_01101_00001_NRS1_uncal_rate_assign_wcs_extract_2d_flat_field.fits"
+    #esa_files_path=pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_IFU/"
     # if a specific file needs to be used
-    esa_files_path = pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_FixedSlit/V84600003001P0000000002104_39528_JLAB88/V84600003001P0000000002104_39528_JLAB88_trace_SLIT/Trace_SLIT_A_200_1_V84600003001P0000000002104_39528_JLAB88.fits"
+    esa_files_path = pipeline_path+"/build7/test_data/ESA_intermediary_products/RegressionTestData_CV3_March2017_IFU/SIMA-QUAL-04-B-6007022859_37668_JLAB88/SIMA-QUAL-04-B-6007022859_37668_JLAB88_trace_IFU/Trace_IFU_Slice_00_SIMA-QUAL-04-B-6007022859_37668_JLAB88.fits"
 
     # set the names of the resulting plots
-    hist_name = "FS_jwtest1003001_01101_00001_wcs_histogram.jpg"
-    deltas_name = "FS_jwtest1003001_01101_00001_wcs_deltas.jpg"
+    hist_name = "IFU_jwtest1003001_01101_00001_wcs_histogram.jpg"
+    deltas_name = "IFU_jwtest1003001_01101_00001_wcs_deltas.jpg"
     plot_names = [hist_name, deltas_name]
 
     # Run the principal function of the script
-    median_diff = compare_wcs(infile_name, esa_files_path=esa_files_path, auxiliary_code_path=auxiliary_code_path,
-                              plot_names=plot_names, show_figs=True, save_figs=False, threshold_diff=1.0e-14)
+    median_diff = compare_wcs(infile_name, esa_files_path=esa_files_path,
+                              auxiliary_code_path=auxiliary_code_path,
+                              plot_names=plot_names, show_figs=True,
+                              save_figs=False, threshold_diff=1.0e-14)
 
 
 
